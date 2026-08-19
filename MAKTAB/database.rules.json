@@ -1,0 +1,63 @@
+{
+  "rules": {
+    "users": {
+      "$uid": {
+        ".read": "auth != null && (auth.uid == $uid || ((root.child('users').child(auth.uid).child('role').val() == 'admin' || root.child('users').child(auth.uid).child('role').val() == 'manager') && root.child('users').child(auth.uid).child('active').val() == true && root.child('users').child(auth.uid).child('maktabId').val() == data.child('maktabId').val()))",
+        ".write": "auth != null && ((!data.exists() && auth.uid == $uid) || (!data.exists() && (root.child('users').child(auth.uid).child('role').val() == 'admin' || root.child('users').child(auth.uid).child('role').val() == 'manager') && root.child('users').child(auth.uid).child('active').val() == true && root.child('users').child(auth.uid).child('maktabId').val() == newData.child('maktabId').val()) || (auth.uid == $uid && newData.child('role').val() == data.child('role').val() && newData.child('maktabId').val() == data.child('maktabId').val() && newData.child('active').val() == data.child('active').val() && newData.child('teacherId').val() == data.child('teacherId').val()) || (auth.uid != $uid && (root.child('users').child(auth.uid).child('role').val() == 'admin' || root.child('users').child(auth.uid).child('role').val() == 'manager') && root.child('users').child(auth.uid).child('active').val() == true && root.child('users').child(auth.uid).child('maktabId').val() == data.child('maktabId').val() && newData.child('maktabId').val() == data.child('maktabId').val() && (newData.child('role').val() == data.child('role').val() || newData.child('role').val() == 'teacher')))",
+        ".validate": "newData.hasChildren(['name', 'email', 'role', 'maktabId', 'active'])"
+      }
+    },
+    "maktabs": {
+      "$maktabId": {
+        "students": {
+          "$studentId": {
+            ".read": "auth != null && root.child('users').child(auth.uid).child('active').val() == true && root.child('users').child(auth.uid).child('maktabId').val() == $maktabId",
+            ".write": "auth != null && root.child('users').child(auth.uid).child('active').val() == true && root.child('users').child(auth.uid).child('maktabId').val() == $maktabId && (root.child('users').child(auth.uid).child('role').val() == 'admin' || root.child('users').child(auth.uid).child('role').val() == 'manager')"
+          }
+        },
+
+        "teachers": {
+          "$teacherId": {
+            ".read": "auth != null && root.child('users').child(auth.uid).child('active').val() == true && root.child('users').child(auth.uid).child('maktabId').val() == $maktabId",
+            ".write": "auth != null && root.child('users').child(auth.uid).child('active').val() == true && root.child('users').child(auth.uid).child('maktabId').val() == $maktabId && (root.child('users').child(auth.uid).child('role').val() == 'admin' || root.child('users').child(auth.uid).child('role').val() == 'manager')"
+          }
+        },
+
+        "batches": {
+          "$batchId": {
+            ".read": "auth != null && root.child('users').child(auth.uid).child('active').val() == true && root.child('users').child(auth.uid).child('maktabId').val() == $maktabId",
+            ".write": "auth != null && root.child('users').child(auth.uid).child('active').val() == true && root.child('users').child(auth.uid).child('maktabId').val() == $maktabId && (root.child('users').child(auth.uid).child('role').val() == 'admin' || root.child('users').child(auth.uid).child('role').val() == 'manager')"
+          }
+        },
+
+        "attendance": {
+          "$attId": {
+            ".read": "auth != null && root.child('users').child(auth.uid).child('active').val() == true && root.child('users').child(auth.uid).child('maktabId').val() == $maktabId",
+            ".write": "auth != null && root.child('users').child(auth.uid).child('active').val() == true && root.child('users').child(auth.uid).child('maktabId').val() == $maktabId"
+          }
+        },
+
+        "teacher_attendance": {
+          "$taId": {
+            ".read": "auth != null && root.child('users').child(auth.uid).child('active').val() == true && root.child('users').child(auth.uid).child('maktabId').val() == $maktabId",
+            ".write": "auth != null && root.child('users').child(auth.uid).child('active').val() == true && root.child('users').child(auth.uid).child('maktabId').val() == $maktabId && (root.child('users').child(auth.uid).child('role').val() == 'admin' || root.child('users').child(auth.uid).child('role').val() == 'manager' || (newData.child('teacherId').val() == root.child('users').child(auth.uid).child('teacherId').val() && (!data.exists() || data.child('teacherId').val() == newData.child('teacherId').val())))"
+          }
+        },
+
+        "quran_progress": {
+          "$qpId": {
+            ".read": "auth != null && root.child('users').child(auth.uid).child('active').val() == true && root.child('users').child(auth.uid).child('maktabId').val() == $maktabId",
+            ".write": "auth != null && root.child('users').child(auth.uid).child('active').val() == true && root.child('users').child(auth.uid).child('maktabId').val() == $maktabId"
+          }
+        },
+
+        "fee_payments": {
+          "$feeId": {
+            ".read": "auth != null && root.child('users').child(auth.uid).child('active').val() == true && root.child('users').child(auth.uid).child('maktabId').val() == $maktabId",
+            ".write": "auth != null && root.child('users').child(auth.uid).child('active').val() == true && root.child('users').child(auth.uid).child('maktabId').val() == $maktabId && (root.child('users').child(auth.uid).child('role').val() == 'admin' || root.child('users').child(auth.uid).child('role').val() == 'manager')"
+          }
+        }
+      }
+    }
+  }
+}

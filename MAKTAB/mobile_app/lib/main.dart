@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:maktab_app/providers/auth_provider.dart';
 import 'package:maktab_app/providers/locale_provider.dart';
 import 'package:maktab_app/providers/message_provider.dart';
@@ -39,6 +40,12 @@ Future<bool> _isDeviceRooted() async {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  try {
+    await Firebase.initializeApp();
+  } catch (e) {
+    debugPrint('Firebase.initializeApp note: $e');
+  }
   
   // Global error boundary for UI errors
   FlutterError.onError = (FlutterErrorDetails details) {

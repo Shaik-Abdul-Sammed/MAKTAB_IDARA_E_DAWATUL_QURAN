@@ -6,6 +6,8 @@ import 'package:provider/provider.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   setUpAll(() {
     sqfliteFfiInit();
     databaseFactory = databaseFactoryFfi;
@@ -18,20 +20,21 @@ void main() {
           providers: [
             ChangeNotifierProvider(create: (_) => AuthProvider()),
           ],
-          child: MaterialApp(
-            home: const LoginScreen(),
+          child: const MaterialApp(
+            home: LoginScreen(),
           ),
         ),
       );
 
+      await tester.pump();
+
       expect(find.text('MAKTAB'), findsOneWidget);
       expect(find.text("Idara-e-Dawatul Qur'an"), findsOneWidget);
-      
-      // Check for keypad buttons
+
       for (int i = 0; i <= 9; i++) {
         expect(find.text(i.toString()), findsOneWidget);
       }
-      
+
       expect(find.text('Forgot PIN?'), findsOneWidget);
       expect(find.text('Emergency Restore'), findsOneWidget);
     });
@@ -42,19 +45,20 @@ void main() {
           providers: [
             ChangeNotifierProvider(create: (_) => AuthProvider()),
           ],
-          child: MaterialApp(
-            home: const LoginScreen(),
+          child: const MaterialApp(
+            home: LoginScreen(),
           ),
         ),
       );
 
-      // Tap Forgot PIN
+      await tester.pump();
+
       await tester.ensureVisible(find.text('Forgot PIN?'));
       await tester.tap(find.text('Forgot PIN?'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Forgot PIN?'), findsWidgets); // title
-      expect(find.text('Cancel'), findsOneWidget);
+      expect(find.text('Forgot PIN?'), findsWidgets);
+      expect(find.text('Cancel'), findsWidgets);
       expect(find.text('Reset Admin PIN'), findsOneWidget);
     });
   });

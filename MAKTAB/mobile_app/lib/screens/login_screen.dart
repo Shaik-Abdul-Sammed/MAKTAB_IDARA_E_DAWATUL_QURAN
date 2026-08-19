@@ -254,11 +254,77 @@ class _LoginScreenState extends State<LoginScreen> {
                   ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed. Invalid Date of Birth or input.')));
                 }
               }, 
-              child: Text('Reset Admin PIN')
+              child: const Text('Reset Admin PIN')
             ),
           ],
         );
       }
+    );
+  }
+
+  void _showEmailLoginDialog() {
+    final emailController = TextEditingController();
+    final passwordController = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Sign in with Email'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: emailController,
+              decoration: const InputDecoration(
+                labelText: 'Email Address',
+                hintText: 'teacher@example.com',
+                prefixIcon: Icon(Icons.email),
+              ),
+              keyboardType: TextInputType.emailAddress,
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: passwordController,
+              decoration: const InputDecoration(
+                labelText: 'Password',
+                prefixIcon: Icon(Icons.lock),
+              ),
+              obscureText: true,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF004D40)),
+            onPressed: () async {
+              final auth = Provider.of<AuthProvider>(context, listen: false);
+              final nav = Navigator.of(ctx);
+              final router = GoRouter.of(context);
+              final messenger = ScaffoldMessenger.of(context);
+              final success = await auth.loginWithEmail(
+                emailController.text,
+                passwordController.text,
+              );
+              if (success) {
+                nav.pop();
+                if (auth.currentUser?.role == 'admin') {
+                  router.go('/admin');
+                } else {
+                  router.go('/teacher');
+                }
+              } else {
+                messenger.showSnackBar(
+                  SnackBar(content: Text(auth.lastAuthError.isNotEmpty ? auth.lastAuthError : 'Invalid credentials')),
+                );
+              }
+            },
+            child: const Text('Sign In', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
     );
   }
 
@@ -417,23 +483,35 @@ class _LoginScreenState extends State<LoginScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 40),
                   child: _buildKeyGrid(),
                 ),
-            SizedBox(height: 20),
-            if (!auth.isLoading)
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  TextButton.icon(
-                    onPressed: _showForgotPinDialog, 
-                    icon: Icon(Icons.help_outline, color: Colors.white70, size: 18),
-                    label: Text("Forgot PIN?", style: TextStyle(color: Colors.white70)),
+              if (!auth.isLoading) ...[
+                const SizedBox(height: 12),
+                OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: const Color(0xFFFFD700),
+                    side: const BorderSide(color: Color(0xFFFFD700)),
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                   ),
-                  TextButton.icon(
-                    onPressed: _handleEmergencyRestore, 
-                    icon: Icon(Icons.settings_backup_restore, color: Colors.white70, size: 18),
-                    label: Text("Emergency Restore", style: TextStyle(color: Colors.white70)),
-                  ),
-                ],
-              ),
+                  onPressed: _showEmailLoginDialog,
+                  icon: const Icon(Icons.email),
+                  label: const Text('Sign in with Email (Firebase)', style: TextStyle(fontWeight: FontWeight.bold)),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    TextButton.icon(
+                      onPressed: _showForgotPinDialog, 
+                      icon: const Icon(Icons.help_outline, color: Colors.white70, size: 18),
+                      label: const Text("Forgot PIN?", style: TextStyle(color: Colors.white70)),
+                    ),
+                    TextButton.icon(
+                      onPressed: _handleEmergencyRestore, 
+                      icon: const Icon(Icons.settings_backup_restore, color: Colors.white70, size: 18),
+                      label: const Text("Emergency Restore", style: TextStyle(color: Colors.white70)),
+                    ),
+                  ],
+                ),
+              ],
             ],
           ),
         ),

@@ -1,8 +1,8 @@
-import 'dart:convert';
+import 'dart:async';
 import 'package:flutter/foundation.dart';
-import 'package:http/http.dart' as http;
+import 'package:firebase_database/firebase_database.dart';
+import 'package:firebase_auth/firebase_auth.dart' as fb_auth;
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:maktab_app/config/api_config.dart';
 import 'package:maktab_app/models/user.dart';
 import 'package:maktab_app/models/batch.dart';
 import 'package:maktab_app/models/student.dart';
@@ -10,42 +10,47 @@ import 'package:maktab_app/models/attendance.dart';
 import 'package:maktab_app/models/teacher_attendance.dart';
 import 'package:maktab_app/models/quran_progress.dart';
 import 'package:maktab_app/models/fee_payment.dart';
-import 'package:sqflite_sqlcipher/sqflite.dart' hide Batch;
+import 'package:sqflite_sqlcipher/sqflite.dart' show ConflictAlgorithm;
 import 'package:maktab_app/services/database_helper.dart';
 
-/// 100% Free ($0/month) Self-Hosted REST Synchronization Service.
-/// Interacts with the Python FastAPI REST Backend (`maktab_backend.db`).
-/// Local SQLite (`maktab.db`) remains offline cache & primary storage.
+/// 100% Free ($0/month target) Firebase Realtime Database Granular Cloud Sync Engine.
+/// Replaces external REST servers with native, granular Firebase Realtime Database listeners & updates.
+/// Local SQLite (`maktab.db`) remains the zero-latency offline cache.
 class CloudSyncService {
   static final CloudSyncService instance = CloudSyncService._init();
   CloudSyncService._init();
 
-  Future<String> get _baseUrl async {
-    return await ApiConfig.baseUrl;
+  FirebaseDatabase? get _db {
+    try {
+      return FirebaseDatabase.instance;
+    } catch (_) {
+      return null;
+    }
   }
+
+  final List<StreamSubscription<DatabaseEvent>> _childSubscriptions = [];
 
   Future<String> getMaktabId() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       String? maktabId = prefs.getString('maktab_id');
       if (maktabId == null || maktabId.isEmpty) {
-        final db = await DatabaseHelper.instance.database;
-        final adminRows = await db.query('users', where: 'role = ?', whereArgs: ['admin']);
-        if (adminRows.isNotEmpty) {
-          final mobile = adminRows.first['mobile'] as String?;
-          if (mobile != null && mobile.isNotEmpty) {
-            maktabId = 'MAKTAB-$mobile';
-          } else {
-            maktabId = 'MAKTAB-${adminRows.first['id']}';
+        final user = fb_auth.FirebaseAuth.instance.currentUser;
+        final db = _db;
+        if (user != null && db != null) {
+          final snapshot = await db.ref('users/${user.uid}/maktabId').get();
+          if (snapshot.exists && snapshot.value != null) {
+            maktabId = snapshot.value.toString();
+            await prefs.setString('maktab_id', maktabId);
+            return maktabId;
           }
-        } else {
-          maktabId = 'MAKTAB-1001';
         }
+        maktabId = 'MAKTAB-001';
         await prefs.setString('maktab_id', maktabId);
       }
       return maktabId;
     } catch (_) {
-      return 'MAKTAB-DEFAULT';
+      return 'MAKTAB-001';
     }
   }
 
@@ -56,293 +61,270 @@ class CloudSyncService {
     } catch (_) {}
   }
 
-  // ── Single Entity Push Handlers ──────────────────────────────────────────────
+  // ── Firebase Granular Realtime Listeners ─────────────────────────────────
+
+  void startRealtimeSync(String maktabId) {
+    stopRealtimeSync();
+    final db = _db;
+    if (db == null) return;
+
+    final collections = [
+      'students',
+      'teachers',
+      'batches',
+      'attendance',
+      'teacher_attendance',
+      'quran_progress',
+      'fee_payments',
+    ];
+
+    for (var col in collections) {
+      try {
+        final sub = db.ref('maktabs/$maktabId/$col').onValue.listen((event) async {
+          if (!event.snapshot.exists || event.snapshot.value == null) return;
+          try {
+            final data = Map<String, dynamic>.from(event.snapshot.value as Map);
+            await _mergeCollectionToSQLite(col, data);
+          } catch (e) {
+            debugPrint('Firebase Granular Sync error on $col: $e');
+          }
+        }, onError: (e) {
+          debugPrint('Firebase stream note for $col: $e');
+        });
+        _childSubscriptions.add(sub);
+      } catch (_) {}
+    }
+  }
+
+  void stopRealtimeSync() {
+    for (var sub in _childSubscriptions) {
+      sub.cancel();
+    }
+    _childSubscriptions.clear();
+  }
+
+  Future<void> _mergeCollectionToSQLite(String collection, Map<String, dynamic> colData) async {
+    final db = await DatabaseHelper.instance.database;
+
+    switch (collection) {
+      case 'batches':
+        for (var entry in colData.entries) {
+          try {
+            final item = Map<String, dynamic>.from(entry.value as Map);
+            final b = Batch.fromMap(item);
+            await db.insert('batches', b.toMap(), conflictAlgorithm: ConflictAlgorithm.replace);
+          } catch (_) {}
+        }
+        break;
+
+      case 'students':
+        for (var entry in colData.entries) {
+          try {
+            final item = Map<String, dynamic>.from(entry.value as Map);
+            final s = Student.fromMap(item);
+            await db.insert('students', s.toMap(), conflictAlgorithm: ConflictAlgorithm.replace);
+          } catch (_) {}
+        }
+        break;
+
+      case 'attendance':
+        for (var entry in colData.entries) {
+          try {
+            final item = Map<String, dynamic>.from(entry.value as Map);
+            final a = Attendance.fromMap(item);
+            await db.insert('attendance', a.toMap(), conflictAlgorithm: ConflictAlgorithm.replace);
+          } catch (_) {}
+        }
+        break;
+
+      case 'teacher_attendance':
+        for (var entry in colData.entries) {
+          try {
+            final item = Map<String, dynamic>.from(entry.value as Map);
+            final ta = TeacherAttendance.fromMap(item);
+            await db.insert('teacher_attendance', ta.toMap(), conflictAlgorithm: ConflictAlgorithm.replace);
+          } catch (_) {}
+        }
+        break;
+
+      case 'quran_progress':
+        for (var entry in colData.entries) {
+          try {
+            final item = Map<String, dynamic>.from(entry.value as Map);
+            final qp = QuranProgress.fromMap(item);
+            await db.insert('quran_progress', qp.toMap(), conflictAlgorithm: ConflictAlgorithm.replace);
+          } catch (_) {}
+        }
+        break;
+
+      case 'fee_payments':
+        for (var entry in colData.entries) {
+          try {
+            final item = Map<String, dynamic>.from(entry.value as Map);
+            final f = FeePayment.fromMap(item);
+            await db.insert('fee_payments', f.toMap(), conflictAlgorithm: ConflictAlgorithm.replace);
+          } catch (_) {}
+        }
+        break;
+    }
+  }
+
+  // ── Push Entity Methods ───────────────────────────────────────────────────
 
   Future<void> pushUser(User user) async {
     try {
       final maktabId = await getMaktabId();
-      final url = await _baseUrl;
-      final payload = {
-        "maktab_id": maktabId,
-        "users": [user.toMap()]
-      };
-      await http.post(
-        Uri.parse('$url/api/v1/sync/push'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(payload),
-      );
+      final id = user.id ?? DateTime.now().millisecondsSinceEpoch;
+      await _db?.ref('maktabs/$maktabId/teachers/$id').set(user.toMap());
     } catch (e) {
-      debugPrint('RestSync pushUser error: $e');
+      debugPrint('Firebase pushUser error: $e');
     }
   }
 
   Future<void> pushBatch(Batch batch) async {
     try {
       final maktabId = await getMaktabId();
-      final url = await _baseUrl;
-      final payload = {
-        "maktab_id": maktabId,
-        "batches": [batch.toMap()]
-      };
-      await http.post(
-        Uri.parse('$url/api/v1/sync/push'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(payload),
-      );
+      final id = batch.id ?? DateTime.now().millisecondsSinceEpoch;
+      await _db?.ref('maktabs/$maktabId/batches/$id').set(batch.toMap());
     } catch (e) {
-      debugPrint('RestSync pushBatch error: $e');
+      debugPrint('Firebase pushBatch error: $e');
     }
   }
 
   Future<void> pushStudent(Student student) async {
     try {
       final maktabId = await getMaktabId();
-      final url = await _baseUrl;
-      final payload = {
-        "maktab_id": maktabId,
-        "students": [student.toMap()]
-      };
-      await http.post(
-        Uri.parse('$url/api/v1/sync/push'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(payload),
-      );
+      final id = student.id ?? DateTime.now().millisecondsSinceEpoch;
+      await _db?.ref('maktabs/$maktabId/students/$id').set(student.toMap());
     } catch (e) {
-      debugPrint('RestSync pushStudent error: $e');
+      debugPrint('Firebase pushStudent error: $e');
     }
   }
 
   Future<void> pushAttendance(Attendance attendance) async {
     try {
       final maktabId = await getMaktabId();
-      final url = await _baseUrl;
-      final payload = {
-        "maktab_id": maktabId,
-        "attendance": [attendance.toMap()]
-      };
-      await http.post(
-        Uri.parse('$url/api/v1/sync/push'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(payload),
-      );
+      final id = attendance.id ?? DateTime.now().millisecondsSinceEpoch;
+      await _db?.ref('maktabs/$maktabId/attendance/$id').set(attendance.toMap());
     } catch (e) {
-      debugPrint('RestSync pushAttendance error: $e');
+      debugPrint('Firebase pushAttendance error: $e');
     }
   }
 
-  Future<void> pushTeacherAttendance(TeacherAttendance attendance) async {
+  Future<void> pushTeacherAttendance(TeacherAttendance ta) async {
     try {
       final maktabId = await getMaktabId();
-      final url = await _baseUrl;
-      final payload = {
-        "maktab_id": maktabId,
-        "teacher_attendance": [attendance.toMap()]
-      };
-      await http.post(
-        Uri.parse('$url/api/v1/sync/push'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(payload),
-      );
+      final id = ta.id ?? DateTime.now().millisecondsSinceEpoch;
+      await _db?.ref('maktabs/$maktabId/teacher_attendance/$id').set(ta.toMap());
     } catch (e) {
-      debugPrint('RestSync pushTeacherAttendance error: $e');
+      debugPrint('Firebase pushTeacherAttendance error: $e');
     }
   }
 
-  Future<void> pushQuranProgress(QuranProgress progress) async {
+  Future<void> pushQuranProgress(QuranProgress qp) async {
     try {
       final maktabId = await getMaktabId();
-      final url = await _baseUrl;
-      final payload = {
-        "maktab_id": maktabId,
-        "quran_progress": [progress.toMap()]
-      };
-      await http.post(
-        Uri.parse('$url/api/v1/sync/push'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(payload),
-      );
+      final id = qp.id ?? DateTime.now().millisecondsSinceEpoch;
+      await _db?.ref('maktabs/$maktabId/quran_progress/$id').set(qp.toMap());
     } catch (e) {
-      debugPrint('RestSync pushQuranProgress error: $e');
+      debugPrint('Firebase pushQuranProgress error: $e');
     }
   }
 
-  Future<void> pushFeePayment(FeePayment payment) async {
+  Future<void> pushFeePayment(FeePayment fee) async {
     try {
       final maktabId = await getMaktabId();
-      final url = await _baseUrl;
-      final payload = {
-        "maktab_id": maktabId,
-        "fee_payments": [payment.toMap()]
-      };
-      await http.post(
-        Uri.parse('$url/api/v1/sync/push'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(payload),
-      );
+      final id = fee.id ?? DateTime.now().millisecondsSinceEpoch;
+      await _db?.ref('maktabs/$maktabId/fee_payments/$id').set(fee.toMap());
     } catch (e) {
-      debugPrint('RestSync pushFeePayment error: $e');
-    }
-  }
-
-  Future<void> deleteStudentCloud(int id) async {
-    try {
-      final db = await DatabaseHelper.instance.database;
-      final studentRows = await db.query('students', where: 'id = ?', whereArgs: [id]);
-      if (studentRows.isNotEmpty) {
-        final sMap = Map<String, dynamic>.from(studentRows.first);
-        sMap['is_deleted'] = 1;
-        sMap['deleted_at'] = DateTime.now().toIso8601String();
-        await pushStudent(Student.fromMap(sMap));
-      }
-    } catch (e) {
-      debugPrint('RestSync deleteStudent error: $e');
+      debugPrint('Firebase pushFeePayment error: $e');
     }
   }
 
   Future<void> deleteBatchCloud(int id) async {
     try {
-      // Soft deletion notification to backend
+      final maktabId = await getMaktabId();
+      await _db?.ref('maktabs/$maktabId/batches/$id').remove();
     } catch (e) {
-      debugPrint('RestSync deleteBatch error: $e');
+      debugPrint('Firebase deleteBatchCloud error: $e');
     }
   }
 
-  // ── Multi-Device Teacher Authentication via REST API ───────────────────────
-
-  Future<User?> authenticateTeacherCloud(String pinHash) async {
+  Future<void> deleteStudentCloud(int id) async {
     try {
-      final url = await _baseUrl;
-      final resp = await http.post(
-        Uri.parse('$url/api/v1/auth/login'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'pin_hash': pinHash}),
-      ).timeout(const Duration(seconds: 4));
-
-      if (resp.statusCode == 200) {
-        final data = jsonDecode(resp.body);
-        if (data['success'] == true && data['user'] != null) {
-          final userMap = Map<String, dynamic>.from(data['user']);
-          final maktabId = data['maktab_id'] ?? 'MAKTAB-1001';
-          await setMaktabId(maktabId);
-
-          final user = User.fromMap(userMap);
-          final db = await DatabaseHelper.instance.database;
-          await db.insert('users', user.toMap(), conflictAlgorithm: ConflictAlgorithm.replace);
-
-          await pullAllDataForMaktab(maktabId);
-          return user;
-        }
-      }
+      final maktabId = await getMaktabId();
+      await _db?.ref('maktabs/$maktabId/students/$id').remove();
     } catch (e) {
-      debugPrint('RestSync authenticateTeacherCloud error: $e');
+      debugPrint('Firebase deleteStudentCloud error: $e');
     }
-    return null;
   }
 
-  // ── Full Pull & Push Synchronization ───────────────────────────────────────
+  // ── Sync All Offline SQLite Records ────────────────────────────────────────
 
-  Future<bool> pullAllDataForMaktab(String maktabId) async {
-    try {
-      final url = await _baseUrl;
-      final resp = await http.get(Uri.parse('$url/api/v1/sync/pull/$maktabId'))
-          .timeout(const Duration(seconds: 4));
-
-      if (resp.statusCode == 200) {
-        final data = jsonDecode(resp.body);
-        final db = await DatabaseHelper.instance.database;
-
-        // Upsert Users
-        final users = data['users'] as List?;
-        for (var u in users ?? []) {
-          final uMap = Map<String, dynamic>.from(u);
-          await db.insert('users', uMap, conflictAlgorithm: ConflictAlgorithm.replace);
-        }
-
-        // Upsert Batches
-        final batches = data['batches'] as List?;
-        for (var b in batches ?? []) {
-          final bMap = Map<String, dynamic>.from(b);
-          await db.insert('batches', bMap, conflictAlgorithm: ConflictAlgorithm.replace);
-        }
-
-        // Upsert Students
-        final students = data['students'] as List?;
-        for (var s in students ?? []) {
-          final sMap = Map<String, dynamic>.from(s);
-          await db.insert('students', sMap, conflictAlgorithm: ConflictAlgorithm.replace);
-        }
-
-        // Upsert Attendance
-        final attendance = data['attendance'] as List?;
-        for (var a in attendance ?? []) {
-          final aMap = Map<String, dynamic>.from(a);
-          await db.insert('attendance', aMap, conflictAlgorithm: ConflictAlgorithm.replace);
-        }
-
-        // Upsert Teacher Attendance
-        final teacherAtt = data['teacher_attendance'] as List?;
-        for (var ta in teacherAtt ?? []) {
-          final taMap = Map<String, dynamic>.from(ta);
-          await db.insert('teacher_attendance', taMap, conflictAlgorithm: ConflictAlgorithm.replace);
-        }
-
-        // Upsert Quran Progress
-        final quran = data['quran_progress'] as List?;
-        for (var qp in quran ?? []) {
-          final qpMap = Map<String, dynamic>.from(qp);
-          await db.insert('quran_progress', qpMap, conflictAlgorithm: ConflictAlgorithm.replace);
-        }
-
-        // Upsert Fee Payments
-        final fees = data['fee_payments'] as List?;
-        for (var f in fees ?? []) {
-          final fMap = Map<String, dynamic>.from(f);
-          await db.insert('fee_payments', fMap, conflictAlgorithm: ConflictAlgorithm.replace);
-        }
-
-        return true;
-      }
-    } catch (e) {
-      debugPrint('RestSync pullAllDataForMaktab error: $e');
-    }
-    return false;
-  }
-
-  /// Pushes ALL local Manager/Teacher records to backend, then pulls latest data.
-  Future<void> syncAll() async {
+  Future<bool> syncAll() async {
     try {
       final maktabId = await getMaktabId();
       final db = await DatabaseHelper.instance.database;
 
-      final users = await db.query('users');
-      final batches = await db.query('batches');
-      final students = await db.query('students');
-      final attendance = await db.query('attendance');
-      final teacherAtt = await db.query('teacher_attendance');
-      final quran = await db.query('quran_progress');
-      final fees = await db.query('fee_payments');
+      final users = (await db.query('users')).map((e) => User.fromMap(e)).toList();
+      final batches = (await db.query('batches')).map((e) => Batch.fromMap(e)).toList();
+      final students = (await db.query('students')).map((e) => Student.fromMap(e)).toList();
+      final attendance = (await db.query('attendance')).map((e) => Attendance.fromMap(e)).toList();
+      final taList = (await db.query('teacher_attendance')).map((e) => TeacherAttendance.fromMap(e)).toList();
+      final qpList = (await db.query('quran_progress')).map((e) => QuranProgress.fromMap(e)).toList();
+      final feeList = (await db.query('fee_payments')).map((e) => FeePayment.fromMap(e)).toList();
 
-      final payload = {
-        "maktab_id": maktabId,
-        "users": users,
-        "batches": batches,
-        "students": students,
-        "attendance": attendance,
-        "teacher_attendance": teacherAtt,
-        "quran_progress": quran,
-        "fee_payments": fees
-      };
+      for (var u in users) {
+        if (u.id != null) await _db?.ref('maktabs/$maktabId/teachers/${u.id}').set(u.toMap());
+      }
+      for (var b in batches) {
+        if (b.id != null) await _db?.ref('maktabs/$maktabId/batches/${b.id}').set(b.toMap());
+      }
+      for (var s in students) {
+        if (s.id != null) await _db?.ref('maktabs/$maktabId/students/${s.id}').set(s.toMap());
+      }
+      for (var a in attendance) {
+        if (a.id != null) await _db?.ref('maktabs/$maktabId/attendance/${a.id}').set(a.toMap());
+      }
+      for (var ta in taList) {
+        if (ta.id != null) await _db?.ref('maktabs/$maktabId/teacher_attendance/${ta.id}').set(ta.toMap());
+      }
+      for (var qp in qpList) {
+        if (qp.id != null) await _db?.ref('maktabs/$maktabId/quran_progress/${qp.id}').set(qp.toMap());
+      }
+      for (var f in feeList) {
+        if (f.id != null) await _db?.ref('maktabs/$maktabId/fee_payments/${f.id}').set(f.toMap());
+      }
 
-      final url = await _baseUrl;
-      await http.post(
-        Uri.parse('$url/api/v1/sync/push'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(payload),
-      ).timeout(const Duration(seconds: 4));
+      // Start granular listening for changes in this Maktab
+      startRealtimeSync(maktabId);
 
-      await pullAllDataForMaktab(maktabId);
+      return true;
     } catch (e) {
-      debugPrint('RestSync syncAll error: $e');
+      debugPrint('CloudSyncService syncAll error: $e');
+      return false;
+    }
+  }
+
+  Future<bool> pullAllDataForMaktab(String maktabId) async {
+    try {
+      final db = _db;
+      if (db == null) return false;
+      final snapshot = await db.ref('maktabs/$maktabId').get();
+      if (snapshot.exists && snapshot.value != null) {
+        final data = Map<String, dynamic>.from(snapshot.value as Map);
+        for (var entry in data.entries) {
+          if (entry.value is Map) {
+            await _mergeCollectionToSQLite(entry.key, Map<String, dynamic>.from(entry.value as Map));
+          }
+        }
+        startRealtimeSync(maktabId);
+        return true;
+      }
+      return false;
+    } catch (e) {
+      debugPrint('CloudSyncService pullAllDataForMaktab error: $e');
+      return false;
     }
   }
 }

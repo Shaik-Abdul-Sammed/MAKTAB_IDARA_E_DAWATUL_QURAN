@@ -1,14 +1,21 @@
 # Gradle & Flutter build outputs
 .gradle/
 build/
+**/build/
 .dart_tool/
+**/.dart_tool/
 .kotlin/
 .flutter-plugins
 .flutter-plugins-dependencies
+.pub-cache/
+.pub/
 
 # Environment & Sensitive Credentials
 .env
 *.env
+key.properties
+google-services.json
+GoogleService-Info.plist
 
 # Backend Database & Local Backups
 *.db
@@ -25,9 +32,11 @@ __pycache__/
 # Local configuration file (sdk path, etc)
 local.properties
 
-# Log/OS Files
+# Log/OS/System Files
 *.log
 .DS_Store
+.system_generated/
+scratch/
 
 # Android Studio generated files and folders
 captures/
@@ -48,9 +57,6 @@ render.experimental.xml
 # Keystore files
 *.jks
 *.keystore
-
-# Google Services
-google-services.json
 
 # Android Profiling
 *.hprof
