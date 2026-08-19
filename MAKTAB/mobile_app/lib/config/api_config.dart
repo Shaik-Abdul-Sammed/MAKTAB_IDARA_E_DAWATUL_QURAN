@@ -1,7 +1,7 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiConfig {
-  static const String _defaultUrl = 'https://maktab-backend.onrender.com';
+  static const String _defaultUrl = 'https://maktab-idara-e-dawatul-quran.onrender.com';
   static String? _cachedBaseUrl;
 
   static Future<String> get baseUrl async {
