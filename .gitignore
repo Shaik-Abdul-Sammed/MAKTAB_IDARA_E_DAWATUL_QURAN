@@ -2,6 +2,7 @@
 .gradle/
 build/
 .dart_tool/
+.kotlin/
 .flutter-plugins
 .flutter-plugins-dependencies
 

@@ -13,10 +13,29 @@ import 'package:maktab_app/l10n/app_localizations.dart';
 
 import 'package:maktab_app/services/notification_service.dart';
 
-import 'package:flutter_jailbreak_detection/flutter_jailbreak_detection.dart';
-
-import 'dart:io' show Platform;
+import 'dart:io' show Platform, File;
 import 'package:maktab_app/utils/logger.dart';
+
+Future<bool> _isDeviceRooted() async {
+  if (!Platform.isAndroid) return false;
+  final paths = [
+    '/system/app/Superuser.apk',
+    '/sbin/su',
+    '/system/bin/su',
+    '/system/xbin/su',
+    '/data/local/xbin/su',
+    '/data/local/bin/su',
+    '/system/sd/xbin/su',
+    '/system/bin/failsafe/su',
+    '/data/local/su'
+  ];
+  for (var path in paths) {
+    try {
+      if (await File(path).exists()) return true;
+    } catch (_) {}
+  }
+  return false;
+}
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -62,7 +81,7 @@ void main() async {
   // Security checks
   if (Platform.isAndroid || Platform.isIOS) {
     try {
-      bool jailbroken = await FlutterJailbreakDetection.jailbroken;
+      bool jailbroken = await _isDeviceRooted();
       if (jailbroken) {
         // Halt execution on rooted devices
         runApp(const MaterialApp(
