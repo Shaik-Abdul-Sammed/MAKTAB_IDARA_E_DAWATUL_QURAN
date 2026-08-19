@@ -49,34 +49,31 @@ void main() {
   }
 
   group('LoginScreen Widget Tests', () {
-    testWidgets('renders PIN login UI header and keypad numbers', (WidgetTester tester) async {
+    testWidgets('renders Email + Password login UI header and fields', (WidgetTester tester) async {
       await tester.pumpWidget(buildTestableWidget(const LoginScreen()));
 
       expect(find.text('MAKTAB'), findsOneWidget);
       expect(find.text("Idara-e-Dawatul Qur'an"), findsOneWidget);
-      expect(find.text('1'), findsOneWidget);
-      expect(find.text('2'), findsOneWidget);
-      expect(find.text('3'), findsOneWidget);
-      expect(find.text('4'), findsOneWidget);
+      expect(find.text('SELECT LOGGING ROLE'), findsOneWidget);
+      expect(find.text('Email Address'), findsWidgets);
+      expect(find.text('Password'), findsOneWidget);
     });
 
-    testWidgets('tapping PIN digits triggers login attempt', (WidgetTester tester) async {
-      final mockUser = User(id: 1, name: 'Test', mobile: '1234', role: 'teacher', pinHash: 'hashed_pin', createdAt: DateTime.now().toIso8601String());
+    testWidgets('entering email and password triggers login attempt', (WidgetTester tester) async {
+      final mockUser = User(id: 1, name: 'Test', mobile: 'teacher@example.com', role: 'teacher', pinHash: '', createdAt: DateTime.now().toIso8601String());
       when(() => mockAuth.currentUser).thenReturn(mockUser);
-      when(() => mockAuth.login('1234')).thenAnswer((_) async => true);
+      when(() => mockAuth.loginWithEmail('teacher@example.com', 'password123')).thenAnswer((_) async => true);
 
       await tester.pumpWidget(buildTestableWidget(const LoginScreen()));
 
-      await tester.tap(find.text('1'));
-      await tester.pump();
-      await tester.tap(find.text('2'));
-      await tester.pump();
-      await tester.tap(find.text('3'));
-      await tester.pump();
-      await tester.tap(find.text('4'));
+      await tester.enterText(find.byType(TextFormField).first, 'teacher@example.com');
+      await tester.enterText(find.byType(TextFormField).last, 'password123');
       await tester.pump();
 
-      verify(() => mockAuth.login('1234')).called(1);
+      await tester.tap(find.text('LOGIN AS MANAGER'));
+      await tester.pump();
+
+      verify(() => mockAuth.loginWithEmail('teacher@example.com', 'password123')).called(1);
     });
   });
 }

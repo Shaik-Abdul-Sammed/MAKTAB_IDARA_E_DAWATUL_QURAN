@@ -14,7 +14,7 @@ void main() {
   });
 
   group('Login Screen Tests', () {
-    testWidgets('LoginScreen renders correctly', (WidgetTester tester) async {
+    testWidgets('LoginScreen renders Email and Password fields correctly', (WidgetTester tester) async {
       await tester.pumpWidget(
         MultiProvider(
           providers: [
@@ -30,16 +30,14 @@ void main() {
 
       expect(find.text('MAKTAB'), findsOneWidget);
       expect(find.text("Idara-e-Dawatul Qur'an"), findsOneWidget);
-
-      for (int i = 0; i <= 9; i++) {
-        expect(find.text(i.toString()), findsOneWidget);
-      }
-
-      expect(find.text('Forgot PIN?'), findsOneWidget);
-      expect(find.text('Emergency Restore'), findsOneWidget);
+      expect(find.text('SELECT LOGGING ROLE'), findsOneWidget);
+      expect(find.text('Email Address'), findsWidgets);
+      expect(find.text('Password'), findsOneWidget);
+      expect(find.text('Forgot Password?'), findsOneWidget);
+      expect(find.text('LOGIN AS MANAGER'), findsOneWidget);
     });
 
-    testWidgets('Forgot PIN dialog opens', (WidgetTester tester) async {
+    testWidgets('Forgot Password dialog opens', (WidgetTester tester) async {
       await tester.pumpWidget(
         MultiProvider(
           providers: [
@@ -53,13 +51,13 @@ void main() {
 
       await tester.pump();
 
-      await tester.ensureVisible(find.text('Forgot PIN?'));
-      await tester.tap(find.text('Forgot PIN?'));
+      await tester.ensureVisible(find.text('Forgot Password?'));
+      await tester.tap(find.text('Forgot Password?'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Forgot PIN?'), findsWidgets);
+      expect(find.text('Reset Password'), findsOneWidget);
       expect(find.text('Cancel'), findsWidgets);
-      expect(find.text('Reset Admin PIN'), findsOneWidget);
+      expect(find.text('Send Reset Link'), findsOneWidget);
     });
   });
 }

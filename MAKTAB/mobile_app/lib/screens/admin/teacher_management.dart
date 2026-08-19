@@ -10,6 +10,8 @@ import 'package:maktab_app/repositories/batch_repository.dart';
 import 'package:maktab_app/repositories/user_repository.dart';
 import 'package:maktab_app/widgets/shimmer_loader.dart';
 import 'package:maktab_app/utils/whatsapp_utility.dart';
+import 'package:provider/provider.dart';
+import 'package:maktab_app/providers/auth_provider.dart';
 import 'package:crypto/crypto.dart';
 import 'dart:convert';
 
@@ -589,34 +591,44 @@ class _TeacherManagementScreenState extends State<TeacherManagementScreen> {
                                     _showResetPinDialog(teacher);
                                   },
                                 ),
-                              PopupMenuButton<String>(
-                                icon: const Icon(Icons.more_vert, color: Color(0xFF004D40)),
-                                onSelected: (value) {
-                                  if (value == 'reset_pin') {
-                                    _showResetPinDialog(teacher);
-                                  } else if (value == 'edit') {
-                                    _showEditTeacherDialog(teacher);
-                                  }
-                                },
-                                itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-                                  const PopupMenuItem<String>(
-                                    value: 'edit',
-                                    child: ListTile(
-                                      leading: Icon(Icons.edit, color: Color(0xFF004D40)),
-                                      title: Text('Edit Details'),
-                                      contentPadding: EdgeInsets.zero,
-                                    ),
+                                  PopupMenuButton<String>(
+                                    icon: const Icon(Icons.more_vert, color: Color(0xFF004D40)),
+                                    onSelected: (value) async {
+                                      if (value == 'reset_password') {
+                                        if (teacher.mobile != null && teacher.mobile!.contains('@')) {
+                                          final auth = Provider.of<AuthProvider>(context, listen: false);
+                                          final success = await auth.sendPasswordReset(teacher.mobile!);
+                                          if (context.mounted) {
+                                            ScaffoldMessenger.of(context).showSnackBar(
+                                              SnackBar(content: Text(success ? 'Password reset link sent to ${teacher.mobile}' : 'Failed to send reset link')),
+                                            );
+                                          }
+                                        } else {
+                                          _showResetPinDialog(teacher);
+                                        }
+                                      } else if (value == 'edit') {
+                                        _showEditTeacherDialog(teacher);
+                                      }
+                                    },
+                                    itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+                                      const PopupMenuItem<String>(
+                                        value: 'edit',
+                                        child: ListTile(
+                                          leading: Icon(Icons.edit, color: Color(0xFF004D40)),
+                                          title: Text('Edit Details'),
+                                          contentPadding: EdgeInsets.zero,
+                                        ),
+                                      ),
+                                      const PopupMenuItem<String>(
+                                        value: 'reset_password',
+                                        child: ListTile(
+                                          leading: Icon(Icons.mark_email_unread, color: Color(0xFF004D40)),
+                                          title: Text('Send Password Reset Link'),
+                                          contentPadding: EdgeInsets.zero,
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                  const PopupMenuItem<String>(
-                                    value: 'reset_pin',
-                                    child: ListTile(
-                                      leading: Icon(Icons.lock_reset, color: Color(0xFF004D40)),
-                                      title: Text('Reset PIN'),
-                                      contentPadding: EdgeInsets.zero,
-                                    ),
-                                  ),
-                                ],
-                              ),
                             ],
                           ),
                         ),
