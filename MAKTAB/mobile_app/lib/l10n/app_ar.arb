@@ -1,0 +1,10 @@
+{
+  "appTitle": "مكتب إدارة",
+  "loginTitle": "تسجيل الدخول",
+  "adminDashboard": "لوحة تحكم المسؤول",
+  "teacherDashboard": "لوحة تحكم المعلم",
+  "students": "الطلاب",
+  "batches": "الدفعات",
+  "attendance": "الحضور",
+  "quranProgress": "تقدم القرآن"
+}

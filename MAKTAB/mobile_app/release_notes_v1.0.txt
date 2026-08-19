@@ -1,0 +1,118 @@
+Maktab Idara-e-Dawatul Quran — Private App Release v1.0
+=========================================================
+Release Date : 2026-08-06
+Build Type   : Release APK (Private Sideload — NOT Play Store)
+Package ID   : in.dawatulquran.maktab_app
+Target       : Admin + 2-3 Teachers (internal use only)
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+INSTALLATION INSTRUCTIONS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1. Transfer the APK to your Android phone via WhatsApp, USB, or Google Drive.
+2. Open Files app → tap the APK → tap Install.
+3. If prompted "Install from unknown sources" → Allow for your file manager app.
+4. After install, open "Maktab" from your home screen.
+
+IMPORTANT: Do NOT uninstall the old version if you have data in it.
+           Always use "Update" (install over existing) to preserve data.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+CORE WORKFLOW 1 — FIRST LOGIN / SETUP
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+First Time:
+  1. Open the app → tap "Get Started" on the welcome screen.
+  2. Set a 4-digit PIN (this is the Admin PIN — keep it safe).
+  3. Tap "Create PIN" → you are logged in as Admin.
+
+Returning Login:
+  1. Open the app → enter your 4-digit Admin PIN.
+  2. After 5 wrong attempts, the app locks for 30 seconds.
+
+Teacher Login:
+  - Teachers use their own 4-digit PIN assigned by the Admin.
+  - Teacher accounts are created from Admin → Teachers → Add Teacher.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+CORE WORKFLOW 2 — ADD A STUDENT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  1. Login as Admin.
+  2. Tap "Students" on the dashboard.
+  3. Tap the gold "Add Student" button (bottom right).
+  4. Fill in: Name, Admission No., Batch, Guardian Name, Phone.
+  5. Optionally tap the camera icon to upload a student photo.
+  6. Tap "Save". Student appears in the list immediately.
+
+Bulk Import from Excel:
+  - Admin Dashboard → "Import Excel"
+  - Select your .xlsx or .csv file (columns: name, admission_no, batch_name)
+  - Preview rows → tap "Import All"
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+CORE WORKFLOW 3 — MARK ATTENDANCE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Student Attendance (Teacher role):
+  1. Login as Teacher.
+  2. Tap "Attendance" from the teacher dashboard.
+  3. Select the date (defaults to today).
+  4. Mark each student Present / Absent / Late.
+  5. Tap "Submit Attendance". Timestamp is auto-recorded.
+
+Teacher Attendance (Admin role):
+  Option A — Manual:
+    Admin Dashboard → "Teacher Attendance"
+    → Select teacher → Select status → Tap "Mark Attendance"
+
+  Option B — Face Scan:
+    Admin Dashboard → "Face Scan Attd."
+    → Select teacher from dropdown → Point camera at teacher's face
+    → Tap "Scan & Verify"
+    Note: Face scan requires teacher photo to be uploaded in their profile.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+CORE WORKFLOW 4 — QURAN PROGRESS TRACKING
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  1. Login as Teacher.
+  2. Tap "Quran Progress" from the teacher dashboard.
+  3. Select a student from the list.
+  4. Enter today's Sabaq (new lesson) and Manzil (revision) details.
+  5. Rate recitation quality → tap "Save Progress".
+  6. Progress history is viewable per student.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+CORE WORKFLOW 5 — BACKUP & DATA SAFETY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  1. Login as Admin.
+  2. Admin Dashboard → Settings → Backup & Restore.
+  3. Tap "Export Backup ZIP" → choose a save location (Downloads folder).
+  4. Transfer the ZIP to a safe place (Google Drive, email to self, USB).
+
+IMPORTANT: Take a backup BEFORE every major data entry session and before
+           any app update. All data is stored locally on the device — if
+           the phone is lost or reset, data cannot be recovered without a backup.
+
+Restore from Backup:
+  - Settings → Backup & Restore → "Restore from ZIP"
+  - Select the backup ZIP file → confirm → app restores all data.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+TECHNICAL NOTES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Database: SQLite with AES-256 encryption (SQLCipher). Data is secure.
+• Network: This app is 100% OFFLINE. No internet connection is needed or used.
+• Permissions required: Camera (for face scan + photo upload), Storage (backup/restore).
+• Min Android version: 6.0 (API 23)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SUPPORT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+For technical issues, contact the developer via WhatsApp.
+Please include a screenshot of any error messages you see.
+
+— Maktab App v1.0 · Idara-e-Dawatul Quran · Private Build

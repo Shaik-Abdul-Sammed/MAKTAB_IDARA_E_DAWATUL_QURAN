@@ -1,0 +1,10 @@
+{
+  "appTitle": "Maktab Idara",
+  "loginTitle": "Login to Maktab",
+  "adminDashboard": "Admin Dashboard",
+  "teacherDashboard": "Teacher Dashboard",
+  "students": "Students",
+  "batches": "Batches",
+  "attendance": "Attendance",
+  "quranProgress": "Quran Progress"
+}
