@@ -56,16 +56,18 @@ class DBCursor:
 def get_db() -> DBConnection:
     db_url = os.getenv("DATABASE_URL")
     if db_url:
-        import psycopg2
-        # Fix postgres:// to postgresql:// if needed by psycopg2
-        if db_url.startswith("postgres://"):
-            db_url = db_url.replace("postgres://", "postgresql://", 1)
-        conn = psycopg2.connect(db_url)
-        return DBConnection(True, conn)
-    else:
-        conn = sqlite3.connect(DB_PATH)
-        conn.row_factory = sqlite3.Row
-        return DBConnection(False, conn)
+        try:
+            import psycopg2
+            if db_url.startswith("postgres://"):
+                db_url = db_url.replace("postgres://", "postgresql://", 1)
+            conn = psycopg2.connect(db_url)
+            return DBConnection(True, conn)
+        except (ImportError, Exception) as e:
+            print(f"Warning: PostgreSQL connection/import failed ({e}). Falling back to local persistent SQLite database.")
+
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    return DBConnection(False, conn)
 
 def init_db():
     conn = get_db()

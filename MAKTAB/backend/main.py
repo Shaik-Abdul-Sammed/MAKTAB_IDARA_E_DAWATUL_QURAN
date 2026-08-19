@@ -10,10 +10,18 @@ from database import init_db, get_db
 load_dotenv()
 SECRET_KEY = os.getenv("SECRET_KEY", "36a8b28c9e0246ed6b1058f9c4998b97")
 
+from contextlib import asynccontextmanager
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    init_db()
+    yield
+
 app = FastAPI(
     title="Maktab Manager Self-Hosted REST API",
     version="2.0.0",
-    description="100% Free Production REST API for Maktab Quran School Management"
+    description="100% Free Production REST API for Maktab Quran School Management",
+    lifespan=lifespan
 )
 
 app.add_middleware(
@@ -23,10 +31,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-@app.on_event("startup")
-def on_startup():
-    init_db()
 
 @app.get("/health")
 def health_check():
