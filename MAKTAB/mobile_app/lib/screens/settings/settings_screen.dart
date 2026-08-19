@@ -202,11 +202,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
             onPressed: () async {
               final newUrl = controller.text.trim();
               if (newUrl.isNotEmpty) {
+                final messenger = ScaffoldMessenger.of(context);
+                final nav = Navigator.of(ctx);
                 await ApiConfig.setBaseUrl(newUrl);
                 if (mounted) {
                   setState(() {});
-                  Navigator.pop(ctx);
-                  ScaffoldMessenger.of(context).showSnackBar(
+                  nav.pop();
+                  messenger.showSnackBar(
                     SnackBar(content: Text('Server URL updated to $newUrl')),
                   );
                 }

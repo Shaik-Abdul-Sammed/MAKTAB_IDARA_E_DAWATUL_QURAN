@@ -425,7 +425,7 @@ class _PasswordVaultScreenState extends State<PasswordVaultScreen>
               : ListView.separated(
                   padding: const EdgeInsets.fromLTRB(14, 16, 14, 100),
                   itemCount: _filtered.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 10),
+                  separatorBuilder: (context, index) => const SizedBox(height: 10),
                   itemBuilder: (_, i) => _buildCard(_filtered[i]),
                 ),
     );

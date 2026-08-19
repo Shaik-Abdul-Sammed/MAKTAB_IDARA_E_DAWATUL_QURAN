@@ -1,36 +1,109 @@
-# Maktab Manager Self-Hosted REST API Backend (₹0 Cost)
+# ⚡ Maktab Manager FastAPI REST Backend (₹0 Cost)
 
-This is the **100% Free ($0/month)** self-hosted REST API backend for the **Maktab Manager** mobile application.
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-009688?logo=fastapi)](https://fastapi.tiangolo.com)
+[![Python](https://img.shields.io/badge/Python-3.9+-3776AB?logo=python)](https://python.org)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Supported-4169E1?logo=postgresql)](https://postgresql.org)
+[![Render](https://img.shields.io/badge/Render-Deployed-000000?logo=render)](https://render.com)
 
-## Prerequisites
-- Python 3.9 or higher
+The self-hosted Python FastAPI REST API server powering multi-device synchronization for **Maktab Manager**. Designed to run on **100% Free Cloud Infrastructure ($0/month)** or local servers.
 
-## Linux Setup & Execution
-```bash
-cd backend
-python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-python3 -m uvicorn main:app --host 0.0.0.0 --port 8000
+---
+
+## ⚡ Features
+
+- **Lifespan Context Management**: Modern, clean startup initialization without deprecated handlers.
+- **Dual Database Driver**: Connects automatically to **PostgreSQL** when `DATABASE_URL` is set, or falls back to local persistent **SQLite** (`maktab_backend.db`).
+- **Multi-Tenant Isolation**: Enforces `maktab_id` scoping across all REST endpoints.
+- **Environment Configuration**: Automatic `.env` loading via `python-dotenv`.
+- **Render 1-Click Deployment**: Pre-configured `render.yaml` specification.
+
+---
+
+## 🌐 Production REST API Endpoints
+
+```http
+GET  /health
+POST /api/v1/auth/login
+POST /api/v1/sync/push
+GET  /api/v1/sync/pull/{maktab_id}
 ```
 
-## Windows Setup & Execution (PowerShell)
+### Endpoint Reference
+
+#### 1. Health Check
+- **URL**: `GET /health`
+- **Response**:
+```json
+{
+  "status": "ok",
+  "service": "Maktab Manager REST API",
+  "database": "Local Persistent SQLite",
+  "environment": "Production Cloud / Self-Hosted"
+}
+```
+
+#### 2. Authentication
+- **URL**: `POST /api/v1/auth/login`
+- **Body**: `{"pin_hash": "<SHA256_HASH>"}`
+- **Response**: User object & `maktab_id`.
+
+#### 3. Push Records (Offline to Cloud)
+- **URL**: `POST /api/v1/sync/push`
+- **Body**: Array of updated users, batches, students, attendance, Quran progress, and fee records.
+
+#### 4. Pull Records (Cloud to Mobile)
+- **URL**: `GET /api/v1/sync/pull/{maktab_id}`
+- **Response**: Complete latest database snapshot for the given `maktab_id`.
+
+---
+
+## 🛠️ Local Installation & Execution
+
+### 1. Linux / macOS
+```bash
+cd MAKTAB/backend
+
+# Create virtual environment
+python3 -m venv venv
+source venv/bin/activate
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Start backend server
+python3 main.py
+```
+
+### 2. Windows (PowerShell)
 ```powershell
-cd backend
+cd MAKTAB\backend
 python -m venv venv
 .\venv\Scripts\Activate.ps1
 pip install -r requirements.txt
-python -m uvicorn main:app --host 0.0.0.0 --port 8000
+python main.py
 ```
 
-## Automated Local Database Backup
+---
+
+## ☁️ Deploying to Render.com (100% Free / $0 Month)
+
+1. Sign up at [https://render.com](https://render.com) (No credit card required).
+2. Click **New +** → **Web Service** → Connect your GitHub Repository.
+3. Configure settings:
+   - **Root Directory**: `MAKTAB/backend`
+   - **Build Command**: `pip install -r requirements.txt`
+   - **Start Command**: `uvicorn main:app --host 0.0.0.0 --port $PORT`
+4. Deploy! Your backend will be live at `https://<your-app>.onrender.com`.
+
+---
+
+## 🔄 SQLite to PostgreSQL Data Migration
+
+If you have existing data in `maktab_backend.db` that you wish to transfer to your cloud PostgreSQL database:
+
 ```bash
-chmod +x backup.sh
-./backup.sh
+cd MAKTAB/backend
+export DATABASE_URL="postgresql://user:password@host:5432/maktab_db"
+python3 migrate_to_postgres.py
 ```
-
-## Endpoints
-- `GET /health` -> Health check status
-- `POST /api/v1/auth/login` -> Teacher / Admin PIN authentication
-- `POST /api/v1/sync/push` -> Push local offline records to backend DB
-- `GET /api/v1/sync/pull/{maktab_id}` -> Download remote records for a Maktab
+*Script executes idempotently using `ON CONFLICT(id) DO UPDATE` to prevent duplicates.*

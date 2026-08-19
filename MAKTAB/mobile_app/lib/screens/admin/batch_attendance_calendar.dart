@@ -191,7 +191,7 @@ class _BatchAttendanceCalendarScreenState
                   controller: scroll,
                   padding: const EdgeInsets.all(16),
                   itemCount: records.length,
-                  separatorBuilder: (_, __) => const Divider(height: 1),
+                  separatorBuilder: (context, index) => const Divider(height: 1),
                   itemBuilder: (ctx, i) {
                     final att = records[i];
                     final student = _batchStudents.firstWhere(

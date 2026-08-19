@@ -36,9 +36,11 @@ class _LoginScreenState extends State<LoginScreen> {
       // Only show biometric button if the user explicitly enabled it before
       final prefs = await SharedPreferences.getInstance();
       final enabled = prefs.getBool('use_biometric_login') ?? false;
-      if (mounted) setState(() {
-        _hasBiometricSession = canCheck && enabled;
-      });
+      if (mounted) {
+        setState(() {
+          _hasBiometricSession = canCheck && enabled;
+        });
+      }
     } catch (_) {}
   }
 
