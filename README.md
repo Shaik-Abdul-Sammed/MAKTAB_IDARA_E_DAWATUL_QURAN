@@ -12,16 +12,36 @@ An enterprise-grade, offline-first **Maktab Quran School Management Platform** d
 
 ---
 
-## 🌟 Key Features
+## 🌟 Comprehensive App Features
 
-- 📱 **Cross-Platform Mobile App**: Modern, responsive Flutter application for Android & iOS.
-- ⚡ **Offline-First Architecture**: Local SQLite caching (`maktab.db`) ensures zero-latency user interaction even without an internet connection.
-- ☁️ **Self-Hosted FastAPI Backend**: Lightweight Python REST API deployed for **₹0/month** on cloud hosts (Render / Koyeb) or local servers.
-- 🔄 **Multi-Device Cloud Sync**: Real-time REST synchronization allowing Managers and Teachers to connect seamlessly from anywhere in the world on 4G, 5G, or Wi-Fi.
-- 🔒 **Security & Multi-Tenant Isolation**: PIN hashing, optional JWT tokens, rate-limiting lockout protection, and strict `maktab_id` data isolation.
-- 📚 **Quran Progress Tracking**: Detailed logging of Surah, Ayah ranges, grades, and teacher feedback for every student.
-- 📅 **Smart Attendance**: Attendance tracking for both Students and Teachers with history logs and visual calendar views.
-- 💳 **Fee Payments & Password Vault**: Comprehensive fee collection records, receipt generation, and encrypted credential management.
+### 🔐 1. Authentication & Security
+- **Dual-Role Access Control**: Separate, tailored interfaces for Administrators/Managers and Teachers.
+- **PIN Authentication**: Fast, secure 4-digit PIN login backed by salted SHA-256 hashing.
+- **Biometric Authentication**: Fingerprint and Face ID support for quick unlock (`local_auth`).
+- **Lockout Protection**: Temporary 30-second lockout after 5 failed login attempts to prevent brute-force access.
+- **Password & PIN Vault**: Secure central vault for managers to manage and retrieve all personnel PINs.
+
+### 👥 2. Student & Batch Management
+- **Student Profiles**: Comprehensive student records including guardian name/phone, admission date, roll number, Date of Birth (DOB), and photo.
+- **Batch / Class Organization**: Create and manage classes, sections, room assignments, and primary teacher allocations.
+- **Academic Promotion**: One-click batch promotion tool to advance students to the next academic level.
+
+### 📖 3. Quran Progress Tracker
+- **Recitation & Memorization Logs**: Record Surah name, Ayah range (`from` - `to`), performance grades, and teacher notes.
+- **Progress History**: Track historical recitation records and memorization milestones per student.
+
+### 📅 4. Attendance Tracking & Analytics
+- **Student Attendance**: Mark daily attendance (Present / Absent / Late) with instant batch progress updates.
+- **Teacher Attendance**: Log teacher daily attendance, check-in / check-out times, and optional face verification.
+- **Interactive Calendar Views**: Visual monthly calendar views for student and batch attendance tracking.
+
+### 💳 5. Fee Collection & Receipts
+- **Tuition Fee Vault**: Record fee payments with amount, payment date, month/year, payment method, and receipt numbers.
+- **Payment History**: View detailed financial records and payment status per student.
+
+### ⚡ 6. Offline-First & Multi-Device Sync
+- **Local SQLite Caching**: Local database (`maktab.db`) ensures zero-latency UI performance even without an internet connection.
+- **Cloud REST Synchronization**: Bi-directional REST sync with self-hosted FastAPI backend over 4G, 5G, or Wi-Fi.
 
 ---
 

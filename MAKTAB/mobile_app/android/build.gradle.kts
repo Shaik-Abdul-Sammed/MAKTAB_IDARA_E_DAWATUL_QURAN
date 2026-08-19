@@ -22,9 +22,12 @@ subprojects {
 
 
 subprojects {
-    // 1. Force AGP CompileOptions
+    // 1. Force AGP CompileOptions & Fallback Namespace
     pluginManager.withPlugin("com.android.library") {
         val android = extensions.getByName("android") as com.android.build.gradle.BaseExtension
+        if (android.namespace == null) {
+            android.namespace = "com.example." + project.name.replace("-", "_")
+        }
         android.compileOptions {
             sourceCompatibility = JavaVersion.VERSION_17
             targetCompatibility = JavaVersion.VERSION_17
@@ -43,13 +46,14 @@ subprojects {
     }
 }
 
-
-
 subprojects {
     if (project.name != "app") {
         project.afterEvaluate {
-            // Force AGP
+            // Force AGP & Namespace
             val android = project.extensions.findByName("android") as? com.android.build.gradle.BaseExtension
+            if (android?.namespace == null) {
+                android?.namespace = "com.example." + project.name.replace("-", "_")
+            }
             android?.compileSdkVersion(36)
             android?.compileOptions {
                 sourceCompatibility = JavaVersion.VERSION_17

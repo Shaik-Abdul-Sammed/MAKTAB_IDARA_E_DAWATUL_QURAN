@@ -4,25 +4,38 @@
 [![Dart](https://img.shields.io/badge/Dart-3.x-0175C2?logo=dart)](https://dart.dev)
 [![Android](https://img.shields.io/badge/Android-APK-3DDC84?logo=android)](https://android.com)
 
-The official Flutter mobile application for **Maktab Idara-e-Dawatul Quran**. Provides role-based workflows for Administrators/Managers and Teachers with full offline caching and multi-device cloud synchronization.
+The official Flutter mobile application for **Maktab Idara-e-Dawatul Quran**. Designed for Administrators/Managers and Teachers, featuring full offline SQLite caching and multi-device cloud synchronization over 4G, 5G, or Wi-Fi.
 
 ---
 
-## 🎨 App Features & Modules
+## 🎨 Complete Application Feature Suite
 
-### 👨‍💼 Administrator / Manager Portal
-- **Dashboard**: High-level overview of total students, active batches, teachers, and attendance statistics.
-- **Batch Management**: Create, assign, and manage class sections and room assignments.
-- **Teacher Directory**: Manage teacher accounts, assigned batches, and PIN credentials.
-- **Student Directory**: Full student enrollment, academic history, and guardian contact details.
-- **Reports & Analytics**: Visual attendance calendars, Quran progress history, and fee payment exports.
-- **Password Vault**: Encrypted pin and password manager for system personnel.
+### 🔐 Security & Access Control
+- **Role-Based Authentication**: Custom portals for Administrators/Managers and Teachers.
+- **PIN-Based Sign-In**: Salted SHA-256 password hashing.
+- **Biometric Integration**: Instant login using Fingerprint / Face ID (`local_auth`).
+- **Lockout Protection**: 5 failed login attempt rate-limiting (30-second lockout). Zero data-loss purge safety.
+- **Password Vault**: Central encrypted storage for manager to view and manage user PIN credentials.
 
-### 👨‍🏫 Teacher Portal
-- **Teacher Dashboard**: Daily quick-actions for marking attendance and recording Quran progress.
-- **Attendance Marking**: Single-tap present/absent/late status logging for assigned batches.
-- **Quran Progress Tracker**: Log Surah, Ayah ranges, recitation grades, and teacher notes per student.
-- **Daily Checklist**: Track daily Maktab tasks and classroom preparation logs.
+### 👨‍💼 Administrator / Manager Dashboard
+- **Live Statistics Overview**: Total students count, active batches, teacher headcount, and daily attendance percentages.
+- **Batch & Class Management**: Create and configure batches, section names, room numbers, and teacher assignments.
+- **Batch Promotion Tool**: Advance students across academic years with a single tap.
+- **Teacher Directory & Management**: Add, edit, or deactivate teacher accounts and reset PINs.
+- **Student Enrollment**: Complete student registration with guardian phone, roll numbers, Date of Birth (DOB), and photos.
+- **Reports & Data Export**: Visual attendance calendars, memorization logs, and CSV/PDF export capabilities.
+
+### 👨‍🏫 Teacher Dashboard
+- **Quick Action Hub**: Instant access to mark student attendance, log Quran lessons, and submit daily checklists.
+- **Single-Tap Attendance**: Rapid Present/Absent/Late logging for assigned batch students.
+- **Quran Progress Tracker**: Record Surah, Ayah range (`from` - `to`), recitation grade, and teacher feedback per student.
+- **Daily Checklist**: Track classroom preparation, student discipline, and daily Maktab tasks.
+- **Teacher Attendance & Check-In**: Log daily teacher check-in / check-out times with optional face verification.
+
+### 💳 Financial & Administrative Utilities
+- **Fee Payment Register**: Track tuition fee collections (amount, payment date, month/year, payment method, receipt number).
+- **Payment History Logs**: Historical fee records per student.
+- **Settings & Network Config**: Easily view or override the active FastAPI server base URL at runtime.
 
 ---
 
@@ -31,7 +44,7 @@ The official Flutter mobile application for **Maktab Idara-e-Dawatul Quran**. Pr
 - **UI Framework**: Flutter 3.x with Material Design 3
 - **State Management**: `Provider` (`ChangeNotifier`)
 - **Routing**: `go_router`
-- **Local Persistence**: `sqflite` (SQLite) & `shared_preferences`
+- **Local Database**: `sqflite` (SQLite) & `shared_preferences`
 - **Network Client**: `http` REST API client with offline retry queue
 - **Security**: Local fingerprint / biometric authentication (`local_auth`) and cleartext HTTP support for local IPs.
 
@@ -39,22 +52,18 @@ The official Flutter mobile application for **Maktab Idara-e-Dawatul Quran**. Pr
 
 ## 🚀 Building & Running
 
-### 1. Prerequisites
-- Flutter SDK 3.x installed on your PATH.
-- Android SDK / Android Studio (for Android build).
-
-### 2. Static Analysis
-Verify that there are zero lint or syntax errors:
+### 1. Static Code Analysis
+Verify zero lint or syntax errors:
 ```bash
 flutter analyze lib/
 ```
 
-### 3. Run on Emulator / Device
+### 2. Run on Emulator / Connected Device
 ```bash
 flutter run
 ```
 
-### 4. Build Release Android APK
+### 3. Build Release Android APK
 Generate the release APK file for distribution to Manager and Teacher mobile devices:
 ```bash
 flutter build apk --release
