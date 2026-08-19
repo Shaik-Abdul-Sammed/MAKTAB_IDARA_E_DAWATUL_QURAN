@@ -1,0 +1,51 @@
+name: Flutter Mobile App CI/CD
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    name: Build & Analyze Flutter App
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v3
+
+      - name: Set up Java Development Kit
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Set up Flutter SDK
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.x'
+          channel: 'stable'
+          cache: true
+
+      - name: Get Dependencies
+        working-directory: MAKTAB/mobile_app
+        run: flutter pub get
+
+      - name: Analyze Static Code
+        working-directory: MAKTAB/mobile_app
+        run: flutter analyze lib/
+
+      - name: Run Tests
+        working-directory: MAKTAB/mobile_app
+        run: flutter test
+
+      - name: Build Android Release APK
+        working-directory: MAKTAB/mobile_app
+        run: flutter build apk --release
+
+      - name: Upload Release APK Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: maktab-manager-release-apk
+          path: MAKTAB/mobile_app/build/app/outputs/flutter-apk/app-release.apk

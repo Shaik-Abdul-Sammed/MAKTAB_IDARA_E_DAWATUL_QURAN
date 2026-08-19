@@ -1,0 +1,39 @@
+name: FastAPI Backend CI/CD
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'MAKTAB/backend/**'
+      - '.github/workflows/backend_ci.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'MAKTAB/backend/**'
+
+jobs:
+  test-backend:
+    name: Test & Validate Python FastAPI Backend
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+          cache: 'pip'
+          cache-dependency-path: 'MAKTAB/backend/requirements.txt'
+
+      - name: Install Dependencies
+        working-directory: MAKTAB/backend
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Validate Backend Syntax & Database Driver
+        working-directory: MAKTAB/backend
+        run: |
+          python -c "import main, database; print('FastAPI backend imports successfully!')"
