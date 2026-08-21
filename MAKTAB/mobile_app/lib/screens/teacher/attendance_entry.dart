@@ -11,8 +11,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../models/student.dart';
 import '../../providers/attendance_provider.dart';
+import '../../providers/auth_provider.dart';
 import '../../repositories/attendance_repository.dart';
+import '../../repositories/batch_repository.dart';
 import '../../repositories/student_repository.dart';
+import '../../repositories/user_repository.dart';
 import '../../utils/whatsapp_utility.dart';
 import '../../widgets/molecules/custom_app_bar.dart';
 import '../../widgets/shimmer_loader.dart';
@@ -38,6 +41,9 @@ class _AttendanceEntryScreenState extends State<AttendanceEntryScreen>
   late final TabController _tabController;
   final TextEditingController _searchController = TextEditingController();
 
+  String _batchName = '';
+  String _teacherName = '';
+
   @override
   void initState() {
     super.initState();
@@ -46,6 +52,29 @@ class _AttendanceEntryScreenState extends State<AttendanceEntryScreen>
     _provider.setDate(widget.date);
     _provider.setBatchId(widget.batchId);
     _provider.addListener(_autoSaveDraft);
+    _loadMetadata();
+  }
+
+  Future<void> _loadMetadata() async {
+    try {
+      final batch = await BatchRepository().getBatchById(widget.batchId);
+      if (batch != null) {
+        _batchName = batch.name;
+        if (batch.teacherId != null) {
+          final teacher = await UserRepository().getUserById(batch.teacherId!);
+          if (teacher != null) {
+            _teacherName = teacher.name;
+          }
+        }
+      }
+      if (_teacherName.isEmpty && mounted) {
+        final auth = Provider.of<AuthProvider>(context, listen: false);
+        if (auth.currentUser != null) {
+          _teacherName = auth.currentUser!.name;
+        }
+      }
+      if (mounted) setState(() {});
+    } catch (_) {}
   }
 
   @override
@@ -248,17 +277,54 @@ class _AttendanceEntryScreenState extends State<AttendanceEntryScreen>
   // ── #15: Share report
   void _shareAttendanceReport(List<Student> present, List<Student> absent) {
     final buffer = StringBuffer();
-    buffer.writeln('📋 Attendance Report — ${widget.date}');
+    final totalCount = _provider.students.length;
+    final presentCount = present.length;
+    final absentCount = absent.length;
+    final lateCount = _provider.lateCount;
+    final leaveCount = _provider.leaveCount;
+    final rate = totalCount > 0 ? ((presentCount / totalCount) * 100).toStringAsFixed(1) : '0.0';
+
+    buffer.writeln('📋 ATTENDANCE REPORT — ${widget.date}');
     buffer.writeln('─────────────────────────');
-    buffer.writeln('✅ Present (${present.length}):');
-    for (final s in present) { buffer.writeln('  • ${s.name}'); }
-    buffer.writeln();
-    buffer.writeln('❌ Not Present (${absent.length}):');
-    for (final s in absent) {
-      final st = _provider.studentStatuses[s.id!] ?? 'Absent';
-      buffer.writeln('  • ${s.name} [$st]');
+    if (_batchName.isNotEmpty) {
+      buffer.writeln('🏫 Class/Batch: $_batchName');
     }
-    buffer.write('\n\nFrom: MAKTAB IDARA E DAWATUL QURAN');
+    if (_teacherName.isNotEmpty) {
+      buffer.writeln('👨‍🏫 Teacher: $_teacherName');
+    }
+    buffer.writeln('📊 Summary:');
+    buffer.writeln('  • Total Students: $totalCount');
+    buffer.writeln('  • Present Count: $presentCount');
+    buffer.writeln('  • Absent Count: $absentCount');
+    if (lateCount > 0) buffer.writeln('  • Late Count: $lateCount');
+    if (leaveCount > 0) buffer.writeln('  • Leave Count: $leaveCount');
+    buffer.writeln('  • Attendance Rate: $rate%');
+    buffer.writeln('─────────────────────────');
+
+    buffer.writeln('\n✅ PRESENT STUDENTS ($presentCount):');
+    if (present.isEmpty) {
+      buffer.writeln('  None');
+    } else {
+      for (int i = 0; i < present.length; i++) {
+        final s = present[i];
+        final adm = s.admissionNumber.isNotEmpty ? s.admissionNumber : 'N/A';
+        buffer.writeln('  ${i + 1}. [Adm: $adm] ${s.name}');
+      }
+    }
+
+    buffer.writeln('\n❌ NOT PRESENT / ABSENT STUDENTS ($absentCount):');
+    if (absent.isEmpty) {
+      buffer.writeln('  None');
+    } else {
+      for (int i = 0; i < absent.length; i++) {
+        final s = absent[i];
+        final adm = s.admissionNumber.isNotEmpty ? s.admissionNumber : 'N/A';
+        final st = _provider.studentStatuses[s.id!] ?? 'Absent';
+        buffer.writeln('  ${i + 1}. [Adm: $adm] ${s.name} [$st]');
+      }
+    }
+
+    buffer.write('\n─────────────────────────\nFrom: MAKTAB IDARA E DAWATUL QURAN');
     SharePlus.instance.share(ShareParams(text: buffer.toString()));
   }
 
@@ -274,6 +340,9 @@ class _AttendanceEntryScreenState extends State<AttendanceEntryScreen>
           level: 0,
           child: pw.Text('Attendance Report — ${widget.date}', style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold)),
         ),
+        pw.SizedBox(height: 6),
+        if (_batchName.isNotEmpty) pw.Text('Class/Batch: $_batchName', style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold)),
+        if (_teacherName.isNotEmpty) pw.Text('Teacher: $_teacherName', style: const pw.TextStyle(fontSize: 11)),
         pw.SizedBox(height: 10),
         pw.Row(mainAxisAlignment: pw.MainAxisAlignment.spaceBetween, children: [
           pw.Text('Present: ${present.length}'),
@@ -284,11 +353,11 @@ class _AttendanceEntryScreenState extends State<AttendanceEntryScreen>
         ]),
         pw.SizedBox(height: 16),
         pw.TableHelper.fromTextArray(
-          headers: ['#', 'Student Name', 'Status'],
+          headers: ['S.No', 'Adm No', 'Student Name', 'Status'],
           data: allStudents.asMap().entries.map((e) {
             final s = e.value;
             final st = _provider.studentStatuses[s.id] ?? 'Present';
-            return [(e.key + 1).toString(), s.name, st];
+            return [(e.key + 1).toString(), s.admissionNumber.isNotEmpty ? s.admissionNumber : 'N/A', s.name, st];
           }).toList(),
           headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 11),
           cellStyle: const pw.TextStyle(fontSize: 10),

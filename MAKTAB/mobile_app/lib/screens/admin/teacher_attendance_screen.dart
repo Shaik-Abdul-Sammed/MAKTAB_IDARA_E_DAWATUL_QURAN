@@ -315,17 +315,50 @@ class _TeacherAttendanceScreenState extends State<TeacherAttendanceScreen> {
   void _shareReport(String dateStr, List<User> present, List<User> absent,
       List<User> late, List<User> leave) {
     final buf = StringBuffer();
-    buf.writeln('📋 Teacher Attendance — $dateStr');
-    buf.writeln('─────────────────────');
-    buf.writeln('✅ Present (${present.length}): ${present.map((t) => t.name).join(', ')}');
-    buf.writeln('❌ Absent (${absent.length}): ${absent.map((t) => t.name).join(', ')}');
+    final totalCount = present.length + absent.length + late.length + leave.length;
+    buf.writeln('📋 TEACHER ATTENDANCE REPORT — $dateStr');
+    buf.writeln('─────────────────────────');
+    buf.writeln('📊 Summary:');
+    buf.writeln('  • Total Teachers: $totalCount');
+    buf.writeln('  • Present Count: ${present.length}');
+    buf.writeln('  • Absent Count: ${absent.length}');
+    if (late.isNotEmpty) buf.writeln('  • Late Count: ${late.length}');
+    if (leave.isNotEmpty) buf.writeln('  • Leave Count: ${leave.length}');
+    buf.writeln('─────────────────────────');
+
+    buf.writeln('\n✅ PRESENT TEACHERS (${present.length}):');
+    if (present.isEmpty) {
+      buf.writeln('  None');
+    } else {
+      for (int i = 0; i < present.length; i++) {
+        buf.writeln('  ${i + 1}. ${present[i].name}');
+      }
+    }
+
+    buf.writeln('\n❌ ABSENT TEACHERS (${absent.length}):');
+    if (absent.isEmpty) {
+      buf.writeln('  None');
+    } else {
+      for (int i = 0; i < absent.length; i++) {
+        buf.writeln('  ${i + 1}. ${absent[i].name}');
+      }
+    }
+
     if (late.isNotEmpty) {
-      buf.writeln('🕒 Late (${late.length}): ${late.map((t) => t.name).join(', ')}');
+      buf.writeln('\n🕒 LATE TEACHERS (${late.length}):');
+      for (int i = 0; i < late.length; i++) {
+        buf.writeln('  ${i + 1}. ${late[i].name}');
+      }
     }
+
     if (leave.isNotEmpty) {
-      buf.writeln('🏖️ Leave (${leave.length}): ${leave.map((t) => t.name).join(', ')}');
+      buf.writeln('\n🏖️ LEAVE TEACHERS (${leave.length}):');
+      for (int i = 0; i < leave.length; i++) {
+        buf.writeln('  ${i + 1}. ${leave[i].name}');
+      }
     }
-    buf.writeln('\nFrom: MAKTAB IDARA E DAWATUL QURAN');
+
+    buf.write('\n─────────────────────────\nFrom: MAKTAB IDARA E DAWATUL QURAN');
     SharePlus.instance.share(ShareParams(text: buf.toString()));
   }
 
