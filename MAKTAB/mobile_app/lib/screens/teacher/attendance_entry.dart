@@ -2,8 +2,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:go_router/go_router.dart';
-import 'package:pdf/pdf.dart';
-import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
@@ -16,6 +14,7 @@ import '../../repositories/attendance_repository.dart';
 import '../../repositories/batch_repository.dart';
 import '../../repositories/student_repository.dart';
 import '../../repositories/user_repository.dart';
+import '../../utils/attendance_report_generator.dart';
 import '../../utils/whatsapp_utility.dart';
 import '../../widgets/molecules/custom_app_bar.dart';
 import '../../widgets/shimmer_loader.dart';
@@ -276,98 +275,26 @@ class _AttendanceEntryScreenState extends State<AttendanceEntryScreen>
 
   // ── #15: Share report
   void _shareAttendanceReport(List<Student> present, List<Student> absent) {
-    final buffer = StringBuffer();
-    final totalCount = _provider.students.length;
-    final presentCount = present.length;
-    final absentCount = absent.length;
-    final lateCount = _provider.lateCount;
-    final leaveCount = _provider.leaveCount;
-    final rate = totalCount > 0 ? ((presentCount / totalCount) * 100).toStringAsFixed(1) : '0.0';
-
-    buffer.writeln('📋 ATTENDANCE REPORT — ${widget.date}');
-    buffer.writeln('─────────────────────────');
-    if (_batchName.isNotEmpty) {
-      buffer.writeln('🏫 Class/Batch: $_batchName');
-    }
-    if (_teacherName.isNotEmpty) {
-      buffer.writeln('👨‍🏫 Teacher: $_teacherName');
-    }
-    buffer.writeln('📊 Summary:');
-    buffer.writeln('  • Total Students: $totalCount');
-    buffer.writeln('  • Present Count: $presentCount');
-    buffer.writeln('  • Absent Count: $absentCount');
-    if (lateCount > 0) buffer.writeln('  • Late Count: $lateCount');
-    if (leaveCount > 0) buffer.writeln('  • Leave Count: $leaveCount');
-    buffer.writeln('  • Attendance Rate: $rate%');
-    buffer.writeln('─────────────────────────');
-
-    buffer.writeln('\n✅ PRESENT STUDENTS ($presentCount):');
-    if (present.isEmpty) {
-      buffer.writeln('  None');
-    } else {
-      for (int i = 0; i < present.length; i++) {
-        final s = present[i];
-        final adm = s.admissionNumber.isNotEmpty ? s.admissionNumber : 'N/A';
-        buffer.writeln('  ${i + 1}. [Adm: $adm] ${s.name}');
-      }
-    }
-
-    buffer.writeln('\n❌ NOT PRESENT / ABSENT STUDENTS ($absentCount):');
-    if (absent.isEmpty) {
-      buffer.writeln('  None');
-    } else {
-      for (int i = 0; i < absent.length; i++) {
-        final s = absent[i];
-        final adm = s.admissionNumber.isNotEmpty ? s.admissionNumber : 'N/A';
-        final st = _provider.studentStatuses[s.id!] ?? 'Absent';
-        buffer.writeln('  ${i + 1}. [Adm: $adm] ${s.name} [$st]');
-      }
-    }
-
-    buffer.write('\n─────────────────────────\nFrom: MAKTAB IDARA E DAWATUL QURAN');
-    SharePlus.instance.share(ShareParams(text: buffer.toString()));
+    final reportText = AttendanceReportGenerator.generateTextReport(
+      rawDate: widget.date,
+      batchName: _batchName,
+      teacherName: _teacherName,
+      students: _provider.students,
+      studentStatuses: _provider.studentStatuses,
+    );
+    SharePlus.instance.share(ShareParams(text: reportText));
   }
 
   // ── #15: PDF Export
   Future<void> _exportPdf(
       List<Student> present, List<Student> absent, List<Student> late, List<Student> leave) async {
-    final doc = pw.Document();
-    final allStudents = _provider.students;
-    doc.addPage(pw.MultiPage(
-      pageFormat: PdfPageFormat.a4,
-      build: (pw.Context context) => [
-        pw.Header(
-          level: 0,
-          child: pw.Text('Attendance Report — ${widget.date}', style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold)),
-        ),
-        pw.SizedBox(height: 6),
-        if (_batchName.isNotEmpty) pw.Text('Class/Batch: $_batchName', style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold)),
-        if (_teacherName.isNotEmpty) pw.Text('Teacher: $_teacherName', style: const pw.TextStyle(fontSize: 11)),
-        pw.SizedBox(height: 10),
-        pw.Row(mainAxisAlignment: pw.MainAxisAlignment.spaceBetween, children: [
-          pw.Text('Present: ${present.length}'),
-          pw.Text('Absent: ${absent.length}'),
-          pw.Text('Late: ${late.length}'),
-          pw.Text('Leave: ${leave.length}'),
-          pw.Text('Total: ${allStudents.length}'),
-        ]),
-        pw.SizedBox(height: 16),
-        pw.TableHelper.fromTextArray(
-          headers: ['S.No', 'Adm No', 'Student Name', 'Status'],
-          data: allStudents.asMap().entries.map((e) {
-            final s = e.value;
-            final st = _provider.studentStatuses[s.id] ?? 'Present';
-            return [(e.key + 1).toString(), s.admissionNumber.isNotEmpty ? s.admissionNumber : 'N/A', s.name, st];
-          }).toList(),
-          headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 11),
-          cellStyle: const pw.TextStyle(fontSize: 10),
-          border: pw.TableBorder.all(width: 0.5),
-          headerDecoration: const pw.BoxDecoration(color: PdfColors.teal100),
-        ),
-        pw.SizedBox(height: 20),
-        pw.Text('From: MAKTAB IDARA E DAWATUL QURAN', style: pw.TextStyle(fontStyle: pw.FontStyle.italic, fontSize: 9)),
-      ],
-    ));
+    final doc = await AttendanceReportGenerator.generatePdfReport(
+      rawDate: widget.date,
+      batchName: _batchName,
+      teacherName: _teacherName,
+      students: _provider.students,
+      studentStatuses: _provider.studentStatuses,
+    );
 
     await Printing.sharePdf(bytes: await doc.save(), filename: 'attendance_${widget.date}.pdf');
   }
