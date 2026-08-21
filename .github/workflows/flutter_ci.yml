@@ -40,6 +40,46 @@ jobs:
         working-directory: MAKTAB/mobile_app
         run: flutter test
 
+      - name: Configure Google Services for CI
+        working-directory: MAKTAB/mobile_app
+        run: |
+          mkdir -p android/app
+          if [ -n "${{ secrets.GOOGLE_SERVICES_JSON }}" ]; then
+            echo "${{ secrets.GOOGLE_SERVICES_JSON }}" > android/app/google-services.json
+          else
+            cat << 'EOF' > android/app/google-services.json
+          {
+            "project_info": {
+              "project_number": "401274599872",
+              "project_id": "maktab-management-99001",
+              "storage_bucket": "maktab-management-99001.firebasestorage.app"
+            },
+            "client": [
+              {
+                "client_info": {
+                  "mobilesdk_app_id": "1:401274599872:android:e76418ae77ff4bb0f87025",
+                  "android_client_info": {
+                    "package_name": "in.dawatulquran.maktab_app"
+                  }
+                },
+                "oauth_client": [],
+                "api_key": [
+                  {
+                    "current_key": "AIzaSyDETNoHQKvdMqLlKIEXBaqgBJPYnFsOoGA"
+                  }
+                ],
+                "services": {
+                  "appinvite_service": {
+                    "other_platform_oauth_client": []
+                  }
+                }
+              }
+            ],
+            "configuration_version": "1"
+          }
+          EOF
+          fi
+
       - name: Build Android Release APK
         working-directory: MAKTAB/mobile_app
         run: flutter build apk --release
