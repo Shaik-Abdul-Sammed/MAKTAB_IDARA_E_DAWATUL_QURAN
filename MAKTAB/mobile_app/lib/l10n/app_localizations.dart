@@ -30,6 +30,15 @@ class AppLocalizations {
       'students': 'Students',
       'teachers': 'Teachers',
       'batches': 'Batches',
+      'fee_management': 'Fee Management',
+      'fee_receipt': 'Fee Receipt',
+      'amount': 'Amount',
+      'payment_mode': 'Payment Mode',
+      'date_time': 'Date & Time',
+      'save': 'Save',
+      'cancel': 'Cancel',
+      'send_whatsapp': 'Send WhatsApp',
+      'print_pdf': 'Print PDF',
     },
     'te': {
       'app_title': 'మక్తబ్ నిర్వహణ',
@@ -49,6 +58,15 @@ class AppLocalizations {
       'students': 'విద్యార్థులు',
       'teachers': 'ఉపాధ్యాయులు',
       'batches': 'బ్యాచ్‌లు',
+      'fee_management': 'ఫీజు నిర్వహణ',
+      'fee_receipt': 'ఫీజు రసీదు',
+      'amount': 'మొత్తం',
+      'payment_mode': 'చెల్లింపు విధానం',
+      'date_time': 'తేదీ & సమయం',
+      'save': 'సేవ్ చేయండి',
+      'cancel': 'రద్దు చేయండి',
+      'send_whatsapp': 'వాట్సాప్ ద్వారా పంపండి',
+      'print_pdf': 'పిడిఎఫ్ ప్రింట్ చేయండి',
     },
     'ur': {
       'app_title': 'مکتب مینجمنٹ',
@@ -68,6 +86,43 @@ class AppLocalizations {
       'students': 'طلباء',
       'teachers': 'اساتذہ',
       'batches': 'بیچز',
+      'fee_management': 'فیس مینجمنٹ',
+      'fee_receipt': 'فیس کی رسیپٹ',
+      'amount': 'رقم',
+      'payment_mode': 'ادائیگی کا طریقہ',
+      'date_time': 'تاریخ اور وقت',
+      'save': 'محفوظ کریں',
+      'cancel': 'منسوخ کریں',
+      'send_whatsapp': 'واٹس ایپ بھیجیں',
+      'print_pdf': 'پی ڈی ایف پرنٹ کریں',
+    },
+    'hi': {
+      'app_title': 'मकतब प्रबंधन',
+      'login': 'लॉगिन करें',
+      'admin_dashboard': 'एडमिन डैशबोर्ड',
+      'teacher_dashboard': 'शिक्षक डैशबोर्ड',
+      'attendance': 'उपस्थिति',
+      'quran_progress': 'क़ुरआन प्रगति',
+      'reports': 'रिपोर्ट',
+      'profiles': 'प्रोफ़ाइल',
+      'checklist': 'दैनिक चेकलिस्ट',
+      'settings': 'सेटिंग्स',
+      'logout': 'लॉगआउट',
+      'present': 'उपस्थित',
+      'absent': 'अनुपस्थित',
+      'mark_all_present': 'सभी को उपस्थित चिन्हित करें',
+      'students': 'छात्र',
+      'teachers': 'शिक्षक',
+      'batches': 'बैच',
+      'fee_management': 'शुल्क प्रबंधन',
+      'fee_receipt': 'शुल्क रसीद',
+      'amount': 'राशि',
+      'payment_mode': 'भुगतान विधि',
+      'date_time': 'तिथि एवं समय',
+      'save': 'सहेजें',
+      'cancel': 'रद्द करें',
+      'send_whatsapp': 'व्हाट्सएप भेजें',
+      'print_pdf': 'पीडीएफ प्रिंट करें',
     }
   };
 
@@ -81,7 +136,7 @@ class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> 
 
   @override
   bool isSupported(Locale locale) {
-    return ['en', 'te', 'ur'].contains(locale.languageCode);
+    return ['en', 'te', 'ur', 'hi'].contains(locale.languageCode);
   }
 
   @override

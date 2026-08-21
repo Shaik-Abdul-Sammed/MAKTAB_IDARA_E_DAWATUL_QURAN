@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_auth/firebase_auth.dart' as fb_auth;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -35,15 +36,19 @@ class CloudSyncService {
       final prefs = await SharedPreferences.getInstance();
       String? maktabId = prefs.getString('maktab_id');
       if (maktabId == null || maktabId.isEmpty) {
-        final user = fb_auth.FirebaseAuth.instance.currentUser;
-        final db = _db;
-        if (user != null && db != null) {
-          final snapshot = await db.ref('users/${user.uid}/maktabId').get();
-          if (snapshot.exists && snapshot.value != null) {
-            maktabId = snapshot.value.toString();
-            await prefs.setString('maktab_id', maktabId);
-            return maktabId;
-          }
+        if (Firebase.apps.isNotEmpty) {
+          try {
+            final user = fb_auth.FirebaseAuth.instance.currentUser;
+            final db = _db;
+            if (user != null && db != null) {
+              final snapshot = await db.ref('users/${user.uid}/maktabId').get();
+              if (snapshot.exists && snapshot.value != null) {
+                maktabId = snapshot.value.toString();
+                await prefs.setString('maktab_id', maktabId);
+                return maktabId;
+              }
+            }
+          } catch (_) {}
         }
         maktabId = 'MAKTAB-001';
         await prefs.setString('maktab_id', maktabId);

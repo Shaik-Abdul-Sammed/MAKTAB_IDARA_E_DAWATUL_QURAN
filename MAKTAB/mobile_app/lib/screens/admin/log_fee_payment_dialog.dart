@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
 import '../../models/student.dart';
 import '../../models/fee_payment.dart';
 import '../../providers/student_detail_provider.dart';
+import '../../providers/auth_provider.dart';
+import '../../utils/whatsapp_utility.dart';
 
 class LogFeePaymentDialog extends StatefulWidget {
   final Student student;
@@ -54,9 +57,34 @@ class _LogFeePaymentDialogState extends State<LogFeePaymentDialog> {
       await provider.addPayment(payment);
       
       if (mounted) {
+        final currentUser = Provider.of<AuthProvider>(context, listen: false).currentUser;
+        final collectorName = currentUser?.name ?? 'Management';
+        final formattedTime = DateFormat('dd MMM yyyy, hh:mm a').format(now);
+        final month = DateFormat('MMMM yyyy').format(now);
+
         Navigator.of(context).pop(true);
+
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Payment logged successfully!'), backgroundColor: Color(0xFF004D40)),
+          SnackBar(
+            content: const Text('Payment logged successfully!'),
+            backgroundColor: const Color(0xFF004D40),
+            action: SnackBarAction(
+              label: 'Send Receipt',
+              textColor: Colors.amber,
+              onPressed: () {
+                WhatsAppUtility.sendFeeReceipt(
+                  context,
+                  widget.student.phone ?? '',
+                  widget.student.name,
+                  amount.toDouble(),
+                  month,
+                  paymentMode: _selectedMode,
+                  dateTime: formattedTime,
+                  collectorName: collectorName,
+                );
+              },
+            ),
+          ),
         );
       }
     }

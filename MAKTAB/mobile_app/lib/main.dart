@@ -187,6 +187,7 @@ class _MaktabAppState extends State<MaktabApp> with WidgetsBindingObserver {
           Locale('en', ''),
           Locale('te', ''),
           Locale('ur', ''),
+          Locale('hi', ''),
         ],
         localizationsDelegates: const [
           AppLocalizations.delegate,

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../models/student.dart';
 import '../../repositories/student_repository.dart';
+import '../../repositories/batch_repository.dart';
+import '../../widgets/bulk_fee_messaging_dialog.dart';
 import '../../widgets/molecules/custom_app_bar.dart';
 
 class WhatsAppReminderScreen extends StatefulWidget {
@@ -44,6 +46,15 @@ class _WhatsAppReminderScreenState extends State<WhatsAppReminderScreen> {
     } catch (_) {
       if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  Future<void> _openBulkBatchMessaging() async {
+    final batches = await BatchRepository().getAllBatches();
+    if (!mounted) return;
+    showDialog(
+      context: context,
+      builder: (ctx) => BulkFeeMessagingDialog(batches: batches),
+    );
   }
 
   @override
@@ -150,22 +161,43 @@ class _WhatsAppReminderScreenState extends State<WhatsAppReminderScreen> {
 
   Widget _buildBanner() {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: Colors.green.shade800,
         borderRadius: BorderRadius.circular(18),
       ),
-      child: const Row(
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Icon(Icons.chat_rounded, color: Colors.white, size: 36),
-          SizedBox(width: 16),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Parent Communication', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
-              SizedBox(height: 4),
-              Text('Send direct WhatsApp updates to guardians', style: TextStyle(color: Colors.white70, fontSize: 12)),
-            ],
+          const Expanded(
+            child: Row(
+              children: [
+                Icon(Icons.chat_rounded, color: Colors.white, size: 34),
+                SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Parent Communication', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
+                      SizedBox(height: 2),
+                      Text('Send direct WhatsApp updates to guardians', style: TextStyle(color: Colors.white70, fontSize: 11)),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          ElevatedButton.icon(
+            onPressed: _openBulkBatchMessaging,
+            icon: const Icon(Icons.send_rounded, size: 14),
+            label: const Text('Bulk Batch Fee Messages', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFFFD700),
+              foregroundColor: const Color(0xFF004D40),
+              elevation: 2,
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
           ),
         ],
       ),

@@ -20,7 +20,7 @@ class LocaleProvider with ChangeNotifier {
   }
 
   Future<void> setLocale(Locale locale) async {
-    if (!['en', 'te', 'ur'].contains(locale.languageCode)) return;
+    if (!['en', 'te', 'ur', 'hi'].contains(locale.languageCode)) return;
 
     _locale = locale;
     notifyListeners();

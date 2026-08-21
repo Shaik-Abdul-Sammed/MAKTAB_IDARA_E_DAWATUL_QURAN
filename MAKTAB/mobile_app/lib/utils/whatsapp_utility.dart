@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-enum Language { english, urdu, hindi }
+enum Language { english, urdu, hindi, telugu }
 
 class WhatsAppUtility {
   static const String _signature = "\n\nFrom: MAKTAB IDARA E DAWATUL QURAN";
@@ -37,26 +38,78 @@ class WhatsAppUtility {
       case Language.hindi:
         msg = "अस्सलामु अलैकुम,\nप्रिय शिक्षक $name,\nआपके मकतब ऐप का लॉगिन पिन है: *$pin*\nकृपया इसे गोपनीय रखें और किसी के साथ साझा न करें।";
         break;
+      case Language.telugu:
+        msg = "అస్సలాము అలైకుమ్,\nగౌరవనీయ ఉపాధ్యాయులు $name,\nమీ మక్తబ్ యాప్ లాగిన్ పిన్: *$pin*\nదయచేసి దీనిని రహస్యంగా ఉంచండి మరియు ఎవరితోనూ పంచుకోకండి.";
+        break;
     }
 
     await launchWhatsApp(phone, msg + _signature);
   }
 
   static Future<void> sendFeeReceipt(
-      BuildContext context, String phone, String studentName, double amount, String month) async {
+    BuildContext context,
+    String phone,
+    String studentName,
+    double amount,
+    String month, {
+    String? paymentMode,
+    String? dateTime,
+    String? collectorName,
+  }) async {
     final lang = await _promptLanguageSelection(context);
     if (lang == null) return;
+
+    final modeText = (paymentMode != null && paymentMode.isNotEmpty) ? paymentMode : 'Cash';
+    final timeText = (dateTime != null && dateTime.isNotEmpty)
+        ? dateTime
+        : DateFormat('dd MMM yyyy, hh:mm a').format(DateTime.now());
+    final collector = (collectorName != null && collectorName.isNotEmpty) ? collectorName : 'Management';
 
     String msg = '';
     switch (lang) {
       case Language.english:
-        msg = "Assalamu Alaikum,\nDear Parent,\nWe confirm receipt of the monthly fee of ₹$amount for *$studentName* for the month of *$month*.\nJazakallah Khair.";
+        msg = "Assalamu Alaikum,\nDear Parent,\n\n"
+            "🧾 *FEE PAYMENT RECEIPT*\n"
+            "👤 *Student*: *$studentName*\n"
+            "💵 *Amount Received*: ₹$amount\n"
+            "💳 *Payment Mode*: $modeText\n"
+            "⏰ *Time*: $timeText\n"
+            "👨‍💼 *Teacher / Manager*: $collector\n"
+            "📅 *Month*: $month\n\n"
+            "Jazakallah Khair.";
         break;
       case Language.urdu:
-        msg = "السلام علیکم،\nمحترم والدین،\nہمیں *$studentName* کی *$month* کے مہینے کی فیس ₹$amount موصول ہو گئی ہے۔\nجزاک اللہ خیر۔";
+        msg = "السلام علیکم،\nمحترم والدین،\n\n"
+            "🧾 *فیس کی رسیپٹ*\n"
+            "👤 *طالب علم*: *$studentName*\n"
+            "💵 *وصول شدہ رقم*: ₹$amount\n"
+            "💳 *ادائیگی کا طریقہ*: $modeText\n"
+            "⏰ *وقت*: $timeText\n"
+            "👨‍💼 *ٹیچر / منیجر*: $collector\n"
+            "📅 *مہینہ*: $month\n\n"
+            "جزاک اللہ خیر۔";
         break;
       case Language.hindi:
-        msg = "अस्सलामु अलैकुम,\nप्रिय माता-पिता,\nहमें *$month* महीने के लिए *$studentName* की ₹$amount फीस प्राप्त हो गई है।\nजज़ाकल्लाह खैर।";
+        msg = "अस्सलामु अलैकुम,\nप्रिय माता-पिता,\n\n"
+            "🧾 *शुल्क भुगतान रसीद*\n"
+            "👤 *छात्र*: *$studentName*\n"
+            "💵 *प्राप्त राशि*: ₹$amount\n"
+            "💳 *भुगतान विधि*: $modeText\n"
+            "⏰ *समय*: $timeText\n"
+            "👨‍💼 *शिक्षक / प्रबंधक*: $collector\n"
+            "📅 *महीना*: $month\n\n"
+            "जज़ाकल्लाह खैर।";
+        break;
+      case Language.telugu:
+        msg = "అస్సలాము అలైకుమ్,\nప్రియమైన తల్లిదండ్రులారా,\n\n"
+            "🧾 *ఫీజు చెల్లింపు రసీదు*\n"
+            "👤 *విద్యార్థి*: *$studentName*\n"
+            "💵 *స్వీకరించిన మొత్తం*: ₹$amount\n"
+            "💳 *చెల్లింపు విధానం*: $modeText\n"
+            "⏰ *సమయం*: $timeText\n"
+            "👨‍💼 *ఉపాధ్యాయుడు / మేనేజర్*: $collector\n"
+            "📅 *నెల*: $month\n\n"
+            "జజాకల్లా ఖైర్.";
         break;
     }
 
@@ -80,6 +133,9 @@ class WhatsAppUtility {
         break;
       case Language.hindi:
         msg = "अस्सलामु अलैकुम,\nप्रिय माता-पिता,\nआपका बच्चा *$studentName* आज *$dateStr* को मकतब से *अनुपस्थित* रहा।\nबेहतर प्रगति के लिए नियमित उपस्थिति सुनिश्चित करें।";
+        break;
+      case Language.telugu:
+        msg = "అస్సలాము అలైకుమ్,\nప్రియమైన తల్లిదండ్రులారా,\nమీ బిడ్డ *$studentName* తేది *$dateStr* న మక్తబ్ నుండి *హాజరు కాలేదు (గైర్హాజరు)*.\nమెరుగైన పురోగతి కోసం క్రమం తప్పకుండా హాజరయ్యేలా చూడండి.";
         break;
     }
 
@@ -126,6 +182,8 @@ class WhatsAppUtility {
               _LanguageTile(label: '🇵🇰  اردو (Urdu)', value: Language.urdu),
               const Divider(height: 1),
               _LanguageTile(label: '🇮🇳  हिंदी (Hindi)', value: Language.hindi),
+              const Divider(height: 1),
+              _LanguageTile(label: '🇮🇳  తెలుగు (Telugu)', value: Language.telugu),
             ],
           ),
         );

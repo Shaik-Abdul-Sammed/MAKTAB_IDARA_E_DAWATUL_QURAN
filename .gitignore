@@ -9,6 +9,11 @@ build/
 .flutter-plugins-dependencies
 .pub-cache/
 .pub/
+.packages
+coverage/
+**/coverage/
+ephemeral/
+**/ephemeral/
 
 # Environment & Sensitive Credentials
 .env

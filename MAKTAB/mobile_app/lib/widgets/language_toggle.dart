@@ -33,6 +33,12 @@ class LanguageToggle extends StatelessWidget {
             fontWeight: localeProvider.locale.languageCode == 'ur' ? FontWeight.bold : FontWeight.normal
           )),
         ),
+        PopupMenuItem<String>(
+          value: 'hi',
+          child: Text('हिंदी (Hindi)', style: TextStyle(
+            fontWeight: localeProvider.locale.languageCode == 'hi' ? FontWeight.bold : FontWeight.normal
+          )),
+        ),
       ],
     );
   }
