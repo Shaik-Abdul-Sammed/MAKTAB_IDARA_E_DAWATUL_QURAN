@@ -116,6 +116,14 @@ class Student {
     }
     bId ??= 1;
 
+    bool isDel = false;
+    final rawDel = map['is_deleted'] ?? map['isDeleted'];
+    if (rawDel != null) {
+      if (rawDel == true || rawDel == 1 || rawDel.toString() == '1' || rawDel.toString().toLowerCase() == 'true') {
+        isDel = true;
+      }
+    }
+
     return Student(
       id: rawId,
       admissionNumber: (map['admission_number'] ?? map['admissionNumber'] ?? '').toString(),
@@ -132,7 +140,7 @@ class Student {
       createdAt: (map['created_at'] ?? map['createdAt'] ?? DateTime.now().toIso8601String()).toString(),
       feesAmount: map['fees_amount'] != null ? int.tryParse(map['fees_amount'].toString()) : null,
       teacherNotes: map['teacher_notes'] ?? map['teacherNotes'],
-      isDeleted: (map['is_deleted'] ?? map['isDeleted'] ?? 0) == 1 || map['is_deleted'] == true || map['isDeleted'] == true,
+      isDeleted: isDel,
       deletedAt: map['deleted_at'] ?? map['deletedAt'],
     );
   }

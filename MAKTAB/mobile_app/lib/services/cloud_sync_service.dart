@@ -93,9 +93,9 @@ class CloudSyncService {
     if (db == null) return;
 
     final collections = [
-      'students',
       'teachers',
       'batches',
+      'students',
       'attendance',
       'teacher_attendance',
       'quran_progress',
@@ -151,12 +151,40 @@ class CloudSyncService {
         break;
 
       case 'students':
+        final localBatches = await db.query('batches');
+        final batchMap = <int, int>{};
+        final batchNameMap = <String, int>{};
+        for (var b in localBatches) {
+          final bId = b['id'] as int?;
+          final bName = b['name']?.toString().toLowerCase();
+          if (bId != null) {
+            batchMap[bId] = bId;
+            if (bName != null) batchNameMap[bName] = bId;
+          }
+        }
+
         for (var entry in colData.entries) {
           try {
             final item = Map<String, dynamic>.from(entry.value as Map);
             item['id'] ??= int.tryParse(entry.key.toString());
             final s = Student.fromMap(item);
-            await db.insert('students', s.toMap(), conflictAlgorithm: ConflictAlgorithm.replace);
+            var map = s.toMap();
+
+            int? resolvedBatchId = map['batch_id'] as int?;
+            if (resolvedBatchId != null && batchMap.containsKey(resolvedBatchId)) {
+              map['batch_id'] = batchMap[resolvedBatchId];
+            } else if (item['batch_name'] != null || item['batch'] != null) {
+              final rawName = (item['batch_name'] ?? (item['batch'] is Map ? item['batch']['name'] : item['batch']))?.toString().toLowerCase();
+              if (rawName != null && batchNameMap.containsKey(rawName)) {
+                map['batch_id'] = batchNameMap[rawName];
+              }
+            }
+            if (localBatches.isNotEmpty) {
+              map['batch_id'] ??= localBatches.first['id'];
+            }
+            map['batch_id'] ??= 1;
+
+            await db.insert('students', map, conflictAlgorithm: ConflictAlgorithm.replace);
           } catch (e) {
             debugPrint('Error merging student ${entry.key} to SQLite: $e');
           }
@@ -525,9 +553,9 @@ class CloudSyncService {
       if (db == null) return false;
 
       final collections = [
-        'students',
         'teachers',
         'batches',
+        'students',
         'attendance',
         'teacher_attendance',
         'quran_progress',
