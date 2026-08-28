@@ -26,21 +26,25 @@ class FeePaymentRepository {
 
   Future<int> deleteFeePayment(int id) async {
     final db = await _dbHelper.database;
-    return await db.delete(
+    final res = await db.delete(
       'fee_payments',
       where: 'id = ?',
       whereArgs: [id],
     );
+    await CloudSyncService.instance.deleteFeePaymentCloud(id);
+    return res;
   }
 
   Future<int> updateFeePayment(FeePayment payment) async {
     final db = await _dbHelper.database;
-    return await db.update(
+    final res = await db.update(
       'fee_payments',
       payment.toMap(),
       where: 'id = ?',
       whereArgs: [payment.id],
     );
+    await CloudSyncService.instance.pushFeePayment(payment);
+    return res;
   }
 
   Future<List<FeePayment>> getAllPayments() async {

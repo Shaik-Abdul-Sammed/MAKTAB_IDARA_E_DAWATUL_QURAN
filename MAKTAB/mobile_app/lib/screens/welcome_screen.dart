@@ -159,9 +159,9 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      // Register / Get Started
+                      // Login to Account (Primary button for both Teachers & Managers)
                       ElevatedButton(
-                        key: const Key('btn_get_started'),
+                        key: const Key('btn_login_account'),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFFFFD700),
                           foregroundColor: const Color(0xFF004D40),
@@ -171,9 +171,9 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                           ),
                           elevation: 4,
                         ),
-                        onPressed: () => context.go('/register'),
+                        onPressed: () => context.go('/login'),
                         child: const Text(
-                          'Get Started',
+                          'Login to Account',
                           style: TextStyle(
                             fontSize: 17,
                             fontWeight: FontWeight.bold,
@@ -183,9 +183,9 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                       ),
                       const SizedBox(height: 14),
 
-                      // Already registered → go to Login
+                      // First-Time Setup / Initial Admin Registration
                       OutlinedButton(
-                        key: const Key('btn_already_registered'),
+                        key: const Key('btn_admin_setup'),
                         style: OutlinedButton.styleFrom(
                           foregroundColor: Colors.white70,
                           side: const BorderSide(color: Colors.white30, width: 1.2),
@@ -194,10 +194,10 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                             borderRadius: BorderRadius.circular(14),
                           ),
                         ),
-                        onPressed: () => context.go('/login'),
+                        onPressed: () => context.go('/register'),
                         child: const Text(
-                          'I already have an account',
-                          style: TextStyle(fontSize: 15),
+                          'First-Time Setup (Admin Only)',
+                          style: TextStyle(fontSize: 14),
                         ),
                       ),
                     ],

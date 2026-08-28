@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../models/student.dart';
 import '../../../repositories/student_repository.dart';
+import '../../../services/student_excel_csv_service.dart';
 
 class BatchStudentListScreen extends StatefulWidget {
   const BatchStudentListScreen({super.key});
@@ -23,20 +24,39 @@ class _BatchStudentListScreenState extends State<BatchStudentListScreen> {
   Future<void> _loadRecords() async {
     setState(() => _isLoading = true);
     try {
-        final repo = StudentRepository();
-    final records = await repo.getAllStudents();
-        if (mounted) {
-            setState(() {
-                _items = records;
-                _isLoading = false;
-            });
-        }
+      final repo = StudentRepository();
+      final records = await repo.getAllStudents();
+      if (mounted) {
+        setState(() {
+          _items = records;
+          _isLoading = false;
+        });
+      }
     } catch (e) {
-        if (mounted) {
-            setState(() => _isLoading = false);
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error loading data: $e')));
-        }
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error loading data: $e')));
+      }
     }
+  }
+
+  Future<void> _importExcelCsv() async {
+    final count = await StudentExcelCsvService.importStudentsFromCsv(context: context);
+    if (count > 0) {
+      _loadRecords();
+    }
+  }
+
+  Future<void> _exportExcelCsv() async {
+    await StudentExcelCsvService.exportStudentsToCsv(
+      context: context,
+      students: _items,
+      filenamePrefix: 'Batch_Enrollment_Students',
+    );
+  }
+
+  Future<void> _downloadTemplate() async {
+    await StudentExcelCsvService.exportSampleTemplate(context);
   }
 
 
@@ -98,6 +118,36 @@ class _BatchStudentListScreenState extends State<BatchStudentListScreen> {
         backgroundColor: const Color(0xFF004D40), // Dark green
         iconTheme: const IconThemeData(color: Colors.white),
         centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.file_upload),
+            tooltip: 'Import Excel / CSV',
+            onPressed: _importExcelCsv,
+          ),
+          IconButton(
+            icon: const Icon(Icons.file_download),
+            tooltip: 'Export Excel / CSV',
+            onPressed: _exportExcelCsv,
+          ),
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert),
+            onSelected: (val) {
+              if (val == 'template') _downloadTemplate();
+            },
+            itemBuilder: (ctx) => [
+              const PopupMenuItem(
+                value: 'template',
+                child: Row(
+                  children: [
+                    Icon(Icons.description, color: Color(0xFF004D40)),
+                    SizedBox(width: 8),
+                    Text('Download Import Template'),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
       body: SafeArea(
         child: Column(

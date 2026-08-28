@@ -1,8 +1,10 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart' as fb_auth;
 import 'package:firebase_database/firebase_database.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:crypto/crypto.dart';
 import 'package:maktab_app/models/user.dart';
 import 'package:maktab_app/repositories/user_repository.dart';
@@ -18,9 +20,15 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
+  static const String _rtdbUrl = 'https://maktab-management-99001-default-rtdb.asia-southeast1.firebasedatabase.app';
+
   FirebaseDatabase? get _db {
     try {
-      return FirebaseDatabase.instance;
+      if (Firebase.apps.isEmpty) return null;
+      return FirebaseDatabase.instanceFor(
+        app: Firebase.app(),
+        databaseURL: _rtdbUrl,
+      );
     } catch (_) {
       return null;
     }
@@ -34,6 +42,8 @@ class AuthProvider with ChangeNotifier {
   int _failedAttempts = 0;
   DateTime? _lockoutEndTime;
   String _lastAuthError = '';
+
+  bool _isExplicitLoggingIn = false;
 
   User? get currentUser => _currentUser;
   bool get isLoading => _isLoading;
@@ -80,6 +90,7 @@ class AuthProvider with ChangeNotifier {
 
     // Listen for Firebase Auth persistent state changes
     _fbAuth?.authStateChanges().listen((fbUser) async {
+      if (_isExplicitLoggingIn) return; // Prevent race condition during active login
       if (fbUser != null) {
         await _loadFirebaseUserProfile(fbUser.uid);
       } else {
@@ -98,6 +109,69 @@ class AuthProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  // ── Teacher Provisioning via Secondary FirebaseApp (Spark Plan Compatible) ──
+
+  Future<bool> provisionTeacherAuthAccount({
+    required int teacherId,
+    required String name,
+    required String rawPin,
+    String? mobile,
+  }) async {
+    try {
+      final maktabId = await CloudSyncService.instance.getMaktabId();
+      final derivedEmail = 'teacher_${maktabId}_$teacherId@maktab.app';
+      final saltedHash = _hashPin(rawPin);
+      final derivedPassword = saltedHash.padRight(32, '0').substring(0, 32);
+
+      FirebaseApp secondaryApp;
+      try {
+        secondaryApp = Firebase.app('TeacherProvisioner');
+      } catch (_) {
+        secondaryApp = await Firebase.initializeApp(
+          name: 'TeacherProvisioner',
+          options: Firebase.app().options,
+        );
+      }
+
+      final secondaryAuth = fb_auth.FirebaseAuth.instanceFor(app: secondaryApp);
+      
+      fb_auth.UserCredential? cred;
+      try {
+        cred = await secondaryAuth.createUserWithEmailAndPassword(
+          email: derivedEmail,
+          password: derivedPassword,
+        ).timeout(const Duration(seconds: 8));
+      } on fb_auth.FirebaseAuthException catch (e) {
+        if (e.code == 'email-already-in-use') {
+          debugPrint('Teacher Firebase Auth account already exists.');
+          await secondaryAuth.signOut();
+          return true;
+        }
+        rethrow;
+      }
+
+      final teacherUid = cred.user?.uid;
+      if (teacherUid != null && _db != null) {
+        // Manager's primary Firebase session writes /users/$teacherUid profile with mobile & pinHash
+        await _db!.ref('users/$teacherUid').set({
+          'name': name,
+          'email': derivedEmail,
+          'role': 'teacher',
+          'maktabId': maktabId,
+          'teacherId': teacherId,
+          'mobile': mobile ?? '',
+          'pinHash': saltedHash,
+          'active': true,
+        }).timeout(const Duration(seconds: 5));
+      }
+      await secondaryAuth.signOut();
+      return true;
+    } catch (e) {
+      debugPrint('provisionTeacherAuthAccount Error: $e');
+      return false;
+    }
+  }
+
   // ── Firebase Email + Password Authentication ──────────────────────────────
 
   Future<bool> loginWithEmail(String email, String password) async {
@@ -108,6 +182,7 @@ class AuthProvider with ChangeNotifier {
     }
 
     _isLoading = true;
+    _isExplicitLoggingIn = true;
     _lastAuthError = '';
     notifyListeners();
 
@@ -115,6 +190,7 @@ class AuthProvider with ChangeNotifier {
       if (_fbAuth == null) {
         _lastAuthError = 'Firebase Auth not initialized.';
         _isLoading = false;
+        _isExplicitLoggingIn = false;
         notifyListeners();
         return false;
       }
@@ -122,15 +198,18 @@ class AuthProvider with ChangeNotifier {
       final credential = await _fbAuth!.signInWithEmailAndPassword(
         email: email.trim(),
         password: password.trim(),
-      );
+      ).timeout(const Duration(seconds: 8), onTimeout: () {
+        throw TimeoutException('Firebase login request timed out. Check internet connection.');
+      });
 
       if (credential.user != null) {
-        final success = await _loadFirebaseUserProfile(credential.user!.uid);
+        final success = await _loadFirebaseUserProfile(credential.user!.uid, isManagerLogin: true);
         if (success) {
           _failedAttempts = 0;
           _lockoutEndTime = null;
           _lastAuthError = '';
           _isLoading = false;
+          _isExplicitLoggingIn = false;
           notifyListeners();
           return true;
         }
@@ -144,10 +223,13 @@ class AuthProvider with ChangeNotifier {
         _lastAuthError = e.message ?? 'Authentication failed.';
       }
     } catch (e) {
-      _lastAuthError = 'Network or connection error. Please try again.';
+      _lastAuthError = e is TimeoutException
+          ? e.message ?? 'Login request timed out. Check connection.'
+          : 'Network or connection error. Please try again.';
     }
 
     _isLoading = false;
+    _isExplicitLoggingIn = false;
     notifyListeners();
     return false;
   }
@@ -163,14 +245,29 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
-  Future<bool> _loadFirebaseUserProfile(String uid) async {
+  Future<bool> _loadFirebaseUserProfile(String uid, {bool isManagerLogin = false}) async {
     try {
-      final snapshot = await _db?.ref('users/$uid').get();
+      final snapshot = await _db?.ref('users/$uid').get().timeout(
+        const Duration(seconds: 5),
+        onTimeout: () => throw TimeoutException('Profile load query timed out.'),
+      );
       if (snapshot != null && snapshot.exists && snapshot.value != null) {
         final data = Map<String, dynamic>.from(snapshot.value as Map);
-        final maktabId = data['maktabId'] as String? ?? 'MAKTAB-001';
+        final maktabId = data['maktabId'] as String?;
         final role = data['role'] as String? ?? 'teacher';
         final active = data['active'] as bool? ?? true;
+
+        if (maktabId == null || maktabId.trim().isEmpty) {
+          _lastAuthError = 'Profile configuration error: missing maktabId in /users/$uid profile.';
+          await logout();
+          return false;
+        }
+
+        if (isManagerLogin && role != 'manager' && role != 'admin' && role != 'operator') {
+          _lastAuthError = 'Unauthorized: Account role "$role" is not manager, operator, or admin.';
+          await logout();
+          return false;
+        }
 
         if (!active) {
           _lastAuthError = 'Your account has been deactivated. Contact your administrator.';
@@ -193,17 +290,253 @@ class AuthProvider with ChangeNotifier {
         SharedPreferences prefs = await SharedPreferences.getInstance();
         await prefs.setInt('logged_in_user_id', _currentUser!.id!);
 
-        // Start background realtime sync for this Maktab
+        try {
+          await CloudSyncService.instance.pullAllDataForMaktab(maktabId);
+        } catch (e) {
+          debugPrint('Initial pull note in _loadFirebaseUserProfile: $e');
+        }
         CloudSyncService.instance.startRealtimeSync(maktabId);
         return true;
+      } else {
+        _lastAuthError = 'Firebase User authenticated, but database profile /users/$uid does not exist.';
+        await logout();
+        return false;
       }
     } catch (e) {
       debugPrint('Error loading Firebase user profile: $e');
+      _lastAuthError = e is TimeoutException
+          ? 'Network timeout loading user profile /users/$uid. Check internet connection.'
+          : 'Permission denied or error reading user profile /users/$uid.';
     }
     return false;
   }
 
   // ── PIN & Local Fallback Auth ─────────────────────────────────────────────
+
+  Future<bool> loginTeacherWithPin(String teacherIdOrMobile, String pin) async {
+    if (isLockedOut) {
+      _lastAuthError = 'Account locked due to multiple failed attempts. Retry in ${remainingLockoutSeconds}s.';
+      notifyListeners();
+      return false;
+    }
+
+    _isLoading = true;
+    _isExplicitLoggingIn = true;
+    _lastAuthError = '';
+    notifyListeners();
+
+    final input = teacherIdOrMobile.trim();
+    final saltedHash = _hashPin(pin);
+
+    List<User> allTeachers = await _userRepository.getAllTeachers();
+    User? matchedUser;
+
+    final parsedId = int.tryParse(input.replaceAll(RegExp(r'\D'), ''));
+    for (var u in allTeachers) {
+      bool idMatch = false;
+      if (u.id != null) {
+        if (u.id.toString() == input || (parsedId != null && u.id == parsedId)) {
+          idMatch = true;
+        }
+      }
+      bool mobileMatch = u.mobile != null && u.mobile!.contains(input);
+      bool nameMatch = u.name.toLowerCase().contains(input.toLowerCase());
+
+      if (idMatch || mobileMatch || nameMatch) {
+        if (u.pinHash == saltedHash || u.pinHash == sha256.convert(utf8.encode(pin)).toString()) {
+          matchedUser = u;
+          break;
+        }
+      }
+    }
+
+    matchedUser ??= await _userRepository.authenticateUser(saltedHash);
+    matchedUser ??= await _userRepository.authenticateUser(sha256.convert(utf8.encode(pin)).toString());
+
+    // Firebase RTDB direct Teacher lookup fallback for fresh device installations
+    if (matchedUser == null && _db != null) {
+      try {
+        final activeMaktabId = await CloudSyncService.instance.getMaktabId();
+        final teachersSnap = await _db!.ref('maktabs/$activeMaktabId/teachers').get().timeout(const Duration(seconds: 4));
+        if (teachersSnap.exists && teachersSnap.value is Map) {
+          final tMap = Map<String, dynamic>.from(teachersSnap.value as Map);
+          for (var entry in tMap.entries) {
+            try {
+              final item = Map<String, dynamic>.from(entry.value as Map);
+              item['id'] ??= int.tryParse(entry.key.toString());
+              final u = User.fromMap(item);
+              if (u.role == 'teacher' && (u.pinHash == saltedHash || u.pinHash == sha256.convert(utf8.encode(pin)).toString())) {
+                final idMatch = parsedId != null && u.id == parsedId;
+                final mobileMatch = input.isNotEmpty && (u.mobile ?? '').replaceAll(RegExp(r'\D'), '').endsWith(input);
+                final nameMatch = u.name.toLowerCase().contains(input.toLowerCase());
+                if (idMatch || mobileMatch || nameMatch || input.isEmpty) {
+                  matchedUser = u;
+                  await _userRepository.insertUser(u);
+                  break;
+                }
+              }
+            } catch (_) {}
+          }
+        }
+      } catch (e) {
+        debugPrint('Firebase RTDB direct Teacher lookup note: $e');
+      }
+    }
+
+    // Firebase Auth direct sign-in fallback for fresh device installations
+    if (matchedUser == null && _fbAuth != null) {
+      try {
+        final activeMaktabId = await CloudSyncService.instance.getMaktabId();
+        final teacherIdGuess = parsedId ?? 1;
+        final derivedEmail = 'teacher_${activeMaktabId}_$teacherIdGuess@maktab.app';
+        final derivedPassword = saltedHash.padRight(32, '0').substring(0, 32);
+
+        final cred = await _fbAuth!.signInWithEmailAndPassword(
+          email: derivedEmail,
+          password: derivedPassword,
+        ).timeout(const Duration(seconds: 4));
+
+        if (cred.user != null && _db != null) {
+          final snapshot = await _db!.ref('users/${cred.user!.uid}').get().timeout(const Duration(seconds: 3));
+          if (snapshot.exists && snapshot.value is Map) {
+            final val = Map<String, dynamic>.from(snapshot.value as Map);
+            final uTeacherId = val['teacherId'] as int? ?? teacherIdGuess;
+            final uName = val['name']?.toString() ?? 'Teacher';
+            final uMobile = val['mobile']?.toString() ?? '';
+            final isActive = val['active'] != false;
+
+            matchedUser = User(
+              id: uTeacherId,
+              name: uName,
+              mobile: uMobile,
+              pinHash: saltedHash,
+              role: 'teacher',
+              isActive: isActive,
+              createdAt: DateTime.now().toIso8601String(),
+            );
+            try {
+              await _userRepository.insertUser(matchedUser);
+            } catch (_) {}
+          }
+        }
+      } catch (e) {
+        debugPrint('Firebase direct Teacher Auth fallback note: $e');
+      }
+    }
+
+    if (matchedUser != null) {
+      final teacher = matchedUser;
+      if (!teacher.isActive) {
+        _lastAuthError = 'Teacher account is inactive. Contact your administrator.';
+        _isLoading = false;
+        notifyListeners();
+        return false;
+      }
+
+      _currentUser = teacher;
+      _failedAttempts = 0;
+      _lockoutEndTime = null;
+      _lastAuthError = '';
+
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      if (teacher.id != null) {
+        await prefs.setInt('logged_in_user_id', teacher.id!);
+      }
+
+      String activeMaktabId = await CloudSyncService.instance.getMaktabId();
+
+      // Bind Teacher PIN authentication to a secure Firebase Auth identity
+      try {
+        if (_fbAuth != null) {
+          final derivedEmail = 'teacher_${activeMaktabId}_${teacher.id ?? 1}@maktab.app';
+          final derivedPassword = _hashPin(pin).padRight(32, '0').substring(0, 32);
+          fb_auth.UserCredential? cred;
+          try {
+            cred = await _fbAuth!.signInWithEmailAndPassword(
+              email: derivedEmail,
+              password: derivedPassword,
+            ).timeout(const Duration(seconds: 5));
+          } catch (e) {
+            debugPrint('Teacher Firebase Auth sign-in failed, attempting provisioning: $e');
+            if (teacher.id != null) {
+              await provisionTeacherAuthAccount(
+                teacherId: teacher.id!,
+                name: teacher.name,
+                rawPin: pin,
+                mobile: teacher.mobile,
+              );
+              try {
+                cred = await _fbAuth!.signInWithEmailAndPassword(
+                  email: derivedEmail,
+                  password: derivedPassword,
+                ).timeout(const Duration(seconds: 5));
+              } catch (e2) {
+                try {
+                  cred = await _fbAuth!.createUserWithEmailAndPassword(
+                    email: derivedEmail,
+                    password: derivedPassword,
+                  ).timeout(const Duration(seconds: 5));
+                } catch (e3) {
+                  try {
+                    cred = await _fbAuth!.signInAnonymously().timeout(const Duration(seconds: 5));
+                  } catch (_) {}
+                }
+              }
+            }
+          }
+
+          if (cred?.user != null && _db != null) {
+            try {
+              final userUid = cred!.user!.uid;
+              final snapshot = await _db!.ref('users/$userUid/maktabId').get().timeout(const Duration(seconds: 3));
+              if (snapshot.exists && snapshot.value != null) {
+                activeMaktabId = snapshot.value.toString();
+                await CloudSyncService.instance.setMaktabId(activeMaktabId);
+              } else {
+                await _db!.ref('users/$userUid').set({
+                  'name': teacher.name,
+                  'email': derivedEmail,
+                  'role': 'teacher',
+                  'maktabId': activeMaktabId,
+                  'teacherId': teacher.id ?? 1,
+                  'active': true,
+                  'mobile': teacher.mobile ?? '',
+                }).timeout(const Duration(seconds: 4));
+              }
+            } catch (eProfile) {
+              debugPrint('Error verifying/provisioning Teacher profile node in RTDB: $eProfile');
+            }
+          }
+        }
+      } catch (e) {
+        debugPrint('Firebase Teacher auth note: $e');
+      }
+
+      try {
+        await CloudSyncService.instance.pullAllDataForMaktab(activeMaktabId);
+      } catch (e) {
+        debugPrint('Initial pull note on teacher login: $e');
+      }
+      CloudSyncService.instance.startRealtimeSync(activeMaktabId);
+
+      _isLoading = false;
+      _isExplicitLoggingIn = false;
+      notifyListeners();
+      return true;
+    }
+
+    _failedAttempts++;
+    if (_failedAttempts >= 5) {
+      _lockoutEndTime = DateTime.now().add(const Duration(seconds: 30));
+      _lastAuthError = '5 failed attempts! Security lockout active for 30 seconds.';
+    } else {
+      _lastAuthError = 'Invalid Teacher ID or PIN. ${5 - _failedAttempts} attempts remaining until lockout.';
+    }
+
+    _isLoading = false;
+    notifyListeners();
+    return false;
+  }
 
   Future<bool> login(String pin) async {
     if (isLockedOut) {
@@ -234,6 +567,29 @@ class AuthProvider with ChangeNotifier {
       await prefs.setInt('logged_in_user_id', user.id!);
 
       final maktabId = await CloudSyncService.instance.getMaktabId();
+
+      try {
+        if (_fbAuth != null) {
+          if (_fbAuth!.currentUser != null && _fbAuth!.currentUser!.isAnonymous == false && user.role == 'teacher') {
+            await _fbAuth!.signOut();
+          }
+          if (user.role == 'teacher') {
+            final derivedEmail = 'teacher_${maktabId}_${user.id}@maktab.app';
+            final derivedPassword = _hashPin(pin).padRight(32, '0').substring(0, 32);
+            try {
+              await _fbAuth!.signInWithEmailAndPassword(
+                email: derivedEmail,
+                password: derivedPassword,
+              ).timeout(const Duration(seconds: 6));
+            } catch (e) {
+              debugPrint('Teacher Firebase Auth login note: $e');
+            }
+          }
+        }
+      } catch (e) {
+        debugPrint('Firebase Teacher auth note: $e');
+      }
+
       CloudSyncService.instance.startRealtimeSync(maktabId);
 
       _isLoading = false;

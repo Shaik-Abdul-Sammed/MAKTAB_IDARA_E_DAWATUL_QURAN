@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../../models/batch.dart';
 import '../../models/student.dart';
 import '../../domain/dtos/user_dto.dart';
@@ -12,6 +11,7 @@ import '../../repositories/student_repository.dart';
 import '../../widgets/shimmer_loader.dart';
 import '../../widgets/molecules/confirm_dialog.dart';
 import '../../widgets/molecules/custom_app_bar.dart';
+import '../../utils/whatsapp_utility.dart';
 
 class BatchDetailsScreen extends StatefulWidget {
   final int batchId;
@@ -82,16 +82,11 @@ class _BatchDetailsScreenState extends State<BatchDetailsScreen> {
       return;
     }
 
-    final msg = Uri.encodeComponent('Assalamu Alaikum Guardians of ${batch.name}, important announcement from Maktab regarding class timing: ${batch.timing}.');
-    final url = Uri.parse('https://wa.me/?text=$msg');
-    try {
-      if (await canLaunchUrl(url)) {
-        await launchUrl(url, mode: LaunchMode.externalApplication);
-      } else {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('WhatsApp broadcast prepared for ${students.length} guardians.')));
-      }
-    } catch (_) {}
+    await WhatsAppUtility.sendBatchNotice(
+      context,
+      batchName: batch.name,
+      timing: batch.timing,
+    );
   }
 
   @override

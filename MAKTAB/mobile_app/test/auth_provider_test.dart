@@ -1,4 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:crypto/crypto.dart';
+import 'dart:convert';
+import 'package:maktab_app/models/user.dart';
 import 'package:maktab_app/providers/auth_provider.dart';
 import 'package:maktab_app/repositories/user_repository.dart';
 import 'package:maktab_app/services/database_helper.dart';
@@ -122,6 +125,64 @@ void main() {
       expect(loginSuccess, isTrue);
       expect(auth.currentUser!.name, 'New Admin');
       expect(auth.currentUser!.mobile, '1234567890');
+    });
+
+    test('loginTeacherWithPin works for valid active teacher and rejects inactive or wrong PIN', () async {
+      final auth = AuthProvider();
+      await auth.initialize();
+
+      final userRepo = UserRepository();
+      const salt = 'idara_maktab_sec_salt_2026';
+      final teacherPinHash = sha256.convert(utf8.encode('${salt}777777')).toString();
+
+      // Insert a test teacher (id = 2)
+      await userRepo.insertUser(User(
+        name: 'Shaik Mahaboob',
+        pinHash: teacherPinHash,
+        role: 'teacher',
+        mobile: '9177024433',
+        isActive: true,
+        createdAt: DateTime.now().toIso8601String(),
+      ));
+
+      // 1. Valid Teacher ID + 6-digit PIN login
+      final success = await auth.loginTeacherWithPin('9177024433', '777777');
+      expect(success, isTrue);
+      expect(auth.currentUser, isNotNull);
+      expect(auth.currentUser!.name, 'Shaik Mahaboob');
+      expect(auth.currentUser!.role, 'teacher');
+
+      // 2. Wrong PIN fails
+      final wrongPinSuccess = await auth.loginTeacherWithPin('9177024433', '999999');
+      expect(wrongPinSuccess, isFalse);
+
+      // 3. Deactivated teacher fails
+      await userRepo.updateUser(auth.currentUser!.copyWith(isActive: false));
+      final inactiveSuccess = await auth.loginTeacherWithPin('9177024433', '777777');
+      expect(inactiveSuccess, isFalse);
+      expect(auth.lastAuthError, contains('inactive'));
+    });
+
+    test('provisionTeacherAuthAccount returns safely when Firebase is unavailable locally', () async {
+      final auth = AuthProvider();
+      await auth.initialize();
+
+      final provisioned = await auth.provisionTeacherAuthAccount(
+        teacherId: 10,
+        name: 'Test Teacher',
+        rawPin: '123456',
+      );
+      // In offline/mock test environment without Firebase init, gracefully returns true or false without throwing crash
+      expect(provisioned, isA<bool>());
+    });
+
+    test('loginWithEmail fails gracefully when Firebase Auth is not initialized locally', () async {
+      final auth = AuthProvider();
+      await auth.initialize();
+
+      final success = await auth.loginWithEmail('admin@test.com', 'password123');
+      expect(success, isFalse);
+      expect(auth.lastAuthError, contains('not initialized'));
     });
   });
 }

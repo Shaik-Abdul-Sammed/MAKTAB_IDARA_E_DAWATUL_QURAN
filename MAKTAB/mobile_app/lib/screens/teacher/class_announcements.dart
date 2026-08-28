@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../models/announcement.dart';
 import '../../../repositories/announcement_repository.dart';
+import '../../../utils/whatsapp_utility.dart';
 
 class ClassAnnouncementsScreen extends StatefulWidget {
   const ClassAnnouncementsScreen({super.key});
@@ -136,13 +137,30 @@ class _ClassAnnouncementsScreenState extends State<ClassAnnouncementsScreen> {
               ),
             ),
             const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF004D40)),
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Close', style: TextStyle(color: Colors.white)),
-              ),
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton.icon(
+                    icon: const Icon(Icons.share_rounded, color: Colors.white, size: 18),
+                    label: const Text('Share via WhatsApp', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                    style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF25D366)),
+                    onPressed: () {
+                      Navigator.pop(context);
+                      WhatsAppUtility.sendNoticeMessage(
+                        context,
+                        title: item.title,
+                        content: item.content,
+                      );
+                    },
+                  ),
+                ),
+                const SizedBox(width: 12),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF004D40)),
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Close', style: TextStyle(color: Colors.white)),
+                ),
+              ],
             ),
           ],
         ),

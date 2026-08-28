@@ -40,6 +40,50 @@ class _StudentHealthInfoScreenState extends State<StudentHealthInfoScreen> {
   }
 
 
+  void _showEditHealthNotesDialog(Student item) {
+    final notesCtrl = TextEditingController(text: item.teacherNotes ?? '');
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Edit Health & Emergency Notes for ${item.name}'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: notesCtrl,
+                decoration: const InputDecoration(
+                  labelText: 'Health / Emergency Notes',
+                  hintText: 'e.g. Allergies, asthma, emergency contact',
+                ),
+                maxLines: 3,
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF004D40), foregroundColor: Colors.white),
+            onPressed: () async {
+              final updated = item.copyWith(teacherNotes: notesCtrl.text.trim());
+              await StudentRepository().updateStudent(updated);
+              if (context.mounted) {
+                Navigator.pop(context);
+                _loadRecords();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Student health notes updated.')),
+                );
+              }
+            },
+            child: const Text('Save'),
+          )
+        ],
+      ),
+    );
+  }
+
   void _showDetailSheet(Student item) {
     showModalBottomSheet(
       context: context,
@@ -50,25 +94,38 @@ class _StudentHealthInfoScreenState extends State<StudentHealthInfoScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text('Record Details', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF004D40))),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(child: Text(item.name, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF004D40)))),
+                IconButton(
+                  icon: const Icon(Icons.edit, color: Colors.blue),
+                  onPressed: () {
+                    Navigator.pop(context);
+                    _showEditHealthNotesDialog(item);
+                  },
+                ),
+              ],
+            ),
             const Divider(),
             const SizedBox(height: 12),
-            
-              // Try to cast to map, if fails, use toString
-              Expanded(
-                child: SingleChildScrollView(
-                  child: Text(
-                    () {
-                      try {
-                        return (item as dynamic).toMap().entries.map((e) => '${e.key}: ${e.value}').join('\n\n');
-                      } catch (_) {
-                        return item.toString();
-                      }
-                    }(), 
-                    style: const TextStyle(fontSize: 16)
-                  ),
+            Expanded(
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Admission No: ${item.admissionNumber}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 8),
+                    Text('Phone: ${item.phone ?? "N/A"}'),
+                    Text('Guardian: ${item.guardianName ?? "N/A"} (${item.guardianPhone ?? "N/A"})'),
+                    const SizedBox(height: 12),
+                    const Text('Health & Emergency Notes:', style: TextStyle(fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 4),
+                    Text(item.teacherNotes?.isNotEmpty == true ? item.teacherNotes! : 'No health notes recorded.'),
+                  ],
                 ),
               ),
+            ),
             const SizedBox(height: 24),
             SizedBox(
               width: double.infinity,

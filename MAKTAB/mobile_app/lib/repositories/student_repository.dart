@@ -9,9 +9,12 @@ class StudentRepository {
 
   Future<int> insertStudent(Student student) async {
     final db = await _dbHelper.database;
-    final id = await db.insert('students', student.toMap());
-    final createdStudent = student.copyWith(id: id);
+    final map = student.toMap();
+    map['batch_id'] ??= 1;
+    final id = await db.insert('students', map);
+    final createdStudent = student.copyWith(id: id, batchId: map['batch_id'] as int);
     await CloudSyncService.instance.pushStudent(createdStudent);
+    CloudSyncService.instance.notifyDataChanged('students');
     return id;
   }
 
@@ -57,10 +60,6 @@ class StudentRepository {
   /// Uses a JOIN so only active students in the teacher's own batches are visible.
   Future<List<Student>> getStudentsByTeacher(int teacherId) async {
     final db = await _dbHelper.database;
-    // Trigger background pull to ensure Teacher Mobile B gets latest students created by Manager
-    final maktabId = await CloudSyncService.instance.getMaktabId();
-    await CloudSyncService.instance.pullAllDataForMaktab(maktabId);
-
     final List<Map<String, dynamic>> maps = await db.rawQuery('''
       SELECT s.*
       FROM students s
@@ -121,13 +120,16 @@ class StudentRepository {
 
   Future<int> updateStudent(Student student) async {
     final db = await _dbHelper.database;
+    final map = student.toMap();
+    map['batch_id'] ??= 1;
     final res = await db.update(
       'students',
-      student.toMap(),
+      map,
       where: 'id = ?',
       whereArgs: [student.id],
     );
-    await CloudSyncService.instance.pushStudent(student);
+    await CloudSyncService.instance.pushStudent(student.copyWith(batchId: map['batch_id'] as int));
+    CloudSyncService.instance.notifyDataChanged('students');
     return res;
   }
 
@@ -145,6 +147,7 @@ class StudentRepository {
     if (student != null) {
       await CloudSyncService.instance.pushStudent(student);
     }
+    CloudSyncService.instance.notifyDataChanged('students');
     return res;
   }
 
@@ -157,6 +160,7 @@ class StudentRepository {
       whereArgs: [id],
     );
     await CloudSyncService.instance.deleteStudentCloud(id);
+    CloudSyncService.instance.notifyDataChanged('students');
     return res;
   }
 }

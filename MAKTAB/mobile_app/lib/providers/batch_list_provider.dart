@@ -1,12 +1,28 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import '../models/batch.dart';
 import '../repositories/batch_repository.dart';
+import '../services/cloud_sync_service.dart';
 
 enum BatchListStatus { initial, loading, success, error }
 
 class BatchListProvider extends ChangeNotifier {
   final BatchRepository _repo;
-  BatchListProvider(this._repo);
+  StreamSubscription<String>? _syncSub;
+
+  BatchListProvider(this._repo) {
+    _syncSub = CloudSyncService.instance.onDataSynced.listen((col) {
+      if (col == 'batches') {
+        fetchBatches();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _syncSub?.cancel();
+    super.dispose();
+  }
 
   BatchListStatus _status = BatchListStatus.initial;
   BatchListStatus get status => _status;

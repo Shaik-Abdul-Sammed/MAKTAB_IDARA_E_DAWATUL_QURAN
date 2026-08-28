@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -12,6 +13,7 @@ import 'package:maktab_app/repositories/batch_repository.dart';
 import 'package:maktab_app/repositories/student_repository.dart';
 import 'package:maktab_app/repositories/teacher_attendance_repository.dart';
 import 'package:maktab_app/repositories/attendance_repository.dart';
+import 'package:maktab_app/services/cloud_sync_service.dart';
 import 'package:maktab_app/widgets/teacher/teacher_quick_actions.dart';
 import 'package:table_calendar/table_calendar.dart';
 
@@ -27,6 +29,7 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
   final _studentRepo = StudentRepository();
   final _teacherAttRepo = TeacherAttendanceRepository();
   final _attRepo = AttendanceRepository();
+  StreamSubscription<String>? _syncSub;
 
   List<Batch> _myBatches = [];
   List<Student> _myStudents = [];
@@ -43,7 +46,23 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
   @override
   void initState() {
     super.initState();
+    _syncSub = CloudSyncService.instance.onDataSynced.listen((collection) {
+      if (mounted &&
+          (collection == 'attendance' ||
+              collection == 'students' ||
+              collection == 'batches' ||
+              collection == 'teacher_attendance' ||
+              collection == 'quran_progress')) {
+        _load();
+      }
+    });
     WidgetsBinding.instance.addPostFrameCallback((_) => _load());
+  }
+
+  @override
+  void dispose() {
+    _syncSub?.cancel();
+    super.dispose();
   }
 
   Future<void> _load() async {
@@ -83,6 +102,7 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
       _myStudents = students;
       _recentAttendance = attendances.take(10).toList();
       _monthSummary = summary;
+      _batchPresentCount.clear();
       _batchPresentCount.addAll(presentCounts);
       _isLoading = false;
     });

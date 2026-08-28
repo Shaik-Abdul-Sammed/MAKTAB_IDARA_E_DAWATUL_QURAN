@@ -238,7 +238,11 @@ class _BatchAttendanceCalendarScreenState
                   ),
                   onPressed: () {
                     Navigator.pop(ctx);
-                    context.push('/admin/attendance/entry?batchId=${widget.batchId}&date=$dateStr');
+                    final isTeacherRoute = GoRouterState.of(context).uri.toString().startsWith('/teacher');
+                    final target = isTeacherRoute
+                        ? '/teacher/attendance/entry?batchId=${widget.batchId}&date=$dateStr'
+                        : '/admin/attendance/entry?batchId=${widget.batchId}&date=$dateStr';
+                    context.push(target);
                   },
                 ),
               ),
@@ -287,7 +291,11 @@ class _BatchAttendanceCalendarScreenState
             tooltip: 'Mark Today',
             onPressed: () {
               final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
-              context.push('/admin/attendance/entry?batchId=${widget.batchId}&date=$today');
+              final isTeacherRoute = GoRouterState.of(context).uri.toString().startsWith('/teacher');
+              final target = isTeacherRoute
+                  ? '/teacher/attendance/entry?batchId=${widget.batchId}&date=$today'
+                  : '/admin/attendance/entry?batchId=${widget.batchId}&date=$today';
+              context.push(target);
             },
           ),
         ],

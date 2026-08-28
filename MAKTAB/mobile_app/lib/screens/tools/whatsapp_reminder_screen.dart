@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../../models/student.dart';
 import '../../repositories/student_repository.dart';
 import '../../repositories/batch_repository.dart';
+import '../../utils/whatsapp_utility.dart';
 import '../../widgets/bulk_fee_messaging_dialog.dart';
 import '../../widgets/molecules/custom_app_bar.dart';
 
@@ -66,25 +66,15 @@ class _WhatsAppReminderScreenState extends State<WhatsAppReminderScreen> {
   Future<void> _sendWhatsApp() async {
     if (_selectedStudent == null) return;
     final phone = _selectedStudent!.phone ?? '';
-    final cleanPhone = phone.replaceAll(RegExp(r'\D'), '');
-    final text = _msgCtrl.text.replaceAll('{StudentName}', _selectedStudent!.name);
+    final content = _msgCtrl.text.replaceAll('{StudentName}', _selectedStudent!.name);
 
-    final url = Uri.parse('https://wa.me/91$cleanPhone?text=${Uri.encodeComponent(text)}');
-    try {
-      if (await canLaunchUrl(url)) {
-        await launchUrl(url, mode: LaunchMode.externalApplication);
-      } else {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Could not open WhatsApp for $phone')),
-        );
-      }
-    } catch (_) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to open WhatsApp.')),
-      );
-    }
+    await WhatsAppUtility.sendNoticeMessage(
+      context,
+      title: 'Maktab Reminder',
+      content: content,
+      recipientPhone: phone,
+      targetName: _selectedStudent!.name,
+    );
   }
 
   @override

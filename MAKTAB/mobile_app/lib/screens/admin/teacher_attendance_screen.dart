@@ -9,6 +9,7 @@ import 'package:maktab_app/models/user.dart';
 import 'package:maktab_app/models/teacher_attendance.dart';
 import 'package:maktab_app/repositories/user_repository.dart';
 import 'package:maktab_app/repositories/teacher_attendance_repository.dart';
+import 'package:maktab_app/utils/whatsapp_utility.dart';
 import 'package:maktab_app/widgets/voice_attendance_dialog.dart';
 
 /// Admin screen: Mark attendance for ALL teachers for a given date.
@@ -250,7 +251,6 @@ class _TeacherAttendanceScreenState extends State<TeacherAttendanceScreen> {
                       icon: const Icon(Icons.close, color: Colors.white),
                       onPressed: () {
                         Navigator.pop(ctx);
-                        context.pop();
                       },
                     ),
                   ]),
@@ -1054,10 +1054,7 @@ class _SummaryTeacherTile extends StatelessWidget {
             icon: const Icon(Icons.send_rounded, color: Colors.green, size: 20),
             tooltip: 'WhatsApp Teacher',
             onPressed: () async {
-              final msg = Uri.encodeComponent(
-                  'السلام عليكم! آپ کی حاضری ($dateStr) غیر حاضر درج کی گئی ہے۔\n\nFrom: MAKTAB IDARA E DAWATUL QURAN');
-              final url = Uri.parse('https://wa.me/$phone?text=$msg');
-              if (await canLaunchUrl(url)) await launchUrl(url, mode: LaunchMode.externalApplication);
+              await WhatsAppUtility.sendAttendanceAlert(context, phone, teacher.name, date: dateStr);
             },
           ),
         ],

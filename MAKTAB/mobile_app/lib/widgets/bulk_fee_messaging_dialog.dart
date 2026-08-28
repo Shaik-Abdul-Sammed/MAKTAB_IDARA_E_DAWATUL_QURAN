@@ -8,6 +8,7 @@ import '../models/student.dart';
 import '../repositories/fee_payment_repository.dart';
 import '../repositories/student_repository.dart';
 import '../services/notification_service.dart';
+import '../utils/whatsapp_utility.dart';
 
 class BulkFeeMessagingDialog extends StatefulWidget {
   final List<Batch> batches;
@@ -150,6 +151,25 @@ class _BulkFeeMessagingDialogState extends State<BulkFeeMessagingDialog> {
         const SnackBar(content: Text('No students selected for message broadcast.')),
       );
       return;
+    }
+
+    final lang = await WhatsAppUtility.promptLanguageSelection(context);
+    if (lang == null) return;
+
+    // Set template based on selected language
+    switch (lang) {
+      case Language.english:
+        _templateCtrl.text = 'Assalamu Alaikum, this is a reminder from MAKTAB IDARA E DAWATUL QURAN that the monthly fee of ₹{Amount} for {StudentName} (Adm: {AdmissionNo}) is due. JazakAllah Khair.';
+        break;
+      case Language.urdu:
+        _templateCtrl.text = 'السلام علیکم، یہ مکتب ادارہ دعوت القرآن کی طرف سے ایک یاد دہانی ہے کہ {StudentName} (داخلہ نمبر: {AdmissionNo}) کی ماہانہ فیس ₹{Amount} واجب الادا ہے۔ جزاک اللہ خیر۔';
+        break;
+      case Language.hindi:
+        _templateCtrl.text = 'अस्सलामु अलैकुम, यह मकतब इदारा दावतुल कुरआन की ओर से एक अनुस्मारक है कि {StudentName} (प्रवेश संख्या: {AdmissionNo}) का मासिक शुल्क ₹{Amount} देय है। जज़ाकल्लाह खैर।';
+        break;
+      case Language.telugu:
+        _templateCtrl.text = 'అస్సలాము అలైకుమ్, మక్తబ్ ఇదారా ఎ దావతుల్ ఖురాన్ నుండి ఇది ఒక జ్ఞాపిక. {StudentName} (అడ్మిషన్ నంబరు: {AdmissionNo}) నెలవారీ ఫీజు ₹{Amount} చెల్లించాల్సి ఉంది. జజాకల్లా ఖైర్.';
+        break;
     }
 
     int sentCount = 0;

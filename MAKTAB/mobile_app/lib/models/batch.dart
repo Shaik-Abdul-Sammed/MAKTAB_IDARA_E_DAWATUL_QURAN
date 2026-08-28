@@ -35,11 +35,21 @@ class Batch {
   }
 
   factory Batch.fromMap(Map<String, dynamic> map) {
+    int? rawId;
+    if (map['id'] != null) {
+      rawId = int.tryParse(map['id'].toString());
+    }
+    int? tId;
+    final rawTeacherId = map['teacher_id'] ?? map['teacherId'];
+    if (rawTeacherId != null) {
+      tId = int.tryParse(rawTeacherId.toString());
+    }
+
     return Batch(
-      id: map['id'],
-      name: map['name'],
-      timing: map['timing'],
-      teacherId: map['teacher_id'],
+      id: rawId,
+      name: (map['name'] ?? '').toString(),
+      timing: (map['timing'] ?? '').toString(),
+      teacherId: tId,
     );
   }
 }

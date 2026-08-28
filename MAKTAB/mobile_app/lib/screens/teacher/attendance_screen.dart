@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -7,6 +8,7 @@ import '../../providers/auth_provider.dart';
 import '../../repositories/attendance_repository.dart';
 import '../../repositories/batch_repository.dart';
 import '../../repositories/user_repository.dart';
+import '../../services/cloud_sync_service.dart';
 import '../../widgets/molecules/custom_app_bar.dart';
 import '../../widgets/shimmer_loader.dart';
 
@@ -33,11 +35,23 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
   Map<int, String> _teachers = {};
   Map<int, _BatchStat> _batchStats = {};
   bool _isTeacher = false;
+  StreamSubscription? _syncSub;
 
   @override
   void initState() {
     super.initState();
+    _syncSub = CloudSyncService.instance.onDataSynced.listen((collection) {
+      if (mounted && (collection == 'attendance' || collection == 'students' || collection == 'batches')) {
+        _loadBatches();
+      }
+    });
     _loadBatches();
+  }
+
+  @override
+  void dispose() {
+    _syncSub?.cancel();
+    super.dispose();
   }
 
   Future<void> _loadBatches() async {
@@ -214,6 +228,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                       teacherName: _teachers[batch.teacherId],
                       stat: stat,
                       isToday: _isToday,
+                      onRefresh: _loadBatches,
                     );
                   },
                 ),
@@ -445,6 +460,7 @@ class _BatchAttendanceCard extends StatelessWidget {
   final String? teacherName;
   final _BatchStat? stat;
   final bool isToday;
+  final VoidCallback? onRefresh;
 
   const _BatchAttendanceCard({
     required this.batch,
@@ -452,6 +468,7 @@ class _BatchAttendanceCard extends StatelessWidget {
     this.teacherName,
     this.stat,
     required this.isToday,
+    this.onRefresh,
   });
 
   Color get _statusColor {
@@ -550,7 +567,13 @@ class _BatchAttendanceCard extends StatelessWidget {
                   children: [
                     Expanded(
                       child: OutlinedButton.icon(
-                        onPressed: () => context.push('/admin/batches/${batch.id}/attendance-calendar'),
+                        onPressed: () {
+                          final isTeacherRoute = GoRouterState.of(context).uri.toString().startsWith('/teacher');
+                          final target = isTeacherRoute
+                              ? '/teacher/attendance/attendance-calendar?batchId=${batch.id}'
+                              : '/admin/batches/${batch.id}/attendance-calendar';
+                          context.push(target);
+                        },
                         icon: const Icon(Icons.bar_chart_rounded, size: 16),
                         label: const Text('History', style: TextStyle(fontSize: 12)),
                         style: OutlinedButton.styleFrom(
@@ -564,8 +587,13 @@ class _BatchAttendanceCard extends StatelessWidget {
                     Expanded(
                       flex: 2,
                       child: ElevatedButton.icon(
-                        onPressed: () {
-                          context.push('/admin/attendance/entry?batchId=${batch.id}&date=$dateStr');
+                        onPressed: () async {
+                          final isTeacherRoute = GoRouterState.of(context).uri.toString().startsWith('/teacher');
+                          final target = isTeacherRoute
+                              ? '/teacher/attendance/entry?batchId=${batch.id}&date=$dateStr'
+                              : '/admin/attendance/entry?batchId=${batch.id}&date=$dateStr';
+                          await context.push(target);
+                          onRefresh?.call();
                         },
                         icon: const Icon(Icons.edit_note_rounded, size: 16),
                         label: Text(

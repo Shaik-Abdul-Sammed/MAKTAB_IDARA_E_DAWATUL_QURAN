@@ -1,0 +1,14 @@
+{
+  "name": "maktab-functions",
+  "version": "1.0.0",
+  "description": "Firebase Cloud Functions for Maktab Management Teacher Custom Token Verification",
+  "main": "index.js",
+  "dependencies": {
+    "firebase-admin": "^13.1.0",
+    "firebase-functions": "^6.3.2"
+  },
+  "engines": {
+    "node": "20"
+  },
+  "private": true
+}

@@ -42,7 +42,7 @@ class DatabaseHelper {
       return await ffi.databaseFactoryFfi.openDatabase(
         path,
         options: ffi.OpenDatabaseOptions(
-          version: 9,
+          version: 10,
           onConfigure: (db) async {
             await db.execute('PRAGMA foreign_keys = ON');
           },
@@ -59,7 +59,7 @@ class DatabaseHelper {
     return await openDatabase(
       path,
       password: key,
-      version: 9,
+      version: 10,
       onConfigure: (db) async {
         await db.execute('PRAGMA foreign_keys = ON');
       },
@@ -118,6 +118,9 @@ class DatabaseHelper {
         mobile $textNullable,
         photo_path $textNullable,
         dob $textNullable,
+        monthly_salary INTEGER DEFAULT 0,
+        upi_id TEXT,
+        preferred_payment_mode TEXT,
         is_active $boolType DEFAULT 1,
         created_at $textType
       )
@@ -313,9 +316,60 @@ class DatabaseHelper {
         updated_at TEXT NOT NULL
       )
     ''');
+
+    // Salary Payments Table (v10)
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS salary_payments (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        teacher_id INTEGER NOT NULL,
+        maktab_id TEXT NOT NULL,
+        salary_month TEXT NOT NULL,
+        amount INTEGER NOT NULL,
+        payment_date TEXT NOT NULL,
+        payment_mode TEXT NOT NULL,
+        upi_id_snapshot TEXT,
+        transaction_reference TEXT,
+        status TEXT NOT NULL,
+        notes TEXT,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        FOREIGN KEY (teacher_id) REFERENCES users (id) ON DELETE CASCADE
+      )
+    ''');
+    await db.execute('CREATE INDEX IF NOT EXISTS idx_sp_teacher_month ON salary_payments(teacher_id, salary_month)');
   }
 
   Future<void> _onUpgrade(dynamic db, int oldVersion, int newVersion) async {
+    try {
+      await db.execute('ALTER TABLE users ADD COLUMN monthly_salary INTEGER DEFAULT 0');
+    } catch (_) {}
+    try {
+      await db.execute('ALTER TABLE users ADD COLUMN upi_id TEXT');
+    } catch (_) {}
+    try {
+      await db.execute('ALTER TABLE users ADD COLUMN preferred_payment_mode TEXT');
+    } catch (_) {}
+    try {
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS salary_payments (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          teacher_id INTEGER NOT NULL,
+          maktab_id TEXT NOT NULL,
+          salary_month TEXT NOT NULL,
+          amount INTEGER NOT NULL,
+          payment_date TEXT NOT NULL,
+          payment_mode TEXT NOT NULL,
+          upi_id_snapshot TEXT,
+          transaction_reference TEXT,
+          status TEXT NOT NULL,
+          notes TEXT,
+          created_at TEXT NOT NULL,
+          updated_at TEXT NOT NULL,
+          FOREIGN KEY (teacher_id) REFERENCES users (id) ON DELETE CASCADE
+        )
+      ''');
+      await db.execute('CREATE INDEX IF NOT EXISTS idx_sp_teacher_month ON salary_payments(teacher_id, salary_month)');
+    } catch (_) {}
     try {
       await db.execute('ALTER TABLE students ADD COLUMN is_deleted INTEGER DEFAULT 0');
     } catch (_) {}

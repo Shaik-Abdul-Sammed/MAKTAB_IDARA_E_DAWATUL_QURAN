@@ -15,15 +15,20 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _teacherIdController = TextEditingController();
+  final _pinController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   
   bool _obscurePassword = true;
+  bool _obscurePin = true;
   String _selectedRole = 'manager'; // Default selected role ('manager' or 'teacher')
 
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
+    _teacherIdController.dispose();
+    _pinController.dispose();
     super.dispose();
   }
 
@@ -34,16 +39,25 @@ class _LoginScreenState extends State<LoginScreen> {
     final router = GoRouter.of(context);
     final messenger = ScaffoldMessenger.of(context);
 
-    final success = await auth.loginWithEmail(
-      _emailController.text.trim(),
-      _passwordController.text.trim(),
-    );
+    bool success = false;
+    if (_selectedRole == 'manager') {
+      success = await auth.loginWithEmail(
+        _emailController.text.trim(),
+        _passwordController.text.trim(),
+      );
+    } else {
+      success = await auth.loginTeacherWithPin(
+        _teacherIdController.text.trim(),
+        _pinController.text.trim(),
+      );
+    }
 
     if (!mounted) return;
 
     if (success) {
-      // Direct user based on authorized profile role from Firebase
-      if (auth.currentUser?.role == 'admin' || auth.currentUser?.role == 'manager') {
+      // Direct user based on authorized profile role
+      final role = auth.currentUser?.role;
+      if (role == 'admin' || role == 'manager' || role == 'operator') {
         router.go('/admin');
       } else {
         router.go('/teacher');
@@ -321,70 +335,123 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         const SizedBox(height: 20),
 
-                        // Email Field
-                        TextFormField(
-                          controller: _emailController,
-                          keyboardType: TextInputType.emailAddress,
-                          decoration: InputDecoration(
-                            labelText: 'Email Address',
-                            hintText: _selectedRole == 'manager' ? 'manager@example.com' : 'teacher@example.com',
-                            prefixIcon: const Icon(Icons.email_outlined, color: Color(0xFF004D40)),
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                            filled: true,
-                            fillColor: const Color(0xFFF5F7F5),
-                          ),
-                          validator: (val) {
-                            if (val == null || val.trim().isEmpty) return 'Please enter your email';
-                            if (!val.contains('@')) return 'Enter a valid email address';
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 16),
-
-                        // Password Field
-                        TextFormField(
-                          controller: _passwordController,
-                          obscureText: _obscurePassword,
-                          decoration: InputDecoration(
-                            labelText: 'Password',
-                            prefixIcon: const Icon(Icons.lock_outline, color: Color(0xFF004D40)),
-                            suffixIcon: IconButton(
-                              icon: Icon(
-                                _obscurePassword ? Icons.visibility_off : Icons.visibility,
-                                color: Colors.grey,
-                              ),
-                              onPressed: () {
-                                setState(() {
-                                  _obscurePassword = !_obscurePassword;
-                                });
-                              },
+                        if (_selectedRole == 'manager') ...[
+                          // Manager / Operator Email Field
+                          TextFormField(
+                            controller: _emailController,
+                            keyboardType: TextInputType.emailAddress,
+                            decoration: InputDecoration(
+                              labelText: 'Email Address',
+                              hintText: 'manager@example.com',
+                              prefixIcon: const Icon(Icons.email_outlined, color: Color(0xFF004D40)),
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                              filled: true,
+                              fillColor: const Color(0xFFF5F7F5),
                             ),
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                            filled: true,
-                            fillColor: const Color(0xFFF5F7F5),
+                            validator: (val) {
+                              if (val == null || val.trim().isEmpty) return 'Please enter your email';
+                              if (!val.contains('@')) return 'Enter a valid email address';
+                              return null;
+                            },
                           ),
-                          validator: (val) {
-                            if (val == null || val.trim().isEmpty) return 'Please enter your password';
-                            if (val.length < 6) return 'Password must be at least 6 characters';
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 12),
+                          const SizedBox(height: 16),
 
-                        // Forgot Password Link
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: TextButton(
-                            onPressed: _showForgotPasswordDialog,
-                            child: const Text(
-                              'Forgot Password?',
-                              style: TextStyle(
-                                color: Color(0xFF004D40),
-                                fontWeight: FontWeight.w600,
+                          // Password Field
+                          TextFormField(
+                            controller: _passwordController,
+                            obscureText: _obscurePassword,
+                            decoration: InputDecoration(
+                              labelText: 'Password',
+                              prefixIcon: const Icon(Icons.lock_outline, color: Color(0xFF004D40)),
+                              suffixIcon: IconButton(
+                                icon: Icon(
+                                  _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                                  color: Colors.grey,
+                                ),
+                                onPressed: () {
+                                  setState(() {
+                                    _obscurePassword = !_obscurePassword;
+                                  });
+                                },
+                              ),
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                              filled: true,
+                              fillColor: const Color(0xFFF5F7F5),
+                            ),
+                            validator: (val) {
+                              if (val == null || val.trim().isEmpty) return 'Please enter your password';
+                              if (val.length < 6) return 'Password must be at least 6 characters';
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 12),
+
+                          // Forgot Password Link
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: TextButton(
+                              onPressed: _showForgotPasswordDialog,
+                              child: const Text(
+                                'Forgot Password?',
+                                style: TextStyle(
+                                  color: Color(0xFF004D40),
+                                  fontWeight: FontWeight.w600,
+                                ),
                               ),
                             ),
                           ),
-                        ),
+                        ] else ...[
+                          // Teacher ID / Mobile Field
+                          TextFormField(
+                            controller: _teacherIdController,
+                            decoration: InputDecoration(
+                              labelText: 'Teacher ID or Mobile',
+                              hintText: 'e.g. 2026-1 or 9177024433',
+                              prefixIcon: const Icon(Icons.badge_outlined, color: Color(0xFF004D40)),
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                              filled: true,
+                              fillColor: const Color(0xFFF5F7F5),
+                            ),
+                            validator: (val) {
+                              if (val == null || val.trim().isEmpty) return 'Please enter Teacher ID or Mobile';
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 16),
+
+                          // Teacher 4-Digit PIN Field
+                          TextFormField(
+                            controller: _pinController,
+                            obscureText: _obscurePin,
+                            keyboardType: TextInputType.number,
+                            maxLength: 6,
+                            decoration: InputDecoration(
+                              labelText: '4-Digit PIN',
+                              prefixIcon: const Icon(Icons.lock_outline, color: Color(0xFF004D40)),
+                              suffixIcon: IconButton(
+                                icon: Icon(
+                                  _obscurePin ? Icons.visibility_off : Icons.visibility,
+                                  color: Colors.grey,
+                                ),
+                                onPressed: () {
+                                  setState(() {
+                                    _obscurePin = !_obscurePin;
+                                  });
+                                },
+                              ),
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                              filled: true,
+                              fillColor: const Color(0xFFF5F7F5),
+                              counterText: '',
+                            ),
+                            validator: (val) {
+                              if (val == null || val.trim().isEmpty) return 'Please enter 4-digit PIN';
+                              if (val.trim().length < 4) return 'PIN must be at least 4 digits';
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 16),
+                        ],
                         const SizedBox(height: 12),
 
                         // Login Action Button

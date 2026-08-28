@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
+import '../models/student.dart';
+import '../utils/voice_parser.dart';
 
 class VoiceAttendanceItem {
   final int id;
@@ -97,59 +99,34 @@ class _VoiceAttendanceDialogState extends State<VoiceAttendanceDialog> {
   }
 
   void _parseVoiceCommand(String speechText) {
-    final text = speechText.toLowerCase().trim();
-    if (text.isEmpty) return;
+    if (speechText.trim().isEmpty) return;
 
-    // Check "all present" / "all absent" bulk commands
-    if (text.contains('mark all present') || text.contains('all present') || text.contains('everyone present')) {
+    final dummyStudents = widget.items.map((i) => Student(
+      id: i.id,
+      admissionNumber: 'V${i.id}',
+      name: i.name,
+      dob: '2015-01-01',
+      gender: 'Male',
+      fatherName: 'Father',
+      phone: '0000000000',
+      createdAt: '2026-08-01',
+    )).toList();
+
+    final result = VoiceParser.parseAttendanceVoiceInput(speechText, dummyStudents);
+
+    if (result.studentStatuses.isNotEmpty) {
       setState(() {
-        for (var k in _statuses.keys) {
-          _statuses[k] = 'Present';
+        _statuses.addAll(result.studentStatuses);
+        if (result.matchedNames.isNotEmpty) {
+          _statusFeedback = 'Updated: ${result.matchedNames.take(3).join(", ")}';
+        } else {
+          _statusFeedback = 'Updated statuses from voice!';
         }
-        _statusFeedback = 'Success: Marked everyone as Present!';
       });
-      return;
-    }
-    if (text.contains('mark all absent') || text.contains('all absent') || text.contains('everyone absent')) {
+    } else {
       setState(() {
-        for (var k in _statuses.keys) {
-          _statuses[k] = 'Absent';
-        }
-        _statusFeedback = 'Success: Marked everyone as Absent!';
+        _statusFeedback = 'Recognized: "$speechText"\n(Could not match student/teacher name)';
       });
-      return;
-    }
-
-    // Individual item matching
-    String? targetStatus;
-    if (text.contains('present') || text.contains('حاضر')) {
-      targetStatus = 'Present';
-    } else if (text.contains('absent') || text.contains('غائب')) {
-      targetStatus = 'Absent';
-    } else if (text.contains('late') || text.contains('تأخير')) {
-      targetStatus = 'Late';
-    } else if (text.contains('leave') || text.contains('إجازة')) {
-      targetStatus = 'Leave';
-    }
-
-    if (targetStatus == null) return;
-
-    // Match name in text
-    bool matched = false;
-    for (var item in widget.items) {
-      final nameLower = item.name.toLowerCase();
-      // Check first name or full name match
-      final firstName = nameLower.split(' ').first;
-      if (text.contains(nameLower) || (firstName.length >= 3 && text.contains(firstName))) {
-        _statuses[item.id] = targetStatus;
-        matched = true;
-        _statusFeedback = 'Updated ${item.name} ➔ $targetStatus';
-        break;
-      }
-    }
-
-    if (!matched) {
-      _statusFeedback = 'Recognized: "$speechText"\n(Could not match student/teacher name)';
     }
   }
 

@@ -16,6 +16,7 @@ import 'package:maktab_app/widgets/animated_counter.dart';
 import 'package:maktab_app/widgets/language_toggle.dart';
 import 'package:maktab_app/l10n/app_localizations.dart';
 import 'package:maktab_app/widgets/universal_search_delegate.dart';
+import 'package:maktab_app/services/analytics_service.dart';
 import 'dart:ui';
 
 
@@ -39,14 +40,12 @@ class _AdminDashboardState extends State<AdminDashboard>
   int _totalTeachers = 0;
   int _totalBatches = 0;
   List<Map<String, dynamic>> _recentAttendance = [];
-
-
+  List<AnomalyAlert> _aiAlerts = [];
 
   @override
   void initState() {
     super.initState();
     _fetchDashboardStats();
-
 
     // Main body fade+slide
     _animController = AnimationController(
@@ -62,22 +61,22 @@ class _AdminDashboardState extends State<AdminDashboard>
       vsync: this,
       duration: const Duration(milliseconds: 1400),
     )..forward();
-
   }
-
-
 
   Future<void> _fetchDashboardStats() async {
     final students = await StudentRepository().getAllStudents();
     final teachers = await UserRepository().getAllTeachers();
     final batches = await BatchRepository().getAllBatches();
     final recentAtt = await AttendanceRepository().getRecentStudentAttendance(limit: 5);
+    final alerts = await AnalyticsService.instance.getDashboardAnomalyAlerts();
+
     if (mounted) {
       setState(() {
         _totalStudents = students.length;
         _totalTeachers = teachers.length;
         _totalBatches = batches.length;
         _recentAttendance = recentAtt;
+        _aiAlerts = alerts;
       });
     }
   }
@@ -90,7 +89,15 @@ class _AdminDashboardState extends State<AdminDashboard>
     super.dispose();
   }
 
-  // ── Feature card ──────────────────────────────────────────────────────────
+  String _formatManagerName(String? rawName) {
+    if (rawName == null || rawName.trim().isEmpty) return 'K. ABDUL RAWOOF';
+    final trimmed = rawName.trim();
+    final upper = trimmed.toUpperCase();
+    if (upper.startsWith('MANAGER') || upper.startsWith('ADMIN') || upper.startsWith('K.')) {
+      return trimmed;
+    }
+    return 'Manager $trimmed';
+  }
 
   Widget _buildFeatureCard(
     BuildContext context, {
@@ -170,15 +177,15 @@ class _AdminDashboardState extends State<AdminDashboard>
                           ),
                         ),
                         Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 14),
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               AnimatedScale(
-                                scale: hover ? 1.1 : 1.0,
+                                scale: hover ? 1.05 : 1.0,
                                 duration: const Duration(milliseconds: 200),
                                 child: Container(
-                                  padding: const EdgeInsets.all(12),
+                                  padding: const EdgeInsets.all(10),
                                   decoration: BoxDecoration(
                                     color: (iconColor ?? teal).withValues(alpha: 0.12),
                                     shape: BoxShape.circle,
@@ -186,14 +193,14 @@ class _AdminDashboardState extends State<AdminDashboard>
                                       BoxShadow(color: (iconColor ?? teal).withValues(alpha: 0.3), blurRadius: 8)
                                     ] : [],
                                   ),
-                                  child: Icon(icon, color: iconColor ?? teal, size: 28),
+                                  child: Icon(icon, color: iconColor ?? teal, size: 26),
                                 ),
                               ),
-                              const Spacer(),
+                              const SizedBox(height: 6),
                               Text(
                                 title,
                                 style: TextStyle(
-                                  fontSize: 13,
+                                  fontSize: 12,
                                   fontWeight: FontWeight.w700,
                                   color: AppColors.textPrimary,
                                   letterSpacing: 0.2,
@@ -275,6 +282,132 @@ class _AdminDashboardState extends State<AdminDashboard>
   }
 
 
+  Widget _buildAiInsightsSection() {
+    if (_aiAlerts.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF004D40).withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(Icons.auto_awesome_rounded, size: 18, color: Color(0xFF004D40)),
+                  ),
+                  const SizedBox(width: 8),
+                  const Text(
+                    'AI Smart Insights & Alerts',
+                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF004D40)),
+                  ),
+                  const Spacer(),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: Colors.red.shade50,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.red.shade200),
+                    ),
+                    child: Text(
+                      '${_aiAlerts.length} Action Needed',
+                      style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.red.shade900),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              ListView.separated(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: _aiAlerts.length > 3 ? 3 : _aiAlerts.length,
+                separatorBuilder: (context, index) => const SizedBox(height: 8),
+                itemBuilder: (context, index) {
+                  final alert = _aiAlerts[index];
+                  final isCritical = alert.severity == AlertSeverity.critical;
+                  final isWarning = alert.severity == AlertSeverity.warning;
+
+                  final bgColor = isCritical
+                      ? Colors.red.shade50
+                      : isWarning
+                          ? Colors.amber.shade50
+                          : Colors.blue.shade50;
+                  final borderColor = isCritical
+                      ? Colors.red.shade200
+                      : isWarning
+                          ? Colors.amber.shade300
+                          : Colors.blue.shade200;
+                  final textColor = isCritical
+                      ? Colors.red.shade900
+                      : isWarning
+                          ? Colors.amber.shade900
+                          : Colors.blue.shade900;
+                  final icon = isCritical
+                      ? Icons.error_outline_rounded
+                      : isWarning
+                          ? Icons.warning_amber_rounded
+                          : Icons.info_outline_rounded;
+
+                  return Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: bgColor,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: borderColor),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(icon, size: 18, color: textColor),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                alert.title,
+                                style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: textColor),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                alert.subtitle,
+                                style: TextStyle(fontSize: 11, color: textColor.withValues(alpha: 0.85)),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   // ── Section header ────────────────────────────────────────────────────────
   Widget _sectionHeader(String title, IconData icon) {
     return Row(
@@ -296,7 +429,7 @@ class _AdminDashboardState extends State<AdminDashboard>
 
   @override
   Widget build(BuildContext context) {
-    final auth = Provider.of<AuthProvider>(context, listen: false);
+    final auth = context.watch<AuthProvider>();
     final loc = AppLocalizations.of(context);
     final now = DateTime.now();
     final greeting = now.hour < 12
@@ -308,28 +441,32 @@ class _AdminDashboardState extends State<AdminDashboard>
     return Scaffold(
       backgroundColor: const Color(0xFFF4F6F9),
       appBar: AppBar(
+        centerTitle: false,
+        titleSpacing: 0,
         title: Row(
           children: [
-            const MaktabLogo(size: 30, showGlow: true),
-            const SizedBox(width: 10),
+            const MaktabLogo(size: 28, showGlow: true),
+            const SizedBox(width: 8),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
                     loc?.translate('admin_dashboard') ?? 'Admin Portal',
                     style: const TextStyle(
                       color: AppColors.goldAccent,
                       fontWeight: FontWeight.bold,
-                      fontSize: 16,
+                      fontSize: 15,
                     ),
                     overflow: TextOverflow.ellipsis,
                     maxLines: 1,
                   ),
-                  const Text(
-                    'Management Console',
-                    style: TextStyle(color: Colors.white54, fontSize: 10),
+                  Text(
+                    loc?.translate('management_console') ?? 'Management Console',
+                    style: const TextStyle(color: Colors.white54, fontSize: 10),
                     overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
                   ),
                 ],
               ),
@@ -344,42 +481,68 @@ class _AdminDashboardState extends State<AdminDashboard>
         foregroundColor: Colors.white,
         actions: [
           IconButton(
-            icon: const Icon(Icons.sync_rounded, size: 22),
-            tooltip: 'Sync Devices Now',
-            onPressed: () async {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Row(
-                    children: [
-                      SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)),
-                      SizedBox(width: 12),
-                      Text('Syncing data with cloud…'),
-                    ],
-                  ),
-                  duration: Duration(seconds: 2),
-                ),
-              );
-              await CloudSyncService.instance.syncAll();
-              if (context.mounted) {
+            icon: const Icon(AppIcons.search, size: 20),
+            tooltip: loc?.translate('search') ?? 'Search',
+            constraints: const BoxConstraints(minWidth: 34, minHeight: 34),
+            padding: EdgeInsets.zero,
+            onPressed: () => showSearch(context: context, delegate: UniversalSearchDelegate()),
+          ),
+          const LanguageToggle(),
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert_rounded, size: 20, color: Colors.white),
+            tooltip: 'Dashboard Tools',
+            onSelected: (value) async {
+              if (value == 'sync') {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
-                    content: Text('Multi-device sync completed!'),
-                    backgroundColor: Color(0xFF004D40),
+                    content: Row(
+                      children: [
+                        SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)),
+                        SizedBox(width: 12),
+                        Text('Syncing data with cloud…'),
+                      ],
+                    ),
                     duration: Duration(seconds: 2),
                   ),
                 );
+                await CloudSyncService.instance.syncAll();
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Multi-device sync completed!'),
+                      backgroundColor: Color(0xFF004D40),
+                      duration: Duration(seconds: 2),
+                    ),
+                  );
+                }
+              } else if (value == 'settings') {
+                context.push(AppRoutes.adminSettings);
               }
             },
+            itemBuilder: (context) => [
+              PopupMenuItem(
+                value: 'sync',
+                child: Row(
+                  children: [
+                    const Icon(Icons.sync_rounded, color: Color(0xFF004D40), size: 18),
+                    const SizedBox(width: 10),
+                    Text(loc?.translate('sync') ?? 'Sync Devices'),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: 'settings',
+                child: Row(
+                  children: [
+                    const Icon(AppIcons.settings, color: Color(0xFF004D40), size: 18),
+                    const SizedBox(width: 10),
+                    Text(loc?.translate('settings') ?? 'Settings'),
+                  ],
+                ),
+              ),
+            ],
           ),
-          IconButton(
-              icon: const Icon(AppIcons.search, size: 22),
-              onPressed: () => showSearch(context: context, delegate: UniversalSearchDelegate()),
-            ),
-          IconButton(
-              icon: const Icon(AppIcons.settings, size: 22),
-              onPressed: () => context.push(AppRoutes.adminSettings),
-            ),
-          const LanguageToggle(),
+          const SizedBox(width: 4),
         ],
       ),
       drawer: _buildDrawer(context, auth, loc),
@@ -454,13 +617,13 @@ class _AdminDashboardState extends State<AdminDashboard>
                             FadeTransition(
                               opacity: _fadeAnim,
                               child: Text(
-                                auth.currentUser?.name ?? 'Administrator',
+                                _formatManagerName(auth.currentUser?.name),
                                 style: const TextStyle(
                                   color: Colors.white,
-                                  fontSize: 15,
+                                  fontSize: 16,
                                   fontWeight: FontWeight.bold,
                                 ),
-                                maxLines: 1,
+                                maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
@@ -499,6 +662,11 @@ class _AdminDashboardState extends State<AdminDashboard>
                 ),
               ),
 
+
+              // ── AI Insights & Anomaly Alerts ─────────────────────────────
+              SliverToBoxAdapter(
+                child: _buildAiInsightsSection(),
+              ),
 
               // ── Core Management ──────────────────────────────────────────
               SliverToBoxAdapter(
@@ -554,6 +722,13 @@ class _AdminDashboardState extends State<AdminDashboard>
                           icon: Icons.how_to_reg_rounded,
                           route: '/admin/teacher-attendance',
                           iconColor: const Color(0xFF7B1FA2),
+                          bgColor: Colors.white,
+                        ),
+                        _buildFeatureCard(context,
+                          title: 'Teacher Salary',
+                          icon: Icons.payments_rounded,
+                          route: '/admin/teacher-salary',
+                          iconColor: const Color(0xFF2E7D32),
                           bgColor: Colors.white,
                         ),
                        ]),
@@ -783,12 +958,16 @@ class _AdminDashboardState extends State<AdminDashboard>
                   child: const Icon(Icons.admin_panel_settings_rounded, color: AppColors.goldAccent, size: 30),
                 ),
                 const SizedBox(height: 12),
-                const Text('Administrator', style: TextStyle(color: AppColors.goldAccent, fontSize: 16, fontWeight: FontWeight.bold)),
                 Text(
-                  auth.currentUser?.name ?? 'Super Admin',
-                  style: const TextStyle(color: Colors.white60, fontSize: 12),
-                  maxLines: 1,
+                  _formatManagerName(auth.currentUser?.name),
+                  style: const TextStyle(color: AppColors.goldAccent, fontSize: 16, fontWeight: FontWeight.bold),
+                  maxLines: 2,
                   overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 2),
+                const Text(
+                  'Manager & Administrator',
+                  style: TextStyle(color: Colors.white70, fontSize: 12),
                 ),
               ],
             ),

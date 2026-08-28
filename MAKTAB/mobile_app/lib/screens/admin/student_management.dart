@@ -6,6 +6,7 @@ import 'package:maktab_app/models/batch.dart';
 import 'package:maktab_app/repositories/student_repository.dart';
 import 'package:maktab_app/repositories/batch_repository.dart';
 import 'package:maktab_app/widgets/shimmer_loader.dart';
+import 'package:maktab_app/services/student_excel_csv_service.dart';
 
 class StudentManagementScreen extends StatefulWidget {
   const StudentManagementScreen({super.key});
@@ -322,6 +323,45 @@ class _StudentManagementScreenState extends State<StudentManagementScreen> {
         backgroundColor: const Color(0xFF004D40),
         iconTheme: const IconThemeData(color: Colors.white),
         centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.file_upload),
+            tooltip: 'Import Excel / CSV',
+            onPressed: () async {
+              final count = await StudentExcelCsvService.importStudentsFromCsv(context: context);
+              if (count > 0) _fetchData();
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.file_download),
+            tooltip: 'Export Excel / CSV',
+            onPressed: () async {
+              await StudentExcelCsvService.exportStudentsToCsv(
+                context: context,
+                students: _students,
+                filenamePrefix: 'Maktab_Student_Management',
+              );
+            },
+          ),
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert),
+            onSelected: (val) {
+              if (val == 'template') StudentExcelCsvService.exportSampleTemplate(context);
+            },
+            itemBuilder: (ctx) => [
+              const PopupMenuItem(
+                value: 'template',
+                child: Row(
+                  children: [
+                    Icon(Icons.description, color: Color(0xFF004D40)),
+                    SizedBox(width: 8),
+                    Text('Download Import Template'),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
       body: SafeArea(
         child: Column(

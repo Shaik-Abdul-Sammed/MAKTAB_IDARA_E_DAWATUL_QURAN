@@ -3,6 +3,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../../models/student.dart';
+import '../../repositories/student_repository.dart';
 import '../../services/ai_service.dart';
 import '../../utils/permission_helper.dart';
 
@@ -91,15 +92,90 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
     } catch (_) {}
   }
 
+  Future<void> _showEditStudentDialog() async {
+    final nameCtrl = TextEditingController(text: widget.student.name);
+    final arabicCtrl = TextEditingController(text: widget.student.arabicName ?? '');
+    final phoneCtrl = TextEditingController(text: widget.student.phone ?? '');
+    final fatherCtrl = TextEditingController(text: widget.student.fatherName ?? '');
+    final feesCtrl = TextEditingController(text: widget.student.feesAmount?.toString() ?? '0');
+    final notesCtrl = TextEditingController(text: widget.student.teacherNotes ?? '');
+
+    final updated = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(
+          children: [
+            Icon(Icons.edit, color: Color(0xFF004D40)),
+            SizedBox(width: 8),
+            Text('Edit Student Details', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'Student Name', icon: Icon(Icons.person))),
+              const SizedBox(height: 8),
+              TextField(controller: arabicCtrl, decoration: const InputDecoration(labelText: 'Arabic Name', icon: Icon(Icons.translate))),
+              const SizedBox(height: 8),
+              TextField(controller: phoneCtrl, keyboardType: TextInputType.phone, decoration: const InputDecoration(labelText: 'Phone Number', icon: Icon(Icons.phone))),
+              const SizedBox(height: 8),
+              TextField(controller: fatherCtrl, decoration: const InputDecoration(labelText: 'Father Name', icon: Icon(Icons.person_outline))),
+              const SizedBox(height: 8),
+              TextField(controller: feesCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Fees Amount (₹)', icon: Icon(Icons.attach_money))),
+              const SizedBox(height: 8),
+              TextField(controller: notesCtrl, maxLines: 2, decoration: const InputDecoration(labelText: 'Teacher Notes', icon: Icon(Icons.note))),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF004D40)),
+            onPressed: () async {
+              final newStudent = widget.student.copyWith(
+                name: nameCtrl.text.trim(),
+                arabicName: arabicCtrl.text.trim(),
+                phone: phoneCtrl.text.trim(),
+                fatherName: fatherCtrl.text.trim(),
+                feesAmount: int.tryParse(feesCtrl.text.trim()) ?? widget.student.feesAmount,
+                teacherNotes: notesCtrl.text.trim(),
+              );
+              final repo = StudentRepository();
+              await repo.updateStudent(newStudent);
+              if (ctx.mounted) Navigator.pop(ctx, true);
+            },
+            child: const Text('Save Changes', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+
+    if (updated == true && mounted) {
+      setState(() {});
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Student details updated successfully!'), backgroundColor: Color(0xFF004D40)),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF9FBE7),
       appBar: AppBar(
-        title: Text('${widget.student.name} - Profile'),
+        title: const Text('Student Profile'),
         elevation: 0,
         backgroundColor: const Color(0xFF004D40),
         foregroundColor: Colors.white,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.edit),
+            tooltip: 'Edit Student Details',
+            onPressed: _showEditStudentDialog,
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         physics: const BouncingScrollPhysics(),

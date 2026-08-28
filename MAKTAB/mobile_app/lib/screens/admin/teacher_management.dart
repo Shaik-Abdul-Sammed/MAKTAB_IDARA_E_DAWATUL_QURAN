@@ -136,9 +136,9 @@ class _TeacherManagementScreenState extends State<TeacherManagementScreen> {
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                     ),
                     keyboardType: TextInputType.number,
-                    maxLength: 4,
+                    maxLength: 6,
                     validator: (val) {
-                      if (val == null || val.length != 4) return 'PIN must be exactly 4 digits';
+                      if (val == null || val.length < 6) return 'PIN must be at least 6 digits';
                       if (int.tryParse(val) == null) return 'PIN must be numeric';
                       return null;
                     },
@@ -194,18 +194,32 @@ class _TeacherManagementScreenState extends State<TeacherManagementScreen> {
                     createdAt: DateTime.now().toIso8601String(),
                   );
                   int newTeacherId = await _userRepository.insertUser(newUser);
+
+                  // Provision Teacher Auth Account via Secondary FirebaseApp (Manager session remains intact)
+                  if (context.mounted) {
+                    await context.read<AuthProvider>().provisionTeacherAuthAccount(
+                      teacherId: newTeacherId,
+                      name: nameController.text.trim(),
+                      rawPin: pinController.text,
+                      mobile: mobileController.text.trim(),
+                    );
+                  }
                   
                   // Assign batches
                   for (int batchId in selectedBatchIds) {
                     await _batchRepository.assignTeacherToBatch(batchId, newTeacherId);
                   }
                   
+                  final teacherMobile = mobileController.text.trim();
+                  final teacherName = nameController.text.trim();
+                  final teacherPin = pinController.text.trim();
+
                   if (context.mounted) Navigator.pop(context);
                   _fetchTeachers();
                   
                   // Ask if they want to share via WhatsApp
-                  if (context.mounted && mobileController.text.trim().isNotEmpty) {
-                    showDialog(
+                  if (context.mounted && teacherMobile.isNotEmpty) {
+                    await showDialog(
                       context: context,
                       builder: (ctx) => AlertDialog(
                         title: const Text('Share PIN'),
@@ -213,9 +227,11 @@ class _TeacherManagementScreenState extends State<TeacherManagementScreen> {
                         actions: [
                           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('No')),
                           ElevatedButton(
-                            onPressed: () {
+                            onPressed: () async {
                               Navigator.pop(ctx);
-                              WhatsAppUtility.sendTeacherCredentials(context, mobileController.text.trim(), nameController.text.trim(), pinController.text);
+                              if (context.mounted) {
+                                await WhatsAppUtility.sendTeacherCredentials(context, teacherMobile, teacherName, teacherPin);
+                              }
                             },
                             child: const Text('Yes, Send'),
                           ),

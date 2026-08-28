@@ -8,6 +8,9 @@ class UserDTO {
   final bool isActive;
   final String? photoPath;
   final String? dob;
+  final int? monthlySalary;
+  final String? upiId;
+  final String? preferredPaymentMode;
 
   UserDTO({
     this.id,
@@ -19,6 +22,9 @@ class UserDTO {
     this.isActive = true,
     this.photoPath,
     this.dob,
+    this.monthlySalary,
+    this.upiId,
+    this.preferredPaymentMode,
   });
 
   Map<String, dynamic> toMap() => {
@@ -31,6 +37,9 @@ class UserDTO {
     'is_active': isActive ? 1 : 0,
     'photo_path': photoPath,
     'dob': dob,
+    'monthly_salary': monthlySalary ?? 0,
+    'upi_id': upiId,
+    'preferred_payment_mode': preferredPaymentMode,
   };
 
   factory UserDTO.fromMap(Map<String, dynamic> map) => UserDTO(
@@ -43,5 +52,8 @@ class UserDTO {
     isActive: map['is_active'] == 1,
     photoPath: map['photo_path'],
     dob: map['dob'],
+    monthlySalary: map['monthly_salary'] as int? ?? 0,
+    upiId: map['upi_id'] as String?,
+    preferredPaymentMode: map['preferred_payment_mode'] as String?,
   );
 }

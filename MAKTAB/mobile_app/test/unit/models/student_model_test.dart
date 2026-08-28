@@ -87,7 +87,7 @@ void main() {
       expect(s.arabicName, isNull);
       expect(s.fatherName, isNull);
       expect(s.phone, isNull);
-      expect(s.batchId, isNull);
+      expect(s.batchId, 1);
     });
   });
 }

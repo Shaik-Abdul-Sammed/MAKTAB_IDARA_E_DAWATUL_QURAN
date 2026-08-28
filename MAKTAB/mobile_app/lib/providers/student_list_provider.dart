@@ -1,12 +1,28 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import '../models/student.dart';
 import '../repositories/student_repository.dart';
+import '../services/cloud_sync_service.dart';
 
 enum StudentListStatus { initial, loading, success, error }
 
 class StudentListProvider extends ChangeNotifier {
   final StudentRepository _repo;
-  StudentListProvider(this._repo);
+  StreamSubscription<String>? _syncSub;
+
+  StudentListProvider(this._repo) {
+    _syncSub = CloudSyncService.instance.onDataSynced.listen((col) {
+      if (col == 'students' || col == 'batches') {
+        fetchStudents();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _syncSub?.cancel();
+    super.dispose();
+  }
 
   StudentListStatus _status = StudentListStatus.initial;
   StudentListStatus get status => _status;

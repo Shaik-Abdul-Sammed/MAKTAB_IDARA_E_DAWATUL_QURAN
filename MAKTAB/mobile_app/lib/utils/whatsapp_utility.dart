@@ -7,25 +7,50 @@ enum Language { english, urdu, hindi, telugu }
 class WhatsAppUtility {
   static const String _signature = "\n\nFrom: MAKTAB IDARA E DAWATUL QURAN";
 
-  static Future<void> launchWhatsApp(String phone, String message) async {
+  static Future<void> launchWhatsApp(String phone, String message, {BuildContext? context}) async {
     // Remove all non-numeric characters from phone
     String cleanPhone = phone.replaceAll(RegExp(r'\D'), '');
+    if (cleanPhone.isEmpty) {
+      if (context != null && context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Invalid phone number for WhatsApp message.')),
+        );
+      }
+      return;
+    }
     if (!cleanPhone.startsWith('91') && cleanPhone.length == 10) {
       cleanPhone = '91$cleanPhone'; // Default to India +91 if not specified
     }
 
     final url = Uri.parse("https://wa.me/$cleanPhone?text=${Uri.encodeComponent(message)}");
-    if (await canLaunchUrl(url)) {
-      await launchUrl(url, mode: LaunchMode.externalApplication);
-    } else {
-      debugPrint("Could not launch WhatsApp for $phone");
+    try {
+      if (await canLaunchUrl(url)) {
+        await launchUrl(url, mode: LaunchMode.externalNonBrowserApplication);
+      } else if (await canLaunchUrl(url)) {
+        await launchUrl(url, mode: LaunchMode.externalApplication);
+      } else {
+        debugPrint("Could not launch WhatsApp for $phone");
+        if (context != null && context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Could not open WhatsApp app.')),
+          );
+        }
+      }
+    } catch (e) {
+      debugPrint("WhatsApp launch error: $e");
+      if (context != null && context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('WhatsApp launch error: $e')),
+        );
+      }
     }
   }
 
   static Future<void> sendTeacherCredentials(
       BuildContext context, String phone, String name, String pin) async {
+    if (!context.mounted) return;
     final lang = await _promptLanguageSelection(context);
-    if (lang == null) return;
+    if (lang == null || !context.mounted) return;
 
     String msg = '';
     switch (lang) {
@@ -43,7 +68,7 @@ class WhatsAppUtility {
         break;
     }
 
-    await launchWhatsApp(phone, msg + _signature);
+    await launchWhatsApp(phone, msg + _signature, context: context);
   }
 
   static Future<void> sendFeeReceipt(
@@ -116,6 +141,80 @@ class WhatsAppUtility {
     await launchWhatsApp(phone, msg + _signature);
   }
 
+  /// Send official Teacher Salary Slip via WhatsApp in selected language.
+  static Future<void> sendSalarySlip(
+    BuildContext context,
+    String phone,
+    String teacherName,
+    double monthlySalary,
+    double paidAmount,
+    String month, {
+    String? paymentMode,
+    String? upiId,
+  }) async {
+    final lang = await _promptLanguageSelection(context);
+    if (lang == null) return;
+
+    final modeText = (paymentMode != null && paymentMode.isNotEmpty) ? paymentMode : 'UPI / Cash';
+    final remaining = monthlySalary - paidAmount;
+    final statusText = remaining <= 0 ? 'Fully Paid ✅' : (paidAmount > 0 ? 'Partially Paid 🟡' : 'Pending 🔴');
+
+    String msg = '';
+    switch (lang) {
+      case Language.english:
+        msg = "Assalamu Alaikum,\nDear Teacher *$teacherName*,\n\n"
+            "💵 *MONTHLY SALARY SLIP — $month*\n"
+            "👤 *Teacher*: *$teacherName*\n"
+            "💰 *Base Monthly Salary*: ₹${monthlySalary.toInt()}\n"
+            "✅ *Paid Amount*: ₹${paidAmount.toInt()}\n"
+            "⏳ *Balance / Remaining*: ₹${remaining > 0 ? remaining.toInt() : 0}\n"
+            "💳 *Payment Mode*: $modeText\n"
+            "📌 *Status*: $statusText\n"
+            "${upiId != null && upiId.isNotEmpty ? '📱 *UPI ID*: $upiId\n' : ''}\n"
+            "Jazakallah Khair for your dedication!";
+        break;
+      case Language.urdu:
+        msg = "السلام علیکم،\nمحترم استاد *$teacherName*،\n\n"
+            "💵 *ماہانہ تنخواہ سلپ — $month*\n"
+            "👤 *استاد*: *$teacherName*\n"
+            "💰 *ماہانہ مقررہ تنخواہ*: ₹${monthlySalary.toInt()}\n"
+            "✅ *اداشدہ رقم*: ₹${paidAmount.toInt()}\n"
+            "⏳ *ببقایا رقم*: ₹${remaining > 0 ? remaining.toInt() : 0}\n"
+            "💳 *ادائیگی کا طریقہ*: $modeText\n"
+            "📌 *حالت*: $statusText\n"
+            "${upiId != null && upiId.isNotEmpty ? '📱 *یو پی آئی*: $upiId\n' : ''}\n"
+            "جزاک اللہ خیر۔";
+        break;
+      case Language.hindi:
+        msg = "अस्सलामु अलैकुम,\nप्रिय शिक्षक *$teacherName*,\n\n"
+            "💵 *मासिक वेतन पर्ची — $month*\n"
+            "👤 *शिक्षक*: *$teacherName*\n"
+            "💰 *मासिक वेतन*: ₹${monthlySalary.toInt()}\n"
+            "✅ *भुगतान की गई राशि*: ₹${paidAmount.toInt()}\n"
+            "⏳ *शेष राशि*: ₹${remaining > 0 ? remaining.toInt() : 0}\n"
+            "💳 *भुगतान विधि*: $modeText\n"
+            "📌 *स्थिति*: $statusText\n"
+            "${upiId != null && upiId.isNotEmpty ? '📱 *UPI ID*: $upiId\n' : ''}\n"
+            "जज़ाकल्लाह खैर!";
+        break;
+      case Language.telugu:
+        msg = "అస్సలాము అలైకుమ్,\nగౌరవనీయ ఉపాధ్యాయులు *$teacherName*,\n\n"
+            "💵 *నెలవారీ జీతం రసీదు — $month*\n"
+            "👤 *ఉపాధ్యాయుడు*: *$teacherName*\n"
+            "💰 *నెలవారీ జీతం*: ₹${monthlySalary.toInt()}\n"
+            "✅ *చెల్లించిన మొత్తం*: ₹${paidAmount.toInt()}\n"
+            "⏳ *మిగిలిన బకాయి*: ₹${remaining > 0 ? remaining.toInt() : 0}\n"
+            "💳 *చెల్లింపు విధానం*: $modeText\n"
+            "📌 *స్థితి*: $statusText\n"
+            "${upiId != null && upiId.isNotEmpty ? '📱 *UPI ID*: $upiId\n' : ''}\n"
+            "జజాకల్లా ఖైర్.";
+        break;
+    }
+
+    if (!context.mounted) return;
+    await launchWhatsApp(phone, msg + _signature, context: context);
+  }
+
   /// Send attendance absence alert with date.
   static Future<void> sendAttendanceAlert(
       BuildContext context, String phone, String studentName, {String? date}) async {
@@ -142,6 +241,92 @@ class WhatsAppUtility {
     await launchWhatsApp(phone, msg + _signature);
   }
 
+  /// Send Batch Notice via WhatsApp with language prompt.
+  static Future<void> sendBatchNotice(
+    BuildContext context, {
+    required String batchName,
+    required String timing,
+    String? phone,
+  }) async {
+    final lang = await promptLanguageSelection(context);
+    if (lang == null || !context.mounted) return;
+
+    String msg = '';
+    switch (lang) {
+      case Language.english:
+        msg = "Assalamu Alaikum,\nDear Guardians of *$batchName*,\n\n"
+            "📢 *MAKTAB ANNOUNCEMENT*\n"
+            "Please note the class timings for *$batchName*: *$timing*.\n"
+            "Please ensure timely attendance.";
+        break;
+      case Language.urdu:
+        msg = "السلام علیکم،\nمحترم سرپرستاں *$batchName*،\n\n"
+            "📢 *مکتب کا اہم اعلان*\n"
+            "براہ کرم *$batchName* کی کلاس کے اوقات ملاحظہ فرمائیں: *$timing*۔\n"
+            "وقت کی پابندی یقینی بنائیں۔";
+        break;
+      case Language.hindi:
+        msg = "अस्सलामु अलैकुम,\n*$batchName* के प्रिय अभिभावक,\n\n"
+            "📢 *मकतब महत्वपूर्ण सूचना*\n"
+            "कृपया *$batchName* की कक्षा का समय ध्यान दें: *$timing*।\n"
+            "समय पर उपस्थिति सुनिश्चित करें।";
+        break;
+      case Language.telugu:
+        msg = "అస్సలాము అలైకుమ్,\n*$batchName* యొక్క ప్రియమైన తల్లిదండ్రులారా,\n\n"
+            "📢 *మక్తబ్ ముఖ్య ప్రకటన*\n"
+            "దయచేసి *$batchName* క్లాస్ సమయం గమనించండి: *$timing*.\n"
+            "సమయ పాలన పాటించండి.";
+        break;
+    }
+
+    await launchWhatsApp(phone ?? '', msg + _signature, context: context);
+  }
+
+  /// Send custom Notice or Announcement with language selection prompt.
+  static Future<void> sendNoticeMessage(
+    BuildContext context, {
+    required String title,
+    required String content,
+    String? recipientPhone,
+    String? targetName,
+  }) async {
+    final lang = await promptLanguageSelection(context);
+    if (lang == null) return;
+
+    final target = (targetName != null && targetName.isNotEmpty) ? targetName : 'Guardian / Student';
+    String msg = '';
+
+    switch (lang) {
+      case Language.english:
+        msg = "Assalamu Alaikum,\nDear *$target*,\n\n"
+            "📢 *$title*\n"
+            "$content\n\n"
+            "Jazakallah Khair.";
+        break;
+      case Language.urdu:
+        msg = "السلام علیکم،\nمحترم *$target*،\n\n"
+            "📢 *$title*\n"
+            "$content\n\n"
+            "جزاک اللہ خیر۔";
+        break;
+      case Language.hindi:
+        msg = "अस्सलामु अलैकुम,\nप्रिय *$target*,\n\n"
+            "📢 *$title*\n"
+            "$content\n\n"
+            "जज़ाकल्लाह खैर।";
+        break;
+      case Language.telugu:
+        msg = "అస్సలాము అలైకుమ్,\nప్రియమైన *$target*,\n\n"
+            "📢 *$title*\n"
+            "$content\n\n"
+            "జజాకల్లా ఖైర్.";
+        break;
+    }
+
+    if (!context.mounted) return;
+    await launchWhatsApp(recipientPhone ?? '', msg + _signature, context: context);
+  }
+
   /// Build and share a plain-text attendance report (no language selection needed).
   static String buildAttendanceReportText({
     required String date,
@@ -164,7 +349,7 @@ class WhatsAppUtility {
     return buffer.toString();
   }
 
-  static Future<Language?> _promptLanguageSelection(BuildContext context) async {
+  static Future<Language?> promptLanguageSelection(BuildContext context) async {
     return showDialog<Language>(
       context: context,
       builder: (context) {
@@ -190,6 +375,8 @@ class WhatsAppUtility {
       },
     );
   }
+
+  static Future<Language?> _promptLanguageSelection(BuildContext context) => promptLanguageSelection(context);
 }
 
 class _LanguageTile extends StatelessWidget {

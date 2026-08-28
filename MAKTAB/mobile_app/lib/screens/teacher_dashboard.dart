@@ -159,15 +159,15 @@ class _TeacherDashboardState extends State<TeacherDashboard>
                           ),
                         ),
                         Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 14),
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               AnimatedScale(
-                                scale: hover ? 1.1 : 1.0,
+                                scale: hover ? 1.05 : 1.0,
                                 duration: const Duration(milliseconds: 200),
                                 child: Container(
-                                  padding: const EdgeInsets.all(12),
+                                  padding: const EdgeInsets.all(10),
                                   decoration: BoxDecoration(
                                     color: cardColor.withValues(alpha: 0.12),
                                     shape: BoxShape.circle,
@@ -175,14 +175,14 @@ class _TeacherDashboardState extends State<TeacherDashboard>
                                       BoxShadow(color: cardColor.withValues(alpha: 0.3), blurRadius: 8)
                                     ] : [],
                                   ),
-                                  child: Icon(icon, color: cardColor, size: 28),
+                                  child: Icon(icon, color: cardColor, size: 26),
                                 ),
                               ),
-                              const Spacer(),
+                              const SizedBox(height: 8),
                               Text(
                                 title,
                                 style: TextStyle(
-                                  fontSize: 13,
+                                  fontSize: 12.5,
                                   fontWeight: FontWeight.w700,
                                   color: cardColor,
                                   letterSpacing: 0.2,
@@ -191,7 +191,6 @@ class _TeacherDashboardState extends State<TeacherDashboard>
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
                               ),
-                              const SizedBox(height: 4),
                             ],
                           ),
                         ),
@@ -208,9 +207,23 @@ class _TeacherDashboardState extends State<TeacherDashboard>
   }
 
 
+  String _formatTeacherName(String? rawName) {
+    if (rawName == null || rawName.trim().isEmpty) return 'Teacher';
+    final trimmed = rawName.trim();
+    final upper = trimmed.toUpperCase();
+    if (upper.startsWith('MOULANA') ||
+        upper.startsWith('SHAIK') ||
+        upper.startsWith('USTAD') ||
+        upper.startsWith('HAFIZ') ||
+        upper.startsWith('K.')) {
+      return trimmed;
+    }
+    return 'Ustad $trimmed';
+  }
+
   @override
   Widget build(BuildContext context) {
-    final auth = Provider.of<AuthProvider>(context, listen: false);
+    final auth = context.watch<AuthProvider>();
     final loc = AppLocalizations.of(context);
     final now = DateTime.now();
     final greeting = now.hour < 12
@@ -222,13 +235,16 @@ class _TeacherDashboardState extends State<TeacherDashboard>
     return Scaffold(
       backgroundColor: const Color(0xFFF4F6F9),
       appBar: AppBar(
+        centerTitle: false,
+        titleSpacing: 0,
         title: Row(
           children: [
-            const MaktabLogo(size: 30, showGlow: true, animate: false),
-            const SizedBox(width: 10),
+            const MaktabLogo(size: 28, showGlow: true, animate: false),
+            const SizedBox(width: 8),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
                     loc?.translate('teacher_dashboard') ?? 'Teacher Portal',
@@ -240,10 +256,11 @@ class _TeacherDashboardState extends State<TeacherDashboard>
                     overflow: TextOverflow.ellipsis,
                     maxLines: 1,
                   ),
-                  const Text(
-                    'Educator Console',
-                    style: TextStyle(color: Colors.white54, fontSize: 10),
+                  Text(
+                    loc?.translate('teacher_portal') ?? 'Educator Console',
+                    style: const TextStyle(color: Colors.white54, fontSize: 10),
                     overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
                   ),
                 ],
               ),
@@ -264,45 +281,71 @@ class _TeacherDashboardState extends State<TeacherDashboard>
         foregroundColor: Colors.white,
         actions: [
           IconButton(
-            icon: const Icon(Icons.sync_rounded, size: 22),
-            tooltip: 'Sync Devices Now',
-            onPressed: () async {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Row(
-                    children: [
-                      SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)),
-                      SizedBox(width: 12),
-                      Text('Syncing data with cloud…'),
-                    ],
-                  ),
-                  duration: Duration(seconds: 2),
-                ),
-              );
-              final maktabId = await CloudSyncService.instance.getMaktabId();
-              await CloudSyncService.instance.pullAllDataForMaktab(maktabId);
-              if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Multi-device sync completed!'),
-                    backgroundColor: Color(0xFF004D40),
-                    duration: Duration(seconds: 2),
-                  ),
-                );
-                setState(() {});
-              }
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.search_rounded, size: 22),
+            icon: const Icon(Icons.search_rounded, size: 20),
+            tooltip: loc?.translate('search') ?? 'Search',
+            constraints: const BoxConstraints(minWidth: 34, minHeight: 34),
+            padding: EdgeInsets.zero,
             onPressed: () =>
                 showSearch(context: context, delegate: UniversalSearchDelegate()),
           ),
-          IconButton(
-            icon: const Icon(Icons.settings_outlined, size: 22),
-            onPressed: () => context.push('/teacher/settings'),
-          ),
           const LanguageToggle(),
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert_rounded, size: 20, color: Colors.white),
+            tooltip: 'Dashboard Tools',
+            onSelected: (value) async {
+              if (value == 'sync') {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Row(
+                      children: [
+                        SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)),
+                        SizedBox(width: 12),
+                        Text('Syncing data with cloud…'),
+                      ],
+                    ),
+                    duration: Duration(seconds: 2),
+                  ),
+                );
+                final maktabId = await CloudSyncService.instance.getMaktabId();
+                await CloudSyncService.instance.pullAllDataForMaktab(maktabId);
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Multi-device sync completed!'),
+                      backgroundColor: Color(0xFF004D40),
+                      duration: Duration(seconds: 2),
+                    ),
+                  );
+                  setState(() {});
+                }
+              } else if (value == 'settings') {
+                context.push('/teacher/settings');
+              }
+            },
+            itemBuilder: (context) => [
+              PopupMenuItem(
+                value: 'sync',
+                child: Row(
+                  children: [
+                    const Icon(Icons.sync_rounded, color: Color(0xFF004D40), size: 18),
+                    const SizedBox(width: 10),
+                    Text(loc?.translate('sync') ?? 'Sync Devices'),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: 'settings',
+                child: Row(
+                  children: [
+                    const Icon(Icons.settings_outlined, color: Color(0xFF004D40), size: 18),
+                    const SizedBox(width: 10),
+                    Text(loc?.translate('settings') ?? 'Settings'),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(width: 4),
         ],
       ),
 
@@ -361,7 +404,7 @@ class _TeacherDashboardState extends State<TeacherDashboard>
                       const SizedBox(width: 6),
                       Expanded(
                         child: Text(
-                          'Ustad ${auth.currentUser?.name ?? 'Teacher'}',
+                          _formatTeacherName(auth.currentUser?.name),
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 14,
@@ -576,13 +619,13 @@ class _TeacherDashboardState extends State<TeacherDashboard>
                               FadeTransition(
                                 opacity: _bodyFade,
                                 child: Text(
-                                  'Ustad ${auth.currentUser?.name ?? 'Teacher'}',
+                                  _formatTeacherName(auth.currentUser?.name),
                                   style: const TextStyle(
                                     color: Colors.white,
                                     fontSize: 15,
                                     fontWeight: FontWeight.bold,
                                   ),
-                                  maxLines: 1,
+                                  maxLines: 2,
                                   overflow: TextOverflow.ellipsis,
                                 ),
                               ),

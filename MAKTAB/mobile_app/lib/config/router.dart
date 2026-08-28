@@ -52,6 +52,7 @@ import 'package:maktab_app/screens/settings/backup_history_screen.dart';
 import 'package:maktab_app/screens/settings/export_config_screen.dart';
 import 'package:maktab_app/screens/fees/fee_management_screen.dart';
 import 'package:maktab_app/screens/fees/student_payment_history_screen.dart';
+import 'package:maktab_app/screens/admin/teacher_salary_management_screen.dart';
 import 'package:maktab_app/screens/tools/whatsapp_reminder_screen.dart';
 import 'package:maktab_app/screens/tools/calendar_sync_screen.dart';
 import 'package:maktab_app/screens/tools/contact_sync_screen.dart';
@@ -93,6 +94,27 @@ class AppRouter {
       final bool isRegisterRoute = currentRoute == '/register';
       final bool isLoginRoute = currentRoute == '/login';
 
+      if (isAuthenticated) {
+        final role = authProvider.currentUser?.role;
+        final bool isAdminOrManager = (role == 'admin' || role == 'manager' || role == 'operator');
+
+        if (isLoginRoute || isWelcomeRoute || isRegisterRoute) {
+          if (isAdminOrManager) {
+            return '/admin';
+          } else {
+            return '/teacher';
+          }
+        }
+
+        // Route access guards
+        if (isAdminOrManager && currentRoute.startsWith('/teacher')) {
+          return '/admin';
+        } else if (!isAdminOrManager && currentRoute.startsWith('/admin')) {
+          return '/teacher';
+        }
+        return null;
+      }
+
       if (!hasRegisteredAdmin) {
         if (!isWelcomeRoute && !isRegisterRoute && !isLoginRoute) {
           return '/welcome';
@@ -108,16 +130,6 @@ class AppRouter {
           return '/login';
         }
         return null;
-      }
-
-      if (isAuthenticated && (isLoginRoute || isWelcomeRoute || isRegisterRoute)) {
-        if (authProvider.currentUser?.role == 'admin') {
-          return '/admin';
-        } else {
-          // Allow login_screen to handle FaceVerification for teachers manually
-          if (isLoginRoute) return null;
-          return '/teacher';
-        }
       }
 
       return null;
@@ -280,6 +292,10 @@ class AppRouter {
                 builder: (context, state) => const StudentPaymentHistoryScreen(),
               ),
             ],
+          ),
+          GoRoute(
+            path: 'teacher-salary',
+            pageBuilder: (context, state) => build3DPageTransition(child: const TeacherSalaryManagementScreen(), state: state),
           ),
           GoRoute(
             path: 'tools',
@@ -473,6 +489,13 @@ class AppRouter {
                   final batchId = int.tryParse(state.uri.queryParameters['batchId'] ?? '') ?? 0;
                   final date = state.uri.queryParameters['date'] ?? '';
                   return AttendanceEntryScreen(batchId: batchId, date: date);
+                },
+              ),
+              GoRoute(
+                path: 'attendance-calendar',
+                builder: (context, state) {
+                  final batchId = int.tryParse(state.uri.queryParameters['batchId'] ?? '') ?? 0;
+                  return BatchAttendanceCalendarScreen(batchId: batchId);
                 },
               ),
             ],

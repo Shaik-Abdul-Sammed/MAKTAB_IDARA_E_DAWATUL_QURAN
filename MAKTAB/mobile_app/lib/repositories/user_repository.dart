@@ -1,36 +1,13 @@
 import 'package:maktab_app/models/user.dart';
 import 'package:maktab_app/services/database_helper.dart';
+import 'package:maktab_app/services/database_seeder.dart';
 import 'package:maktab_app/services/cloud_sync_service.dart';
-import 'package:crypto/crypto.dart';
-import 'dart:convert';
 
 class UserRepository {
   final DatabaseHelper _dbHelper = DatabaseHelper.instance;
 
-  String _hashPin(String pin) {
-    var bytes = utf8.encode(pin);
-    var digest = sha256.convert(bytes);
-    return digest.toString();
-  }
-
   Future<void> initializeDefaultAdmin() async {
-    final db = await _dbHelper.database;
-    final List<Map<String, dynamic>> maps = await db.query(
-      'users',
-      where: 'role = ?',
-      whereArgs: ['admin'],
-    );
-
-    if (maps.isEmpty) {
-      // Create a default admin with PIN '1234'
-      User defaultAdmin = User(
-        name: 'Super Admin',
-        pinHash: _hashPin('1234'), 
-        role: 'admin',
-        createdAt: DateTime.now().toIso8601String(),
-      );
-      await db.insert('users', defaultAdmin.toMap());
-    }
+    await DatabaseSeeder.seedDefaultData();
   }
 
   Future<User?> authenticateUser(String pinHash) async {
@@ -143,8 +120,8 @@ class UserRepository {
     final db = await _dbHelper.database;
     final List<Map<String, dynamic>> maps = await db.query(
       'users',
-      where: 'role = ? AND mobile IS NOT NULL',
-      whereArgs: ['admin'],
+      where: 'role = ? AND mobile IS NOT NULL AND mobile != ? AND name != ?',
+      whereArgs: ['admin', '9030983012', 'Super Admin'],
     );
     return maps.isNotEmpty;
   }

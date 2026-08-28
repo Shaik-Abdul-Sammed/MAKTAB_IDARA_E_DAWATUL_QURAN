@@ -45,13 +45,28 @@ class Attendance {
   }
 
   factory Attendance.fromMap(Map<String, dynamic> map) {
+    int? rawId;
+    if (map['id'] != null) {
+      rawId = int.tryParse(map['id'].toString());
+    }
+    int sId = 0;
+    final rawStudentId = map['student_id'] ?? map['studentId'];
+    if (rawStudentId != null) {
+      sId = int.tryParse(rawStudentId.toString()) ?? 0;
+    }
+
+    String rawDate = (map['date'] ?? DateTime.now().toIso8601String()).toString().trim();
+    if (rawDate.length >= 10) {
+      rawDate = rawDate.substring(0, 10);
+    }
+
     return Attendance(
-      id: map['id'],
-      studentId: map['student_id'],
-      date: map['date'],
-      status: map['status'],
-      remarks: map['remarks'],
-      time: map['time'],
+      id: rawId,
+      studentId: sId,
+      date: rawDate,
+      status: (map['status'] ?? 'Present').toString(),
+      remarks: map['remarks']?.toString(),
+      time: map['time']?.toString(),
     );
   }
 }

@@ -101,24 +101,39 @@ class Student {
   }
 
   factory Student.fromMap(Map<String, dynamic> map) {
+    int? rawId;
+    if (map['id'] != null) {
+      rawId = int.tryParse(map['id'].toString());
+    }
+    int? bId;
+    final rawBatchId = map['batch_id'] ?? map['batchId'] ?? map['batch_ID'] ?? map['batch'];
+    if (rawBatchId != null) {
+      if (rawBatchId is Map) {
+        bId = int.tryParse((rawBatchId['id'] ?? rawBatchId['batch_id'] ?? rawBatchId['batchId'] ?? '').toString());
+      } else {
+        bId = int.tryParse(rawBatchId.toString());
+      }
+    }
+    bId ??= 1;
+
     return Student(
-      id: map['id'],
-      admissionNumber: map['admission_number'] ?? '',
-      name: map['name'] ?? '',
-      arabicName: map['arabic_name'],
+      id: rawId,
+      admissionNumber: (map['admission_number'] ?? map['admissionNumber'] ?? '').toString(),
+      name: (map['name'] ?? '').toString(),
+      arabicName: map['arabic_name'] ?? map['arabicName'],
       dob: map['dob'],
       gender: map['gender'],
-      fatherName: map['father_name'],
+      fatherName: map['father_name'] ?? map['fatherName'],
       phone: map['phone'],
-      guardianName: map['guardian_name'],
-      guardianPhone: map['guardian_phone'],
-      photoPath: map['photo_path'],
-      batchId: map['batch_id'],
-      createdAt: map['created_at'] ?? '',
-      feesAmount: map['fees_amount'],
-      teacherNotes: map['teacher_notes'],
-      isDeleted: (map['is_deleted'] ?? 0) == 1,
-      deletedAt: map['deleted_at'],
+      guardianName: map['guardian_name'] ?? map['guardianName'],
+      guardianPhone: map['guardian_phone'] ?? map['guardianPhone'],
+      photoPath: map['photo_path'] ?? map['photoPath'],
+      batchId: bId,
+      createdAt: (map['created_at'] ?? map['createdAt'] ?? DateTime.now().toIso8601String()).toString(),
+      feesAmount: map['fees_amount'] != null ? int.tryParse(map['fees_amount'].toString()) : null,
+      teacherNotes: map['teacher_notes'] ?? map['teacherNotes'],
+      isDeleted: (map['is_deleted'] ?? map['isDeleted'] ?? 0) == 1 || map['is_deleted'] == true || map['isDeleted'] == true,
+      deletedAt: map['deleted_at'] ?? map['deletedAt'],
     );
   }
 }

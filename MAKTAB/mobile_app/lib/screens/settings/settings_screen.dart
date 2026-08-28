@@ -63,42 +63,47 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : ListView(
-              padding: const EdgeInsets.all(16),
-              children: [
-                _buildSectionHeader('Tools & Integrations'),
-                ListTile(
-                  leading: const Icon(Icons.account_balance_wallet_rounded, color: Color(0xFF004D40)),
-                  title: const Text('Fee Management & UPI'),
-                  subtitle: const Text('Track pending fees and collect via UPI'),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () => context.push('/admin/fees'),
-                ),
-                const Divider(height: 1),
-                ListTile(
-                  leading: const Icon(Icons.chat_rounded, color: Colors.green),
-                  title: const Text('WhatsApp Broadcasts'),
-                  subtitle: const Text('Send template messages to parents'),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () => context.push('/admin/tools/whatsapp'),
-                ),
-                const Divider(height: 1),
-                ListTile(
-                  leading: const Icon(Icons.calendar_month_rounded, color: Color(0xFF004D40)),
-                  title: const Text('Calendar Sync'),
-                  subtitle: const Text('Add exam and fee due dates to device calendar'),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () => context.push('/admin/tools/calendar'),
-                ),
-                const Divider(height: 1),
-                ListTile(
-                  leading: const Icon(Icons.contacts_rounded, color: Color(0xFF004D40)),
-                  title: const Text('Contact Directory & Sync'),
-                  subtitle: const Text('Export student and guardian contacts'),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () => context.push('/admin/tools/contacts'),
-                ),
-                const SizedBox(height: 20),
+          : Consumer<AuthProvider>(
+              builder: (context, auth, _) {
+                final isAdmin = auth.currentUser?.role == 'admin' || auth.currentUser?.role == 'manager';
+                return ListView(
+                  padding: const EdgeInsets.all(16),
+                  children: [
+                    if (isAdmin) ...[
+                      _buildSectionHeader('Tools & Integrations'),
+                      ListTile(
+                        leading: const Icon(Icons.account_balance_wallet_rounded, color: Color(0xFF004D40)),
+                        title: const Text('Fee Management & UPI'),
+                        subtitle: const Text('Track pending fees and collect via UPI'),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () => context.push('/admin/fees'),
+                      ),
+                      const Divider(height: 1),
+                      ListTile(
+                        leading: const Icon(Icons.chat_rounded, color: Colors.green),
+                        title: const Text('WhatsApp Broadcasts'),
+                        subtitle: const Text('Send template messages to parents'),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () => context.push('/admin/tools/whatsapp'),
+                      ),
+                      const Divider(height: 1),
+                      ListTile(
+                        leading: const Icon(Icons.calendar_month_rounded, color: Color(0xFF004D40)),
+                        title: const Text('Calendar Sync'),
+                        subtitle: const Text('Add exam and fee due dates to device calendar'),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () => context.push('/admin/tools/calendar'),
+                      ),
+                      const Divider(height: 1),
+                      ListTile(
+                        leading: const Icon(Icons.contacts_rounded, color: Color(0xFF004D40)),
+                        title: const Text('Contact Directory & Sync'),
+                        subtitle: const Text('Export student and guardian contacts'),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () => context.push('/admin/tools/contacts'),
+                      ),
+                      const SizedBox(height: 20),
+                    ],
 
                 _buildSectionHeader('Server & Network Sync'),
                 FutureBuilder<String>(
@@ -163,7 +168,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   },
                 ),
               ],
-            ),
+            );
+          },
+        ),
     );
   }
 

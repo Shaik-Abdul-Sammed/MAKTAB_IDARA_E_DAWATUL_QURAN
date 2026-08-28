@@ -1,17 +1,34 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:intl/intl.dart';
 import '../models/student.dart';
 import '../models/attendance.dart';
 import '../repositories/attendance_repository.dart';
 import '../repositories/student_repository.dart';
+import '../services/cloud_sync_service.dart';
 
 enum AttendanceStatus { initial, loading, success, error }
 
 class AttendanceProvider extends ChangeNotifier {
   final AttendanceRepository _attendanceRepo;
   final StudentRepository _studentRepo;
+  StreamSubscription<String>? _syncSub;
 
-  AttendanceProvider(this._attendanceRepo, this._studentRepo);
+  AttendanceProvider(this._attendanceRepo, this._studentRepo) {
+    _syncSub = CloudSyncService.instance.onDataSynced.listen((col) {
+      if (col == 'students' || col == 'batches' || col == 'attendance') {
+        if (_selectedBatchId != null) {
+          loadBatchAttendance(_selectedBatchId!);
+        }
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _syncSub?.cancel();
+    super.dispose();
+  }
 
   AttendanceStatus _status = AttendanceStatus.initial;
   AttendanceStatus get status => _status;
@@ -165,7 +182,9 @@ class AttendanceProvider extends ChangeNotifier {
   }
 
   Future<void> saveAttendance() async {
-    if (_students.isEmpty) return;
+    if (_students.isEmpty) {
+      throw StateError('Cannot save attendance: No students found in this batch.');
+    }
     _isSaving = true;
     notifyListeners();
     try {

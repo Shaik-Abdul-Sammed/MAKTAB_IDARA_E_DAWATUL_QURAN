@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:maktab_app/utils/whatsapp_utility.dart';
 import 'package:provider/provider.dart';
 import '../../providers/teacher_form_provider.dart';
+import '../../providers/auth_provider.dart';
 import '../../repositories/teacher_repository.dart';
 import '../../widgets/molecules/custom_app_bar.dart';
 import 'package:flutter_contacts/flutter_contacts.dart' as flutter_contacts;
@@ -23,6 +24,8 @@ class _TeacherAddScreenState extends State<TeacherAddScreen> {
   late final TextEditingController _mobileCtrl;
   late final TextEditingController _pinCtrl;
   late final TextEditingController _confirmPinCtrl;
+  late final TextEditingController _salaryCtrl;
+  late final TextEditingController _upiCtrl;
   bool _pinObscured = true;
   bool _confirmPinObscured = true;
 
@@ -34,6 +37,8 @@ class _TeacherAddScreenState extends State<TeacherAddScreen> {
     _mobileCtrl = TextEditingController();
     _pinCtrl = TextEditingController();
     _confirmPinCtrl = TextEditingController();
+    _salaryCtrl = TextEditingController();
+    _upiCtrl = TextEditingController();
   }
 
   @override
@@ -42,6 +47,8 @@ class _TeacherAddScreenState extends State<TeacherAddScreen> {
     _mobileCtrl.dispose();
     _pinCtrl.dispose();
     _confirmPinCtrl.dispose();
+    _salaryCtrl.dispose();
+    _upiCtrl.dispose();
     _provider.dispose();
     super.dispose();
   }
@@ -93,13 +100,31 @@ class _TeacherAddScreenState extends State<TeacherAddScreen> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
-    await _provider.addTeacher(
-      name: _nameCtrl.text,
-      mobile: _mobileCtrl.text,
-      pin: _pinCtrl.text,
+    final nameText = _nameCtrl.text.trim();
+    final mobileText = _mobileCtrl.text.trim();
+    final pinText = _pinCtrl.text.trim();
+    final salaryVal = int.tryParse(_salaryCtrl.text.trim()) ?? 0;
+    final upiVal = _upiCtrl.text.trim();
+
+    final newTeacherId = await _provider.addTeacher(
+      name: nameText,
+      mobile: mobileText,
+      pin: pinText,
+      monthlySalary: salaryVal,
+      upiId: upiVal.isNotEmpty ? upiVal : null,
     );
+
     if (!mounted) return;
-    if (_provider.status == TeacherFormStatus.success) {
+    if (_provider.status == TeacherFormStatus.success && newTeacherId != null) {
+      // Provision Teacher Auth Account via Secondary FirebaseApp
+      await context.read<AuthProvider>().provisionTeacherAuthAccount(
+        teacherId: newTeacherId,
+        name: nameText,
+        rawPin: pinText,
+        mobile: mobileText,
+      );
+
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Teacher added successfully!'),
@@ -107,7 +132,7 @@ class _TeacherAddScreenState extends State<TeacherAddScreen> {
         ),
       );
       
-      if (mounted && _mobileCtrl.text.trim().isNotEmpty) {
+      if (mounted && mobileText.isNotEmpty) {
         await showDialog(
           context: context,
           builder: (ctx) => AlertDialog(
@@ -116,9 +141,11 @@ class _TeacherAddScreenState extends State<TeacherAddScreen> {
             actions: [
               TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('No')),
               ElevatedButton(
-                onPressed: () {
+                onPressed: () async {
                   Navigator.pop(ctx);
-                  WhatsAppUtility.sendTeacherCredentials(context, _mobileCtrl.text.trim(), _nameCtrl.text.trim(), _pinCtrl.text);
+                  if (mounted) {
+                    await WhatsAppUtility.sendTeacherCredentials(context, mobileText, nameText, pinText);
+                  }
                 },
                 child: const Text('Yes, Send'),
               ),
@@ -126,7 +153,13 @@ class _TeacherAddScreenState extends State<TeacherAddScreen> {
           ),
         );
       }
-      if (mounted) context.pop(true);
+      if (mounted) {
+        if (context.canPop()) {
+          context.pop(true);
+        } else {
+          context.go('/admin/teachers');
+        }
+      }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -217,6 +250,24 @@ class _TeacherAddScreenState extends State<TeacherAddScreen> {
                       if (v != _pinCtrl.text) return 'PINs do not match.';
                       return null;
                     },
+                  ),
+                  const SizedBox(height: 24),
+                  const _SectionHeader(icon: Icons.payments_outlined, title: 'Salary & Payment Details'),
+                  const SizedBox(height: 12),
+                  _buildField(
+                    controller: _salaryCtrl,
+                    label: 'Monthly Salary (₹)',
+                    hint: 'e.g. 15000',
+                    icon: Icons.currency_rupee_rounded,
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  ),
+                  const SizedBox(height: 16),
+                  _buildField(
+                    controller: _upiCtrl,
+                    label: 'UPI ID (Optional)',
+                    hint: 'e.g. teacher@upi',
+                    icon: Icons.account_balance_wallet_outlined,
                   ),
                   const SizedBox(height: 36),
                   Consumer<TeacherFormProvider>(

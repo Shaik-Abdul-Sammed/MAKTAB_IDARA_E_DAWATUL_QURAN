@@ -501,8 +501,12 @@ class _StudentTile extends StatelessWidget {
         title: Row(
           children: [
             Expanded(
-              child: Text(student.name,
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF1A1A1A))),
+              child: Text(
+                student.name,
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF1A1A1A)),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
             Icon(genderIcon, size: 16, color: genderColor),
           ],
@@ -511,8 +515,12 @@ class _StudentTile extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 2),
-            Text('ADM: ${student.admissionNumber} ${student.fatherName != null ? '· S/O ${student.fatherName}' : ''}',
-                style: const TextStyle(fontSize: 12, color: Colors.black54)),
+            Text(
+              'ADM: ${student.admissionNumber} ${student.fatherName != null ? '· S/O ${student.fatherName}' : ''}',
+              style: const TextStyle(fontSize: 12, color: Colors.black54),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
           ],
         ),
         trailing: const Icon(Icons.chevron_right, color: Colors.black26),

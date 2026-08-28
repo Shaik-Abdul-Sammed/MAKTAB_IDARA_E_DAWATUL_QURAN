@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:maktab_app/models/attendance.dart';
 import 'package:maktab_app/services/database_helper.dart';
 import 'package:maktab_app/services/cloud_sync_service.dart';
@@ -10,17 +11,27 @@ class AttendanceRepository {
     final id = await db.insert('attendance', attendance.toMap());
     final createdAtt = attendance.copyWith(id: id);
     await CloudSyncService.instance.pushAttendance(createdAtt);
+    CloudSyncService.instance.notifyDataChanged('attendance');
     return id;
   }
 
   Future<void> insertAttendances(List<Attendance> attendances) async {
     final db = await _dbHelper.database;
+    final List<Attendance> createdList = [];
     await db.transaction((txn) async {
       for (var att in attendances) {
-        await txn.insert('attendance', att.toMap());
-        await CloudSyncService.instance.pushAttendance(att);
+        final insertedId = await txn.insert('attendance', att.toMap());
+        createdList.add(att.copyWith(id: insertedId));
       }
     });
+    for (var created in createdList) {
+      try {
+        await CloudSyncService.instance.pushAttendance(created);
+      } catch (e) {
+        debugPrint('CloudSync push error for attendance ${created.id}: $e');
+      }
+    }
+    CloudSyncService.instance.notifyDataChanged('attendance');
   }
 
   Future<void> updateAttendances(List<Attendance> attendances) async {
@@ -33,9 +44,16 @@ class AttendanceRepository {
           where: 'id = ?',
           whereArgs: [att.id],
         );
-        await CloudSyncService.instance.pushAttendance(att);
       }
     });
+    for (var att in attendances) {
+      try {
+        await CloudSyncService.instance.pushAttendance(att);
+      } catch (e) {
+        debugPrint('CloudSync push error for attendance ${att.id}: $e');
+      }
+    }
+    CloudSyncService.instance.notifyDataChanged('attendance');
   }
 
     Future<List<Attendance>> getAttendanceForBatch(int batchId) async {
@@ -73,7 +91,7 @@ class AttendanceRepository {
     final List<Map<String, dynamic>> maps = await db.rawQuery('''
       SELECT a.* FROM attendance a
       INNER JOIN students s ON a.student_id = s.id
-      WHERE a.date = ? AND s.batch_id = ?
+      WHERE substr(a.date, 1, 10) = substr(?, 1, 10) AND s.batch_id = ?
     ''', [date, batchId]);
     
     return List.generate(maps.length, (i) => Attendance.fromMap(maps[i]));
@@ -111,18 +129,19 @@ class AttendanceRepository {
     final rows = await db.rawQuery('''
       SELECT
         COUNT(DISTINCT s.id) as total,
-        SUM(CASE WHEN a.status = 'Present' THEN 1 ELSE 0 END) as present,
-        SUM(CASE WHEN a.status != 'Present' THEN 1 ELSE 0 END) as absent
+        COUNT(DISTINCT CASE WHEN a.status = 'Present' THEN s.id END) as present,
+        COUNT(DISTINCT CASE WHEN a.status IS NOT NULL AND a.status != 'Present' THEN s.id END) as absent,
+        COUNT(DISTINCT CASE WHEN a.status IS NOT NULL THEN s.id END) as marked
       FROM students s
-      LEFT JOIN attendance a ON a.student_id = s.id AND a.date = ?
-      WHERE s.batch_id = ?
+      LEFT JOIN attendance a ON a.student_id = s.id AND substr(a.date, 1, 10) = substr(?, 1, 10)
+      WHERE s.batch_id = ? AND (s.is_deleted IS NULL OR s.is_deleted = 0)
     ''', [date, batchId]);
     if (rows.isEmpty) return {'total': 0, 'present': 0, 'absent': 0, 'marked': 0};
     final row = rows.first;
     final total = (row['total'] as int?) ?? 0;
     final present = (row['present'] as int?) ?? 0;
     final absent = (row['absent'] as int?) ?? 0;
-    final marked = present + absent;
+    final marked = (row['marked'] as int?) ?? (present + absent);
     return {'total': total, 'present': present, 'absent': absent, 'marked': marked};
   }
 }

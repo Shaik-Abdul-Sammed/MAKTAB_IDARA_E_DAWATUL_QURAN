@@ -14,6 +14,7 @@ import '../../repositories/attendance_repository.dart';
 import '../../repositories/batch_repository.dart';
 import '../../repositories/student_repository.dart';
 import '../../repositories/user_repository.dart';
+import '../../services/cloud_sync_service.dart';
 import '../../utils/attendance_report_generator.dart';
 import '../../utils/whatsapp_utility.dart';
 import '../../widgets/molecules/custom_app_bar.dart';
@@ -107,6 +108,7 @@ class _AttendanceEntryScreenState extends State<AttendanceEntryScreen>
   Future<void> _save() async {
     try {
       await _provider.saveAttendance();
+      CloudSyncService.instance.notifyDataChanged('attendance');
       // Clear draft
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove('draft_attendance_${widget.batchId}_${widget.date}');
@@ -187,7 +189,7 @@ class _AttendanceEntryScreenState extends State<AttendanceEntryScreen>
                   ),
                   IconButton(
                     icon: const Icon(Icons.close, color: Colors.white),
-                    onPressed: () { Navigator.pop(ctx); context.pop(); },
+                    onPressed: () { Navigator.pop(ctx); },
                   ),
                 ]),
               ),
@@ -250,8 +252,11 @@ class _AttendanceEntryScreenState extends State<AttendanceEntryScreen>
                   ),
                   onPressed: () {
                     Navigator.pop(ctx);
-                    context.pop();
-                    context.push('/admin/batches/${widget.batchId}/attendance-calendar');
+                    final isTeacherRoute = GoRouterState.of(context).uri.toString().startsWith('/teacher');
+                    final target = isTeacherRoute
+                        ? '/teacher/attendance/attendance-calendar?batchId=${widget.batchId}'
+                        : '/admin/batches/${widget.batchId}/attendance-calendar';
+                    context.push(target);
                   },
                 ),
               ),
@@ -264,11 +269,30 @@ class _AttendanceEntryScreenState extends State<AttendanceEntryScreen>
 
   // ── #14: Bulk notify absent parents
   Future<void> _bulkNotifyAbsent(BuildContext ctx, List<Student> students) async {
+    final lang = await WhatsAppUtility.promptLanguageSelection(ctx);
+    if (lang == null || !ctx.mounted) return;
+
     for (final s in students) {
       final phone = s.phone ?? s.guardianPhone ?? '';
       if (phone.isNotEmpty && ctx.mounted) {
-        await WhatsAppUtility.sendAttendanceAlert(ctx, phone, s.name, date: widget.date);
-        await Future.delayed(const Duration(seconds: 2));
+        final dateStr = widget.date;
+        String msg = '';
+        switch (lang) {
+          case Language.english:
+            msg = "Assalamu Alaikum,\nDear Parent,\nYour child *${s.name}* was marked *Absent/Late* from Maktab on *$dateStr*.\nPlease ensure regular attendance for better progress.";
+            break;
+          case Language.urdu:
+            msg = "السلام علیکم،\nمحترم والدین،\nآپ کا بچہ *${s.name}* آج *$dateStr* کو مکتب سے *غیر حاضر/تاخیر* ہے۔\nبہتر ترقی کے لیے باقاعدہ حاضری یقینی بنائیں۔";
+            break;
+          case Language.hindi:
+            msg = "अस्सलामु अलैकुम,\nप्रिय माता-पिता,\nआपका बच्चा *${s.name}* आज *$dateStr* को मकतब से *अनुपस्थित/विलंब* रहा।\nबेहतर प्रगति के लिए नियमित उपस्थिति सुनिश्चित करें।";
+            break;
+          case Language.telugu:
+            msg = "అస్సలాము అలైకుమ్,\nప్రియమైన తల్లిదండ్రులారా,\nమీ బిడ్డ *${s.name}* తేది *$dateStr* న మక్తబ్ నుండి *హాజరు కాలేదు (గైర్హాజరు/ఆలస్యం)*.\nమెరుగైన పురోగతి కోసం క్రమం తప్పకుండా హాజరయ్యేలా చూడండి.";
+            break;
+        }
+        await WhatsAppUtility.launchWhatsApp(phone, '$msg\n\nFrom: MAKTAB IDARA E DAWATUL QURAN', context: ctx);
+        await Future.delayed(const Duration(milliseconds: 500));
       }
     }
   }

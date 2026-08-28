@@ -24,11 +24,13 @@ class TeacherFormProvider extends ChangeNotifier {
     return sha256.convert(bytes).toString();
   }
 
-  Future<void> addTeacher({
+  Future<int?> addTeacher({
     required String name,
     required String mobile,
     required String pin,
     String? photoPath,
+    int? monthlySalary,
+    String? upiId,
   }) async {
     _status = TeacherFormStatus.loading;
     _errorMessage = '';
@@ -42,14 +44,19 @@ class TeacherFormProvider extends ChangeNotifier {
         mobile: mobile.trim(),
         isActive: true,
         photoPath: photoPath,
+        monthlySalary: monthlySalary ?? 0,
+        upiId: upiId?.trim(),
       );
-      await _repo.insertUser(dto);
+      final id = await _repo.insertUser(dto);
       _status = TeacherFormStatus.success;
+      notifyListeners();
+      return id;
     } catch (e) {
       _status = TeacherFormStatus.error;
       _errorMessage = 'Failed to save teacher. Please try again.';
+      notifyListeners();
+      return null;
     }
-    notifyListeners();
   }
 
   Future<void> updateTeacher({
@@ -58,6 +65,8 @@ class TeacherFormProvider extends ChangeNotifier {
     required String mobile,
     String? newPin,
     String? photoPath,
+    int? monthlySalary,
+    String? upiId,
   }) async {
     _status = TeacherFormStatus.loading;
     _errorMessage = '';
@@ -74,6 +83,8 @@ class TeacherFormProvider extends ChangeNotifier {
         mobile: mobile.trim(),
         isActive: existing.isActive,
         photoPath: photoPath ?? existing.photoPath,
+        monthlySalary: monthlySalary ?? existing.monthlySalary,
+        upiId: upiId ?? existing.upiId,
       );
       await _repo.updateUser(updated);
       _status = TeacherFormStatus.success;

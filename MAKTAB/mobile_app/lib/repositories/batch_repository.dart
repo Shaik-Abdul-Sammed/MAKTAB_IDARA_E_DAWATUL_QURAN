@@ -13,6 +13,7 @@ class BatchRepository {
     final id = await db.insert('batches', batch.toMap());
     final createdBatch = batch.copyWith(id: id);
     await CloudSyncService.instance.pushBatch(createdBatch);
+    CloudSyncService.instance.notifyDataChanged('batches');
     return id;
   }
 
@@ -20,10 +21,6 @@ class BatchRepository {
 
   Future<List<Batch>> getAllBatches() async {
     final db = await _dbHelper.database;
-    // Trigger background pull for latest updates
-    final maktabId = await CloudSyncService.instance.getMaktabId();
-    CloudSyncService.instance.pullAllDataForMaktab(maktabId).catchError((_) => false);
-
     final List<Map<String, dynamic>> maps = await db.query('batches');
     return List.generate(maps.length, (i) => Batch.fromMap(maps[i]));
   }
@@ -43,10 +40,6 @@ class BatchRepository {
   /// Used by the teacher-side screens to scope data.
   Future<List<Batch>> fetchTeacherBatches(int teacherId) async {
     final db = await _dbHelper.database;
-    // Trigger pull so teacher device gets assigned batches
-    final maktabId = await CloudSyncService.instance.getMaktabId();
-    await CloudSyncService.instance.pullAllDataForMaktab(maktabId);
-
     final List<Map<String, dynamic>> maps = await db.query(
       'batches',
       where: 'teacher_id = ?',
@@ -86,6 +79,7 @@ class BatchRepository {
     if (batch != null) {
       await CloudSyncService.instance.pushBatch(batch);
     }
+    CloudSyncService.instance.notifyDataChanged('batches');
   }
 
   /// Removes any teacher assignment from a batch (sets teacher_id to NULL).
@@ -101,6 +95,7 @@ class BatchRepository {
     if (batch != null) {
       await CloudSyncService.instance.pushBatch(batch);
     }
+    CloudSyncService.instance.notifyDataChanged('batches');
   }
 
   // ── Update / Delete ──────────────────────────────────────────────────────────
@@ -114,6 +109,7 @@ class BatchRepository {
       whereArgs: [batch.id],
     );
     await CloudSyncService.instance.pushBatch(batch);
+    CloudSyncService.instance.notifyDataChanged('batches');
     return res;
   }
 
@@ -125,6 +121,7 @@ class BatchRepository {
       whereArgs: [id],
     );
     await CloudSyncService.instance.deleteBatchCloud(id);
+    CloudSyncService.instance.notifyDataChanged('batches');
     return res;
   }
 }

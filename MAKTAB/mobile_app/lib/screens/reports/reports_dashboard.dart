@@ -95,7 +95,14 @@ class _ReportsDashboardState extends State<ReportsDashboard> {
           children: [
             const Icon(Icons.auto_awesome, color: Colors.purple),
             const SizedBox(width: 10),
-            Text('AI Summary - ${student.name}', style: const TextStyle(fontSize: 16)),
+            Expanded(
+              child: Text(
+                'AI Summary - ${student.name}',
+                style: const TextStyle(fontSize: 16),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
           ],
         ),
         content: Text(summary, style: const TextStyle(height: 1.5)),

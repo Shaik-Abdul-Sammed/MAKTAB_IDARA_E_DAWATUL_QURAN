@@ -11,6 +11,7 @@ import 'package:maktab_app/models/attendance.dart';
 import 'package:maktab_app/models/teacher_attendance.dart';
 import 'package:maktab_app/models/quran_progress.dart';
 import 'package:maktab_app/models/fee_payment.dart';
+import 'package:maktab_app/models/salary_payment.dart';
 import 'package:sqflite_sqlcipher/sqflite.dart' show ConflictAlgorithm;
 import 'package:maktab_app/services/database_helper.dart';
 
@@ -21,15 +22,30 @@ class CloudSyncService {
   static final CloudSyncService instance = CloudSyncService._init();
   CloudSyncService._init();
 
+  static const String _rtdbUrl = 'https://maktab-management-99001-default-rtdb.asia-southeast1.firebasedatabase.app';
+
   FirebaseDatabase? get _db {
     try {
-      return FirebaseDatabase.instance;
+      if (Firebase.apps.isEmpty) return null;
+      return FirebaseDatabase.instanceFor(
+        app: Firebase.app(),
+        databaseURL: _rtdbUrl,
+      );
     } catch (_) {
       return null;
     }
   }
 
   final List<StreamSubscription<DatabaseEvent>> _childSubscriptions = [];
+  final StreamController<String> _syncController = StreamController<String>.broadcast();
+
+  Stream<String> get onDataSynced => _syncController.stream;
+
+  void notifyDataChanged(String collection) {
+    if (!_syncController.isClosed) {
+      _syncController.add(collection);
+    }
+  }
 
   Future<String> getMaktabId() async {
     try {
@@ -41,7 +57,10 @@ class CloudSyncService {
             final user = fb_auth.FirebaseAuth.instance.currentUser;
             final db = _db;
             if (user != null && db != null) {
-              final snapshot = await db.ref('users/${user.uid}/maktabId').get();
+              final snapshot = await db.ref('users/${user.uid}/maktabId').get().timeout(
+                const Duration(seconds: 3),
+                onTimeout: () => throw TimeoutException('maktabId query timed out'),
+              );
               if (snapshot.exists && snapshot.value != null) {
                 maktabId = snapshot.value.toString();
                 await prefs.setString('maktab_id', maktabId);
@@ -81,6 +100,7 @@ class CloudSyncService {
       'teacher_attendance',
       'quran_progress',
       'fee_payments',
+      'salary_payments',
     ];
 
     for (var col in collections) {
@@ -99,6 +119,11 @@ class CloudSyncService {
         _childSubscriptions.add(sub);
       } catch (_) {}
     }
+    // Trigger background sync for any unpushed offline SQLite records
+    syncAll().catchError((e) {
+      debugPrint('Background syncAll error on startRealtimeSync: $e');
+      return false;
+    });
   }
 
   void stopRealtimeSync() {
@@ -116,9 +141,12 @@ class CloudSyncService {
         for (var entry in colData.entries) {
           try {
             final item = Map<String, dynamic>.from(entry.value as Map);
+            item['id'] ??= int.tryParse(entry.key.toString());
             final b = Batch.fromMap(item);
             await db.insert('batches', b.toMap(), conflictAlgorithm: ConflictAlgorithm.replace);
-          } catch (_) {}
+          } catch (e) {
+            debugPrint('Error merging batch ${entry.key} to SQLite: $e');
+          }
         }
         break;
 
@@ -126,9 +154,25 @@ class CloudSyncService {
         for (var entry in colData.entries) {
           try {
             final item = Map<String, dynamic>.from(entry.value as Map);
+            item['id'] ??= int.tryParse(entry.key.toString());
             final s = Student.fromMap(item);
             await db.insert('students', s.toMap(), conflictAlgorithm: ConflictAlgorithm.replace);
-          } catch (_) {}
+          } catch (e) {
+            debugPrint('Error merging student ${entry.key} to SQLite: $e');
+          }
+        }
+        break;
+
+      case 'teachers':
+        for (var entry in colData.entries) {
+          try {
+            final item = Map<String, dynamic>.from(entry.value as Map);
+            item['id'] ??= int.tryParse(entry.key.toString());
+            final u = User.fromMap(item);
+            await db.insert('users', u.toMap(), conflictAlgorithm: ConflictAlgorithm.replace);
+          } catch (e) {
+            debugPrint('Error merging teacher ${entry.key} to SQLite: $e');
+          }
         }
         break;
 
@@ -136,9 +180,12 @@ class CloudSyncService {
         for (var entry in colData.entries) {
           try {
             final item = Map<String, dynamic>.from(entry.value as Map);
+            item['id'] ??= int.tryParse(entry.key.toString());
             final a = Attendance.fromMap(item);
             await db.insert('attendance', a.toMap(), conflictAlgorithm: ConflictAlgorithm.replace);
-          } catch (_) {}
+          } catch (e) {
+            debugPrint('Error merging attendance ${entry.key} to SQLite: $e');
+          }
         }
         break;
 
@@ -146,9 +193,12 @@ class CloudSyncService {
         for (var entry in colData.entries) {
           try {
             final item = Map<String, dynamic>.from(entry.value as Map);
+            item['id'] ??= int.tryParse(entry.key.toString());
             final ta = TeacherAttendance.fromMap(item);
             await db.insert('teacher_attendance', ta.toMap(), conflictAlgorithm: ConflictAlgorithm.replace);
-          } catch (_) {}
+          } catch (e) {
+            debugPrint('Error merging teacher_attendance ${entry.key} to SQLite: $e');
+          }
         }
         break;
 
@@ -156,9 +206,12 @@ class CloudSyncService {
         for (var entry in colData.entries) {
           try {
             final item = Map<String, dynamic>.from(entry.value as Map);
+            item['id'] ??= int.tryParse(entry.key.toString());
             final qp = QuranProgress.fromMap(item);
             await db.insert('quran_progress', qp.toMap(), conflictAlgorithm: ConflictAlgorithm.replace);
-          } catch (_) {}
+          } catch (e) {
+            debugPrint('Error merging quran_progress ${entry.key} to SQLite: $e');
+          }
         }
         break;
 
@@ -166,12 +219,29 @@ class CloudSyncService {
         for (var entry in colData.entries) {
           try {
             final item = Map<String, dynamic>.from(entry.value as Map);
+            item['id'] ??= int.tryParse(entry.key.toString());
             final f = FeePayment.fromMap(item);
             await db.insert('fee_payments', f.toMap(), conflictAlgorithm: ConflictAlgorithm.replace);
-          } catch (_) {}
+          } catch (e) {
+            debugPrint('Error merging fee_payment ${entry.key} to SQLite: $e');
+          }
+        }
+        break;
+
+      case 'salary_payments':
+        for (var entry in colData.entries) {
+          try {
+            final item = Map<String, dynamic>.from(entry.value as Map);
+            item['id'] ??= int.tryParse(entry.key.toString());
+            final sp = SalaryPayment.fromMap(item);
+            await db.insert('salary_payments', sp.toMap(), conflictAlgorithm: ConflictAlgorithm.replace);
+          } catch (e) {
+            debugPrint('Error merging salary_payment ${entry.key} to SQLite: $e');
+          }
         }
         break;
     }
+    notifyDataChanged(collection);
   }
 
   // ── Push Entity Methods ───────────────────────────────────────────────────
@@ -190,7 +260,22 @@ class CloudSyncService {
     try {
       final maktabId = await getMaktabId();
       final id = batch.id ?? DateTime.now().millisecondsSinceEpoch;
-      await _db?.ref('maktabs/$maktabId/batches/$id').set(batch.toMap());
+      final map = batch.toMap();
+      map['id'] ??= id;
+      final db = _db;
+      if (db == null) return;
+
+      final user = fb_auth.FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        try {
+          await fb_auth.FirebaseAuth.instance.signInAnonymously().timeout(const Duration(seconds: 4));
+        } catch (_) {}
+      }
+
+      await db.ref('maktabs/$maktabId/batches/$id').set(map).timeout(
+        const Duration(seconds: 6),
+        onTimeout: () => throw TimeoutException('pushBatch timed out'),
+      );
     } catch (e) {
       debugPrint('Firebase pushBatch error: $e');
     }
@@ -200,7 +285,22 @@ class CloudSyncService {
     try {
       final maktabId = await getMaktabId();
       final id = student.id ?? DateTime.now().millisecondsSinceEpoch;
-      await _db?.ref('maktabs/$maktabId/students/$id').set(student.toMap());
+      final map = student.toMap();
+      map['id'] ??= id;
+      final db = _db;
+      if (db == null) return;
+
+      final user = fb_auth.FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        try {
+          await fb_auth.FirebaseAuth.instance.signInAnonymously().timeout(const Duration(seconds: 4));
+        } catch (_) {}
+      }
+
+      await db.ref('maktabs/$maktabId/students/$id').set(map).timeout(
+        const Duration(seconds: 6),
+        onTimeout: () => throw TimeoutException('pushStudent timed out'),
+      );
     } catch (e) {
       debugPrint('Firebase pushStudent error: $e');
     }
@@ -210,9 +310,25 @@ class CloudSyncService {
     try {
       final maktabId = await getMaktabId();
       final id = attendance.id ?? DateTime.now().millisecondsSinceEpoch;
-      await _db?.ref('maktabs/$maktabId/attendance/$id').set(attendance.toMap());
+      final map = attendance.toMap();
+      map['id'] ??= id;
+      final db = _db;
+      if (db == null) return;
+
+      final user = fb_auth.FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        try {
+          await fb_auth.FirebaseAuth.instance.signInAnonymously().timeout(const Duration(seconds: 4));
+        } catch (_) {}
+      }
+
+      await db.ref('maktabs/$maktabId/attendance/$id').set(map).timeout(
+        const Duration(seconds: 6),
+        onTimeout: () => throw TimeoutException('pushAttendance timed out'),
+      );
     } catch (e) {
       debugPrint('Firebase pushAttendance error: $e');
+      rethrow;
     }
   }
 
@@ -220,7 +336,22 @@ class CloudSyncService {
     try {
       final maktabId = await getMaktabId();
       final id = ta.id ?? DateTime.now().millisecondsSinceEpoch;
-      await _db?.ref('maktabs/$maktabId/teacher_attendance/$id').set(ta.toMap());
+      final map = ta.toMap();
+      map['id'] ??= id;
+      final db = _db;
+      if (db == null) return;
+
+      final user = fb_auth.FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        try {
+          await fb_auth.FirebaseAuth.instance.signInAnonymously().timeout(const Duration(seconds: 4));
+        } catch (_) {}
+      }
+
+      await db.ref('maktabs/$maktabId/teacher_attendance/$id').set(map).timeout(
+        const Duration(seconds: 6),
+        onTimeout: () => throw TimeoutException('pushTeacherAttendance timed out'),
+      );
     } catch (e) {
       debugPrint('Firebase pushTeacherAttendance error: $e');
     }
@@ -230,7 +361,22 @@ class CloudSyncService {
     try {
       final maktabId = await getMaktabId();
       final id = qp.id ?? DateTime.now().millisecondsSinceEpoch;
-      await _db?.ref('maktabs/$maktabId/quran_progress/$id').set(qp.toMap());
+      final map = qp.toMap();
+      map['id'] ??= id;
+      final db = _db;
+      if (db == null) return;
+
+      final user = fb_auth.FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        try {
+          await fb_auth.FirebaseAuth.instance.signInAnonymously().timeout(const Duration(seconds: 4));
+        } catch (_) {}
+      }
+
+      await db.ref('maktabs/$maktabId/quran_progress/$id').set(map).timeout(
+        const Duration(seconds: 6),
+        onTimeout: () => throw TimeoutException('pushQuranProgress timed out'),
+      );
     } catch (e) {
       debugPrint('Firebase pushQuranProgress error: $e');
     }
@@ -240,9 +386,49 @@ class CloudSyncService {
     try {
       final maktabId = await getMaktabId();
       final id = fee.id ?? DateTime.now().millisecondsSinceEpoch;
-      await _db?.ref('maktabs/$maktabId/fee_payments/$id').set(fee.toMap());
+      final map = fee.toMap();
+      map['id'] ??= id;
+      final db = _db;
+      if (db == null) return;
+
+      final user = fb_auth.FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        try {
+          await fb_auth.FirebaseAuth.instance.signInAnonymously().timeout(const Duration(seconds: 4));
+        } catch (_) {}
+      }
+
+      await db.ref('maktabs/$maktabId/fee_payments/$id').set(map).timeout(
+        const Duration(seconds: 6),
+        onTimeout: () => throw TimeoutException('pushFeePayment timed out'),
+      );
     } catch (e) {
       debugPrint('Firebase pushFeePayment error: $e');
+    }
+  }
+
+  Future<void> pushSalaryPayment(SalaryPayment sp) async {
+    try {
+      final maktabId = await getMaktabId();
+      final id = sp.id ?? DateTime.now().millisecondsSinceEpoch;
+      final map = sp.toMap();
+      map['id'] ??= id;
+      final db = _db;
+      if (db == null) return;
+
+      final user = fb_auth.FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        try {
+          await fb_auth.FirebaseAuth.instance.signInAnonymously().timeout(const Duration(seconds: 4));
+        } catch (_) {}
+      }
+
+      await db.ref('maktabs/$maktabId/salary_payments/$id').set(map).timeout(
+        const Duration(seconds: 6),
+        onTimeout: () => throw TimeoutException('pushSalaryPayment timed out'),
+      );
+    } catch (e) {
+      debugPrint('Firebase pushSalaryPayment error: $e');
     }
   }
 
@@ -264,6 +450,24 @@ class CloudSyncService {
     }
   }
 
+  Future<void> deleteFeePaymentCloud(int id) async {
+    try {
+      final maktabId = await getMaktabId();
+      await _db?.ref('maktabs/$maktabId/fee_payments/$id').remove();
+    } catch (e) {
+      debugPrint('Firebase deleteFeePaymentCloud error: $e');
+    }
+  }
+
+  Future<void> deleteSalaryPaymentCloud(int id) async {
+    try {
+      final maktabId = await getMaktabId();
+      await _db?.ref('maktabs/$maktabId/salary_payments/$id').remove();
+    } catch (e) {
+      debugPrint('Firebase deleteSalaryPaymentCloud error: $e');
+    }
+  }
+
   // ── Sync All Offline SQLite Records ────────────────────────────────────────
 
   Future<bool> syncAll() async {
@@ -278,6 +482,7 @@ class CloudSyncService {
       final taList = (await db.query('teacher_attendance')).map((e) => TeacherAttendance.fromMap(e)).toList();
       final qpList = (await db.query('quran_progress')).map((e) => QuranProgress.fromMap(e)).toList();
       final feeList = (await db.query('fee_payments')).map((e) => FeePayment.fromMap(e)).toList();
+      final salList = (await db.query('salary_payments')).map((e) => SalaryPayment.fromMap(e)).toList();
 
       for (var u in users) {
         if (u.id != null) await _db?.ref('maktabs/$maktabId/teachers/${u.id}').set(u.toMap());
@@ -300,6 +505,9 @@ class CloudSyncService {
       for (var f in feeList) {
         if (f.id != null) await _db?.ref('maktabs/$maktabId/fee_payments/${f.id}').set(f.toMap());
       }
+      for (var sp in salList) {
+        if (sp.id != null) await _db?.ref('maktabs/$maktabId/salary_payments/${sp.id}').set(sp.toMap());
+      }
 
       // Start granular listening for changes in this Maktab
       startRealtimeSync(maktabId);
@@ -315,18 +523,37 @@ class CloudSyncService {
     try {
       final db = _db;
       if (db == null) return false;
-      final snapshot = await db.ref('maktabs/$maktabId').get();
-      if (snapshot.exists && snapshot.value != null) {
-        final data = Map<String, dynamic>.from(snapshot.value as Map);
-        for (var entry in data.entries) {
-          if (entry.value is Map) {
-            await _mergeCollectionToSQLite(entry.key, Map<String, dynamic>.from(entry.value as Map));
+
+      final collections = [
+        'students',
+        'teachers',
+        'batches',
+        'attendance',
+        'teacher_attendance',
+        'quran_progress',
+        'fee_payments',
+        'salary_payments',
+      ];
+
+      bool anyPulled = false;
+      for (var col in collections) {
+        try {
+          final snapshot = await db.ref('maktabs/$maktabId/$col').get().timeout(
+            const Duration(seconds: 4),
+            onTimeout: () => throw TimeoutException('pull $col timed out'),
+          );
+          if (snapshot.exists && snapshot.value != null) {
+            final data = Map<String, dynamic>.from(snapshot.value as Map);
+            await _mergeCollectionToSQLite(col, data);
+            anyPulled = true;
           }
+        } catch (e) {
+          debugPrint('CloudSyncService error pulling $col for maktab $maktabId: $e');
         }
-        startRealtimeSync(maktabId);
-        return true;
       }
-      return false;
+
+      startRealtimeSync(maktabId);
+      return anyPulled;
     } catch (e) {
       debugPrint('CloudSyncService pullAllDataForMaktab error: $e');
       return false;
