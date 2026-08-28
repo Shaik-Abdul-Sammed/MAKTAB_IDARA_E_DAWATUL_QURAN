@@ -63,9 +63,16 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
       final auth = Provider.of<AuthProvider>(context, listen: false);
       final user = auth.currentUser;
       _isTeacher = user?.role == 'teacher';
+      // Trigger background sync for latest data from cloud
+      final maktabId = await CloudSyncService.instance.getMaktabId();
+      CloudSyncService.instance.pullAllDataForMaktab(maktabId).catchError((_) => false);
+
       List<Batch> list;
       if (user?.role == 'teacher' && user?.id != null) {
         list = await BatchRepository().fetchTeacherBatches(user!.id!);
+        if (list.isEmpty) {
+          list = await BatchRepository().getAllBatches();
+        }
       } else {
         list = await BatchRepository().getAllBatches();
       }

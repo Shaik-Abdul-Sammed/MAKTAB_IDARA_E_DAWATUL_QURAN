@@ -353,29 +353,37 @@ class AuthProvider with ChangeNotifier {
     matchedUser ??= await _userRepository.authenticateUser(saltedHash);
     matchedUser ??= await _userRepository.authenticateUser(sha256.convert(utf8.encode(pin)).toString());
 
-    // Firebase RTDB direct Teacher lookup fallback for fresh device installations
+    // Firebase RTDB direct Teacher lookup fallback for fresh device installations across all Maktabs
     if (matchedUser == null && _db != null) {
       try {
-        final activeMaktabId = await CloudSyncService.instance.getMaktabId();
-        final teachersSnap = await _db!.ref('maktabs/$activeMaktabId/teachers').get().timeout(const Duration(seconds: 4));
-        if (teachersSnap.exists && teachersSnap.value is Map) {
-          final tMap = Map<String, dynamic>.from(teachersSnap.value as Map);
-          for (var entry in tMap.entries) {
-            try {
-              final item = Map<String, dynamic>.from(entry.value as Map);
-              item['id'] ??= int.tryParse(entry.key.toString());
-              final u = User.fromMap(item);
-              if (u.role == 'teacher' && (u.pinHash == saltedHash || u.pinHash == sha256.convert(utf8.encode(pin)).toString())) {
-                final idMatch = parsedId != null && u.id == parsedId;
-                final mobileMatch = input.isNotEmpty && (u.mobile ?? '').replaceAll(RegExp(r'\D'), '').endsWith(input);
-                final nameMatch = u.name.toLowerCase().contains(input.toLowerCase());
-                if (idMatch || mobileMatch || nameMatch || input.isEmpty) {
-                  matchedUser = u;
-                  await _userRepository.insertUser(u);
-                  break;
-                }
+        final maktabsSnap = await _db!.ref('maktabs').get().timeout(const Duration(seconds: 4));
+        if (maktabsSnap.exists && maktabsSnap.value is Map) {
+          final maktabsMap = Map<String, dynamic>.from(maktabsSnap.value as Map);
+          for (var maktabEntry in maktabsMap.entries) {
+            final mId = maktabEntry.key.toString();
+            final mVal = maktabEntry.value;
+            if (mVal is Map && mVal['teachers'] is Map) {
+              final tMap = Map<String, dynamic>.from(mVal['teachers'] as Map);
+              for (var entry in tMap.entries) {
+                try {
+                  final item = Map<String, dynamic>.from(entry.value as Map);
+                  item['id'] ??= int.tryParse(entry.key.toString());
+                  final u = User.fromMap(item);
+                  if (u.role == 'teacher' && (u.pinHash == saltedHash || u.pinHash == sha256.convert(utf8.encode(pin)).toString())) {
+                    final idMatch = parsedId != null && u.id == parsedId;
+                    final mobileMatch = input.isNotEmpty && (u.mobile ?? '').replaceAll(RegExp(r'\D'), '').endsWith(input);
+                    final nameMatch = u.name.toLowerCase().contains(input.toLowerCase());
+                    if (idMatch || mobileMatch || nameMatch || input.isEmpty) {
+                      matchedUser = u;
+                      await CloudSyncService.instance.setMaktabId(mId);
+                      await _userRepository.insertUser(u);
+                      break;
+                    }
+                  }
+                } catch (_) {}
               }
-            } catch (_) {}
+            }
+            if (matchedUser != null) break;
           }
         }
       } catch (e) {
