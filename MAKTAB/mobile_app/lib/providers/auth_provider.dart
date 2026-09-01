@@ -172,6 +172,24 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
+  Future<void> _provisionAllTeachersInBackground() async {
+    try {
+      final teachers = await _userRepository.getAllTeachers();
+      for (var t in teachers) {
+        if (t.id != null) {
+          await provisionTeacherAuthAccount(
+            teacherId: t.id!,
+            name: t.name,
+            rawPin: '1234',
+            mobile: t.mobile,
+          );
+        }
+      }
+    } catch (e) {
+      debugPrint('Background teacher provisioning note: $e');
+    }
+  }
+
   // ── Firebase Email + Password Authentication ──────────────────────────────
 
   Future<bool> loginWithEmail(String email, String password) async {
@@ -296,6 +314,9 @@ class AuthProvider with ChangeNotifier {
           debugPrint('Initial pull note in _loadFirebaseUserProfile: $e');
         }
         CloudSyncService.instance.startRealtimeSync(maktabId);
+        if (role == 'manager' || role == 'admin' || role == 'operator') {
+          _provisionAllTeachersInBackground();
+        }
         return true;
       } else {
         _lastAuthError = 'Firebase User authenticated, but database profile /users/$uid does not exist.';

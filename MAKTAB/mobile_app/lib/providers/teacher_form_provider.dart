@@ -3,6 +3,7 @@ import 'package:crypto/crypto.dart';
 import 'dart:convert';
 import '../domain/dtos/user_dto.dart';
 import '../repositories/teacher_repository.dart';
+import '../providers/auth_provider.dart';
 
 enum TeacherFormStatus { idle, loading, success, error }
 
@@ -48,6 +49,17 @@ class TeacherFormProvider extends ChangeNotifier {
         upiId: upiId?.trim(),
       );
       final id = await _repo.insertUser(dto);
+      try {
+        final authProvider = AuthProvider();
+        await authProvider.provisionTeacherAuthAccount(
+          teacherId: id,
+          name: name.trim(),
+          rawPin: pin.trim(),
+          mobile: mobile.trim(),
+        );
+      } catch (e) {
+        debugPrint('Teacher provisioning note on addTeacher: $e');
+      }
       _status = TeacherFormStatus.success;
       notifyListeners();
       return id;
@@ -87,6 +99,19 @@ class TeacherFormProvider extends ChangeNotifier {
         upiId: upiId ?? existing.upiId,
       );
       await _repo.updateUser(updated);
+      if (existing.id != null && newPin != null && newPin.trim().isNotEmpty) {
+        try {
+          final authProvider = AuthProvider();
+          await authProvider.provisionTeacherAuthAccount(
+            teacherId: existing.id!,
+            name: name.trim(),
+            rawPin: newPin.trim(),
+            mobile: mobile.trim(),
+          );
+        } catch (e) {
+          debugPrint('Teacher provisioning note on updateTeacher: $e');
+        }
+      }
       _status = TeacherFormStatus.success;
     } catch (e) {
       _status = TeacherFormStatus.error;
