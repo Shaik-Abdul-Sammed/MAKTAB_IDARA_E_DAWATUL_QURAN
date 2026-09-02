@@ -108,7 +108,7 @@ class CloudSyncService {
         final sub = db.ref('maktabs/$maktabId/$col').onValue.listen((event) async {
           if (!event.snapshot.exists || event.snapshot.value == null) return;
           try {
-            final data = Map<String, dynamic>.from(event.snapshot.value as Map);
+            final data = _normalizeRtdbSnapshotValue(event.snapshot.value);
             await _mergeCollectionToSQLite(col, data);
           } catch (e) {
             debugPrint('Firebase Granular Sync error on $col: $e');
@@ -133,6 +133,33 @@ class CloudSyncService {
     _childSubscriptions.clear();
   }
 
+  Map<String, dynamic> _normalizeRtdbSnapshotValue(dynamic val) {
+    final Map<String, dynamic> result = {};
+    if (val is Map) {
+      val.forEach((k, v) {
+        if (v != null) result[k.toString()] = v;
+      });
+    } else if (val is List) {
+      for (int i = 0; i < val.length; i++) {
+        if (val[i] != null) {
+          result[i.toString()] = val[i];
+        }
+      }
+    }
+    return result;
+  }
+
+  Map<String, dynamic> _toMap(dynamic val) {
+    if (val is Map) {
+      final Map<String, dynamic> result = {};
+      val.forEach((k, v) {
+        if (v != null) result[k.toString()] = v;
+      });
+      return result;
+    }
+    return {};
+  }
+
   Future<void> _mergeCollectionToSQLite(String collection, Map<String, dynamic> colData) async {
     final db = await DatabaseHelper.instance.database;
 
@@ -140,7 +167,7 @@ class CloudSyncService {
       case 'batches':
         for (var entry in colData.entries) {
           try {
-            final item = Map<String, dynamic>.from(entry.value as Map);
+            final item = _toMap(entry.value);
             item['id'] ??= int.tryParse(entry.key.toString());
             final b = Batch.fromMap(item);
             await db.insert('batches', b.toMap(), conflictAlgorithm: ConflictAlgorithm.replace);
@@ -165,7 +192,7 @@ class CloudSyncService {
 
         for (var entry in colData.entries) {
           try {
-            final item = Map<String, dynamic>.from(entry.value as Map);
+            final item = _toMap(entry.value);
             item['id'] ??= int.tryParse(entry.key.toString());
             final s = Student.fromMap(item);
             var map = s.toMap();
@@ -194,7 +221,7 @@ class CloudSyncService {
       case 'teachers':
         for (var entry in colData.entries) {
           try {
-            final item = Map<String, dynamic>.from(entry.value as Map);
+            final item = _toMap(entry.value);
             item['id'] ??= int.tryParse(entry.key.toString());
             final u = User.fromMap(item);
             await db.insert('users', u.toMap(), conflictAlgorithm: ConflictAlgorithm.replace);
@@ -207,7 +234,7 @@ class CloudSyncService {
       case 'attendance':
         for (var entry in colData.entries) {
           try {
-            final item = Map<String, dynamic>.from(entry.value as Map);
+            final item = _toMap(entry.value);
             item['id'] ??= int.tryParse(entry.key.toString());
             final a = Attendance.fromMap(item);
             await db.insert('attendance', a.toMap(), conflictAlgorithm: ConflictAlgorithm.replace);
@@ -220,7 +247,7 @@ class CloudSyncService {
       case 'teacher_attendance':
         for (var entry in colData.entries) {
           try {
-            final item = Map<String, dynamic>.from(entry.value as Map);
+            final item = _toMap(entry.value);
             item['id'] ??= int.tryParse(entry.key.toString());
             final ta = TeacherAttendance.fromMap(item);
             await db.insert('teacher_attendance', ta.toMap(), conflictAlgorithm: ConflictAlgorithm.replace);
@@ -233,7 +260,7 @@ class CloudSyncService {
       case 'quran_progress':
         for (var entry in colData.entries) {
           try {
-            final item = Map<String, dynamic>.from(entry.value as Map);
+            final item = _toMap(entry.value);
             item['id'] ??= int.tryParse(entry.key.toString());
             final qp = QuranProgress.fromMap(item);
             await db.insert('quran_progress', qp.toMap(), conflictAlgorithm: ConflictAlgorithm.replace);
@@ -246,7 +273,7 @@ class CloudSyncService {
       case 'fee_payments':
         for (var entry in colData.entries) {
           try {
-            final item = Map<String, dynamic>.from(entry.value as Map);
+            final item = _toMap(entry.value);
             item['id'] ??= int.tryParse(entry.key.toString());
             final f = FeePayment.fromMap(item);
             await db.insert('fee_payments', f.toMap(), conflictAlgorithm: ConflictAlgorithm.replace);
@@ -259,7 +286,7 @@ class CloudSyncService {
       case 'salary_payments':
         for (var entry in colData.entries) {
           try {
-            final item = Map<String, dynamic>.from(entry.value as Map);
+            final item = _toMap(entry.value);
             item['id'] ??= int.tryParse(entry.key.toString());
             final sp = SalaryPayment.fromMap(item);
             await db.insert('salary_payments', sp.toMap(), conflictAlgorithm: ConflictAlgorithm.replace);
@@ -580,7 +607,7 @@ class CloudSyncService {
             onTimeout: () => throw TimeoutException('pull $col timed out'),
           );
           if (snapshot.exists && snapshot.value != null) {
-            final data = Map<String, dynamic>.from(snapshot.value as Map);
+            final data = _normalizeRtdbSnapshotValue(snapshot.value);
             await _mergeCollectionToSQLite(col, data);
             anyPulled = true;
           }

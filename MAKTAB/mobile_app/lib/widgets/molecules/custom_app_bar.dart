@@ -16,7 +16,18 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     return AppBar(
-      title: Text(title, style: const TextStyle(color: Color(0xFFFFD700), fontWeight: FontWeight.bold)),
+      title: FittedBox(
+        fit: BoxFit.scaleDown,
+        alignment: Alignment.centerLeft,
+        child: Text(
+          title,
+          style: const TextStyle(color: Color(0xFFFFD700), fontWeight: FontWeight.bold, fontSize: 18),
+          maxLines: 1,
+          softWrap: false,
+        ),
+      ),
+      titleSpacing: 4,
+      centerTitle: false,
       backgroundColor: const Color(0xFF004D40),
       automaticallyImplyLeading: showBackButton,
       iconTheme: const IconThemeData(color: Color(0xFFFFD700)),

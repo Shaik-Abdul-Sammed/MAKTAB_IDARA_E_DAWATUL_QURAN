@@ -208,7 +208,8 @@ class _MaktabAppState extends State<MaktabApp> with WidgetsBindingObserver {
           appBarTheme: const AppBarTheme(
             backgroundColor: Color(0xFF004D40), // Dark green
             foregroundColor: Colors.white,
-            centerTitle: true,
+            centerTitle: false,
+            titleSpacing: 8,
             elevation: 0,
           ),
           splashColor: const Color(0xFFFFD700).withValues(alpha: 0.12),
