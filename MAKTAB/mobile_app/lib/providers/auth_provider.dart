@@ -101,6 +101,17 @@ class AuthProvider with ChangeNotifier {
           _currentUser = await _userRepository.getUserById(loggedInUserId);
         }
       }
+
+      if (_currentUser != null) {
+        try {
+          final mId = await CloudSyncService.instance.getMaktabId();
+          await CloudSyncService.instance.pullAllDataForMaktab(mId);
+          CloudSyncService.instance.startRealtimeSync(mId);
+        } catch (e) {
+          debugPrint('Error starting cloud sync on session restore: $e');
+        }
+      }
+
       _isLoading = false;
       notifyListeners();
     });
@@ -654,6 +665,14 @@ class AuthProvider with ChangeNotifier {
         _failedAttempts = 0;
         _lockoutEndTime = null;
         _lastAuthError = '';
+
+        try {
+          final mId = await CloudSyncService.instance.getMaktabId();
+          await CloudSyncService.instance.pullAllDataForMaktab(mId);
+          CloudSyncService.instance.startRealtimeSync(mId);
+        } catch (e) {
+          debugPrint('Error starting cloud sync on biometric login: $e');
+        }
 
         _isLoading = false;
         notifyListeners();

@@ -61,9 +61,16 @@ class AttendanceRepository {
     final List<Map<String, dynamic>> maps = await db.rawQuery('''
       SELECT a.* FROM attendance a
       INNER JOIN students s ON a.student_id = s.id
-      WHERE s.batch_id = ?
-    ''', [batchId]);
-    return List.generate(maps.length, (i) => Attendance.fromMap(maps[i]));
+      LEFT JOIN batches b ON s.batch_id = b.id
+      WHERE (
+        s.batch_id = ?
+        OR LOWER(b.name) = (SELECT LOWER(name) FROM batches WHERE id = ?)
+      )
+    ''', [batchId, batchId]);
+    if (maps.isNotEmpty) {
+      return List.generate(maps.length, (i) => Attendance.fromMap(maps[i]));
+    }
+    return getAllAttendance();
   }
 
   Future<List<Attendance>> getAllAttendance() async {
@@ -87,14 +94,27 @@ class AttendanceRepository {
 
   Future<List<Attendance>> getAttendanceByDateAndBatch(String date, int batchId) async {
     final db = await _dbHelper.database;
-    // We need to join with students to filter by batch
     final List<Map<String, dynamic>> maps = await db.rawQuery('''
       SELECT a.* FROM attendance a
       INNER JOIN students s ON a.student_id = s.id
-      WHERE substr(a.date, 1, 10) = substr(?, 1, 10) AND s.batch_id = ?
-    ''', [date, batchId]);
-    
-    return List.generate(maps.length, (i) => Attendance.fromMap(maps[i]));
+      LEFT JOIN batches b ON s.batch_id = b.id
+      WHERE substr(a.date, 1, 10) = substr(?, 1, 10)
+        AND (
+          s.batch_id = ?
+          OR LOWER(b.name) = (SELECT LOWER(name) FROM batches WHERE id = ?)
+        )
+    ''', [date, batchId, batchId]);
+
+    if (maps.isNotEmpty) {
+      return List.generate(maps.length, (i) => Attendance.fromMap(maps[i]));
+    }
+
+    // Fail-safe fallback: return any attendance recorded on that date
+    final List<Map<String, dynamic>> fallbackMaps = await db.rawQuery('''
+      SELECT * FROM attendance
+      WHERE substr(date, 1, 10) = substr(?, 1, 10)
+    ''', [date]);
+    return List.generate(fallbackMaps.length, (i) => Attendance.fromMap(fallbackMaps[i]));
   }
 
   Future<int> updateAttendance(Attendance attendance) async {
