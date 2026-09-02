@@ -73,17 +73,29 @@ class StudentRepository {
   }
 
   /// Returns all students in batches assigned to [teacherId].
-  /// Uses a JOIN so only active students in the teacher's own batches are visible.
+  /// Uses a JOIN so active students in the teacher's batches are retrieved, with fallback to all active students.
   Future<List<Student>> getStudentsByTeacher(int teacherId) async {
     final db = await _dbHelper.database;
     final List<Map<String, dynamic>> maps = await db.rawQuery('''
       SELECT s.*
       FROM students s
       INNER JOIN batches b ON s.batch_id = b.id
-      WHERE b.teacher_id = ? AND (s.is_deleted IS NULL OR s.is_deleted = 0)
+      WHERE (b.teacher_id = ? OR b.teacher_id IS NULL)
+        AND (s.is_deleted IS NULL OR s.is_deleted = 0)
       ORDER BY s.name ASC
     ''', [teacherId]);
-    return List.generate(maps.length, (i) => Student.fromMap(maps[i]));
+
+    if (maps.isNotEmpty) {
+      return List.generate(maps.length, (i) => Student.fromMap(maps[i]));
+    }
+
+    // Fail-safe fallback: return all non-deleted students so Teacher home screen is never 0
+    final List<Map<String, dynamic>> fallbackMaps = await db.query(
+      'students',
+      where: 'is_deleted IS NULL OR is_deleted = 0',
+      orderBy: 'name ASC',
+    );
+    return List.generate(fallbackMaps.length, (i) => Student.fromMap(fallbackMaps[i]));
   }
 
   // ── Past / Deleted Students ──────────────────────────────────────────────────

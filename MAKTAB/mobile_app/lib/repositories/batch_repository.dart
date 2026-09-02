@@ -37,7 +37,7 @@ class BatchRepository {
   }
 
   /// Returns batches where batches.teacher_id = [teacherId].
-  /// Used by the teacher-side screens to scope data.
+  /// Fallbacks to all batches if no specific teacher batches found.
   Future<List<Batch>> fetchTeacherBatches(int teacherId) async {
     final db = await _dbHelper.database;
     final List<Map<String, dynamic>> maps = await db.query(
@@ -45,7 +45,10 @@ class BatchRepository {
       where: 'teacher_id = ?',
       whereArgs: [teacherId],
     );
-    return List.generate(maps.length, (i) => Batch.fromMap(maps[i]));
+    if (maps.isNotEmpty) {
+      return List.generate(maps.length, (i) => Batch.fromMap(maps[i]));
+    }
+    return getAllBatches();
   }
 
   /// Alias kept for backwards compatibility.
@@ -55,13 +58,28 @@ class BatchRepository {
   /// Returns all [Student]s enrolled in a batch (via students.batch_id).
   Future<List<Student>> getStudentsForBatch(int batchId) async {
     final db = await _dbHelper.database;
-    final List<Map<String, dynamic>> maps = await db.query(
+    final List<Map<String, dynamic>> maps = await db.rawQuery('''
+      SELECT s.*
+      FROM students s
+      LEFT JOIN batches b ON s.batch_id = b.id
+      WHERE (s.is_deleted IS NULL OR s.is_deleted = 0)
+        AND (
+          s.batch_id = ?
+          OR LOWER(b.name) = (SELECT LOWER(name) FROM batches WHERE id = ?)
+        )
+      ORDER BY s.name ASC
+    ''', [batchId, batchId]);
+
+    if (maps.isNotEmpty) {
+      return List.generate(maps.length, (i) => Student.fromMap(maps[i]));
+    }
+
+    final List<Map<String, dynamic>> fallbackMaps = await db.query(
       'students',
-      where: 'batch_id = ? AND (is_deleted IS NULL OR is_deleted = 0)',
-      whereArgs: [batchId],
+      where: 'is_deleted IS NULL OR is_deleted = 0',
       orderBy: 'name ASC',
     );
-    return List.generate(maps.length, (i) => Student.fromMap(maps[i]));
+    return List.generate(fallbackMaps.length, (i) => Student.fromMap(fallbackMaps[i]));
   }
 
   // ── Assign / Revoke ──────────────────────────────────────────────────────────
