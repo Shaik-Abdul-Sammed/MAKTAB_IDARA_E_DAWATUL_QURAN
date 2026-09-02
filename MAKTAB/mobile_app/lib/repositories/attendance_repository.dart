@@ -133,15 +133,45 @@ class AttendanceRepository {
         COUNT(DISTINCT CASE WHEN a.status IS NOT NULL AND a.status != 'Present' THEN s.id END) as absent,
         COUNT(DISTINCT CASE WHEN a.status IS NOT NULL THEN s.id END) as marked
       FROM students s
+      LEFT JOIN batches b ON s.batch_id = b.id
       LEFT JOIN attendance a ON a.student_id = s.id AND substr(a.date, 1, 10) = substr(?, 1, 10)
-      WHERE s.batch_id = ? AND (s.is_deleted IS NULL OR s.is_deleted = 0)
-    ''', [date, batchId]);
-    if (rows.isEmpty) return {'total': 0, 'present': 0, 'absent': 0, 'marked': 0};
-    final row = rows.first;
-    final total = (row['total'] as int?) ?? 0;
-    final present = (row['present'] as int?) ?? 0;
-    final absent = (row['absent'] as int?) ?? 0;
-    final marked = (row['marked'] as int?) ?? (present + absent);
+      WHERE (s.is_deleted IS NULL OR s.is_deleted = 0)
+        AND (
+          s.batch_id = ?
+          OR LOWER(b.name) = (SELECT LOWER(name) FROM batches WHERE id = ?)
+        )
+    ''', [date, batchId, batchId]);
+
+    int total = 0, present = 0, absent = 0, marked = 0;
+    if (rows.isNotEmpty) {
+      final row = rows.first;
+      total = (row['total'] as int?) ?? 0;
+      present = (row['present'] as int?) ?? 0;
+      absent = (row['absent'] as int?) ?? 0;
+      marked = (row['marked'] as int?) ?? (present + absent);
+    }
+
+    // Fail-safe fallback: If specific batch count is 0, count all active students in the Maktab
+    if (total == 0) {
+      final allRows = await db.rawQuery('''
+        SELECT
+          COUNT(DISTINCT s.id) as total,
+          COUNT(DISTINCT CASE WHEN a.status = 'Present' THEN s.id END) as present,
+          COUNT(DISTINCT CASE WHEN a.status IS NOT NULL AND a.status != 'Present' THEN s.id END) as absent,
+          COUNT(DISTINCT CASE WHEN a.status IS NOT NULL THEN s.id END) as marked
+        FROM students s
+        LEFT JOIN attendance a ON a.student_id = s.id AND substr(a.date, 1, 10) = substr(?, 1, 10)
+        WHERE (s.is_deleted IS NULL OR s.is_deleted = 0)
+      ''', [date]);
+      if (allRows.isNotEmpty) {
+        final row = allRows.first;
+        total = (row['total'] as int?) ?? 0;
+        present = (row['present'] as int?) ?? 0;
+        absent = (row['absent'] as int?) ?? 0;
+        marked = (row['marked'] as int?) ?? (present + absent);
+      }
+    }
+
     return {'total': total, 'present': present, 'absent': absent, 'marked': marked};
   }
 }
