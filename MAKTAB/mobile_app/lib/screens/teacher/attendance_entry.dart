@@ -417,10 +417,21 @@ class _AttendanceEntryScreenState extends State<AttendanceEntryScreen>
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('$confirmed / $total students confirmed',
-                  style: const TextStyle(fontSize: 12, color: Color(0xFF004D40), fontWeight: FontWeight.w600)),
-              Text('${p.presentCount} ✅  ${p.absentCount} ❌  ${p.lateCount} 🕒  ${p.leaveCount} 🏖️',
-                  style: const TextStyle(fontSize: 11, color: Colors.black54)),
+              Expanded(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text('$confirmed / $total students confirmed',
+                      style: const TextStyle(fontSize: 12, color: Color(0xFF004D40), fontWeight: FontWeight.w600, height: 1.2)),
+                ),
+              ),
+              const SizedBox(width: 8),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerRight,
+                child: Text('${p.presentCount} ✅  ${p.absentCount} ❌  ${p.lateCount} 🕒  ${p.leaveCount} 🏖️',
+                    style: const TextStyle(fontSize: 11, color: Colors.black54, height: 1.2)),
+              ),
             ],
           ),
           const SizedBox(height: 4),
