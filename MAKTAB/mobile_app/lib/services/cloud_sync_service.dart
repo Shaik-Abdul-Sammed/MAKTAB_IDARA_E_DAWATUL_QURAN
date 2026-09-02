@@ -315,6 +315,15 @@ class CloudSyncService {
       final id = student.id ?? DateTime.now().millisecondsSinceEpoch;
       final map = student.toMap();
       map['id'] ??= id;
+
+      try {
+        final sqliteDb = await DatabaseHelper.instance.database;
+        final batchRows = await sqliteDb.query('batches', where: 'id = ?', whereArgs: [student.batchId]);
+        if (batchRows.isNotEmpty) {
+          map['batch_name'] = batchRows.first['name'];
+        }
+      } catch (_) {}
+
       final db = _db;
       if (db == null) return;
 

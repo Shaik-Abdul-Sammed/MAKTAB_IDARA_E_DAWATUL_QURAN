@@ -249,20 +249,19 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
 
   Widget _buildSummaryHeader(int total, int marked, int pending) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: const Color(0xFF004D40).withValues(alpha: 0.12)),
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _SummaryChip(label: 'Total Batches', value: '$total', color: const Color(0xFF004D40)),
-          Container(width: 1, height: 30, color: Colors.black12),
-          _SummaryChip(label: 'Marked ✅', value: '$marked', color: Colors.green.shade700),
-          Container(width: 1, height: 30, color: Colors.black12),
-          _SummaryChip(label: 'Pending ⏳', value: '$pending', color: Colors.orange.shade700),
+          Expanded(child: _SummaryChip(label: 'Total Batches', value: '$total', color: const Color(0xFF004D40))),
+          Container(width: 1, height: 28, color: Colors.black12),
+          Expanded(child: _SummaryChip(label: 'Marked ✅', value: '$marked', color: Colors.green.shade700)),
+          Container(width: 1, height: 28, color: Colors.black12),
+          Expanded(child: _SummaryChip(label: 'Pending ⏳', value: '$pending', color: Colors.orange.shade700)),
         ],
       ),
     );
@@ -271,7 +270,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
   Widget _buildDateBanner(String displayDate) {
     final isNextDisabled = _isToday;
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           colors: [Color(0xFF004D40), Color(0xFF00695C)],
@@ -291,22 +290,28 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
         children: [
           Row(
             children: [
-              const Icon(Icons.event_available_rounded, color: Color(0xFFFFD700), size: 32),
-              const SizedBox(width: 12),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('Selected Register Date', style: TextStyle(color: Colors.white70, fontSize: 11)),
-                  Text(displayDate,
-                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
-                ],
+              const Icon(Icons.event_available_rounded, color: Color(0xFFFFD700), size: 28),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Selected Register Date', style: TextStyle(color: Colors.white70, fontSize: 11)),
+                    Text(
+                      displayDate,
+                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
               ),
-              const Spacer(),
               if (!_isToday)
                 GestureDetector(
                   onTap: _goToToday,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    margin: const EdgeInsets.only(right: 6),
                     decoration: BoxDecoration(
                       color: const Color(0xFFFFD700),
                       borderRadius: BorderRadius.circular(20),
@@ -323,29 +328,28 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
             ],
           ),
           const SizedBox(height: 8),
-          // Day arrow navigation (#3)
           Row(
             children: [
               Expanded(
                 child: OutlinedButton.icon(
                   onPressed: () => _changeDay(-1),
-                  icon: const Icon(Icons.chevron_left, size: 18, color: Colors.white70),
-                  label: const Text('Prev Day', style: TextStyle(color: Colors.white70, fontSize: 12)),
+                  icon: const Icon(Icons.chevron_left, size: 16, color: Colors.white70),
+                  label: const Text('Prev Day', style: TextStyle(color: Colors.white70, fontSize: 11)),
                   style: OutlinedButton.styleFrom(
                     side: const BorderSide(color: Colors.white30),
-                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    padding: const EdgeInsets.symmetric(vertical: 2),
                   ),
                 ),
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: 8),
               Expanded(
                 child: OutlinedButton.icon(
                   onPressed: isNextDisabled ? null : () => _changeDay(1),
-                  icon: const Icon(Icons.chevron_right, size: 18, color: Colors.white70),
-                  label: const Text('Next Day', style: TextStyle(color: Colors.white70, fontSize: 12)),
+                  icon: const Icon(Icons.chevron_right, size: 16, color: Colors.white70),
+                  label: const Text('Next Day', style: TextStyle(color: Colors.white70, fontSize: 11)),
                   style: OutlinedButton.styleFrom(
                     side: BorderSide(color: isNextDisabled ? Colors.white12 : Colors.white30),
-                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    padding: const EdgeInsets.symmetric(vertical: 2),
                   ),
                 ),
               ),
@@ -453,9 +457,17 @@ class _SummaryChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        Text(value, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: color)),
-        Text(label, style: const TextStyle(fontSize: 11, color: Colors.black54)),
+        Text(value, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: color)),
+        const SizedBox(height: 2),
+        Text(
+          label,
+          style: const TextStyle(fontSize: 10, color: Colors.black54),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          textAlign: TextAlign.center,
+        ),
       ],
     );
   }
