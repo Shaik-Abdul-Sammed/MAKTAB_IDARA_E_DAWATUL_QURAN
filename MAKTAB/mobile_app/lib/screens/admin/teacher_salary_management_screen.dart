@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:maktab_app/config/app_colors.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -23,6 +25,7 @@ class _TeacherSalaryManagementScreenState extends State<TeacherSalaryManagementS
   final UserRepository _userRepository = UserRepository();
   final SalaryRepository _salaryRepository = SalaryRepository();
   final CloudSyncService _cloudSyncService = CloudSyncService.instance;
+  StreamSubscription<String>? _syncSub;
 
   DateTime _selectedDate = DateTime.now();
   List<User> _teachers = [];
@@ -36,6 +39,17 @@ class _TeacherSalaryManagementScreenState extends State<TeacherSalaryManagementS
   void initState() {
     super.initState();
     _loadSalaryData();
+    _syncSub = _cloudSyncService.onDataSynced.listen((col) {
+      if (col == 'salary_payments' || col == 'teachers') {
+        _loadSalaryData();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _syncSub?.cancel();
+    super.dispose();
   }
 
   Future<void> _loadSalaryData() async {
@@ -513,7 +527,10 @@ class _TeacherSalaryManagementScreenState extends State<TeacherSalaryManagementS
     return Scaffold(
       appBar: AppBar(
         title: const Text('Salary & Payment Management'),
-        backgroundColor: const Color(0xFF004D40),
+                flexibleSpace: Container(
+          decoration: const BoxDecoration(gradient: AppColors.primaryGradient),
+        ),
+        backgroundColor: Colors.transparent,
         foregroundColor: Colors.white,
         actions: [
           IconButton(
@@ -697,7 +714,6 @@ class _TeacherSalaryManagementScreenState extends State<TeacherSalaryManagementS
                                             icon: const Icon(Icons.payments, size: 16),
                                             label: const Text('PAY SALARY'),
                                             style: ElevatedButton.styleFrom(
-                                              backgroundColor: const Color(0xFF004D40),
                                               foregroundColor: Colors.white,
                                               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                                               textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),

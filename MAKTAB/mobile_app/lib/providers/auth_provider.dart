@@ -105,8 +105,7 @@ class AuthProvider with ChangeNotifier {
       if (_currentUser != null) {
         try {
           final mId = await CloudSyncService.instance.getMaktabId();
-          await CloudSyncService.instance.pullAllDataForMaktab(mId);
-          CloudSyncService.instance.startRealtimeSync(mId);
+          CloudSyncService.instance.enableAlwaysOnSync(mId);
         } catch (e) {
           debugPrint('Error starting cloud sync on session restore: $e');
         }
@@ -319,17 +318,67 @@ class AuthProvider with ChangeNotifier {
         SharedPreferences prefs = await SharedPreferences.getInstance();
         await prefs.setInt('logged_in_user_id', _currentUser!.id!);
 
-        try {
-          await CloudSyncService.instance.pullAllDataForMaktab(maktabId);
-        } catch (e) {
-          debugPrint('Initial pull note in _loadFirebaseUserProfile: $e');
-        }
-        CloudSyncService.instance.startRealtimeSync(maktabId);
+        CloudSyncService.instance.enableAlwaysOnSync(maktabId);
         if (role == 'manager' || role == 'admin' || role == 'operator') {
           _provisionAllTeachersInBackground();
         }
         return true;
       } else {
+        if (isManagerLogin && _fbAuth?.currentUser?.email != null) {
+          final userEmail = _fbAuth!.currentUser!.email!;
+          String derivedMaktabId = 'MAKTAB-001';
+
+          try {
+            final maktabsSnap = await _db?.ref('maktabs').get().timeout(const Duration(seconds: 3));
+            if (maktabsSnap != null && maktabsSnap.exists && maktabsSnap.value is Map) {
+              final map = Map<String, dynamic>.from(maktabsSnap.value as Map);
+              for (var key in map.keys) {
+                final kStr = key.toString();
+                if (map[kStr] is Map && map[kStr]['students'] != null) {
+                  derivedMaktabId = kStr;
+                  break;
+                }
+              }
+              if (derivedMaktabId == 'MAKTAB-001' && map.keys.isNotEmpty) {
+                derivedMaktabId = map.keys.first.toString();
+              }
+            }
+          } catch (_) {}
+
+          final managerProfile = {
+            'name': userEmail.split('@').first.toUpperCase(),
+            'email': userEmail,
+            'role': 'admin',
+            'maktabId': derivedMaktabId,
+            'active': true,
+            'teacherId': 1,
+            'mobile': '',
+          };
+
+          try {
+            await _db?.ref('users/$uid').set(managerProfile).timeout(const Duration(seconds: 4));
+            await CloudSyncService.instance.setMaktabId(derivedMaktabId);
+
+            _currentUser = User(
+              id: 1,
+              name: managerProfile['name'] as String,
+              mobile: '',
+              pinHash: '',
+              role: 'admin',
+              createdAt: DateTime.now().toIso8601String(),
+            );
+
+            SharedPreferences prefs = await SharedPreferences.getInstance();
+            await prefs.setInt('logged_in_user_id', 1);
+
+            CloudSyncService.instance.enableAlwaysOnSync(derivedMaktabId);
+            _provisionAllTeachersInBackground();
+            return true;
+          } catch (e) {
+            debugPrint('Auto-provisioning Manager profile error: $e');
+          }
+        }
+
         _lastAuthError = 'Firebase User authenticated, but database profile /users/$uid does not exist.';
         await logout();
         return false;
@@ -552,12 +601,7 @@ class AuthProvider with ChangeNotifier {
         debugPrint('Firebase Teacher auth note: $e');
       }
 
-      try {
-        await CloudSyncService.instance.pullAllDataForMaktab(activeMaktabId);
-      } catch (e) {
-        debugPrint('Initial pull note on teacher login: $e');
-      }
-      CloudSyncService.instance.startRealtimeSync(activeMaktabId);
+      CloudSyncService.instance.enableAlwaysOnSync(activeMaktabId);
 
       _isLoading = false;
       _isExplicitLoggingIn = false;
@@ -630,7 +674,7 @@ class AuthProvider with ChangeNotifier {
         debugPrint('Firebase Teacher auth note: $e');
       }
 
-      CloudSyncService.instance.startRealtimeSync(maktabId);
+      CloudSyncService.instance.enableAlwaysOnSync(maktabId);
 
       _isLoading = false;
       notifyListeners();
@@ -668,8 +712,7 @@ class AuthProvider with ChangeNotifier {
 
         try {
           final mId = await CloudSyncService.instance.getMaktabId();
-          await CloudSyncService.instance.pullAllDataForMaktab(mId);
-          CloudSyncService.instance.startRealtimeSync(mId);
+          CloudSyncService.instance.enableAlwaysOnSync(mId);
         } catch (e) {
           debugPrint('Error starting cloud sync on biometric login: $e');
         }
@@ -774,7 +817,7 @@ class AuthProvider with ChangeNotifier {
   Future<void> logout() async {
     _currentUser = null;
     await _fbAuth?.signOut();
-    CloudSyncService.instance.stopRealtimeSync();
+    CloudSyncService.instance.stopAlwaysOnSync();
     SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.remove('logged_in_user_id');
     notifyListeners();

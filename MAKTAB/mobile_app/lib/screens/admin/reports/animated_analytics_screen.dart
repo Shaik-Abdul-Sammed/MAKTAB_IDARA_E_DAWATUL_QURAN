@@ -168,7 +168,7 @@ class _AnimatedAnalyticsScreenState extends State<AnimatedAnalyticsScreen> with 
       appBar: AppBar(
         title: const Text(
           'Analytics & 3D Reports',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18, overflow: TextOverflow.ellipsis),
         ),
         flexibleSpace: Container(
           decoration: const BoxDecoration(gradient: AppColors.primaryGradient),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:maktab_app/config/app_colors.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../models/attendance.dart';
@@ -282,7 +283,10 @@ class _BatchAttendanceCalendarScreenState
           _batch != null ? '${_batch!.name} — Records' : 'Attendance Records',
           style: const TextStyle(color: Color(0xFFFFD700), fontWeight: FontWeight.bold),
         ),
-        backgroundColor: const Color(0xFF004D40),
+                flexibleSpace: Container(
+          decoration: const BoxDecoration(gradient: AppColors.primaryGradient),
+        ),
+        backgroundColor: Colors.transparent,
         iconTheme: const IconThemeData(color: Color(0xFFFFD700)),
         actions: [
           IconButton(icon: const Icon(Icons.refresh_rounded), onPressed: _loadData, tooltip: 'Refresh'),
@@ -528,7 +532,7 @@ class _BatchAttendanceCalendarScreenState
             const Icon(Icons.bar_chart_rounded, color: Color(0xFFFFD700), size: 28),
             const SizedBox(width: 10),
             Text(DateFormat('MMMM yyyy').format(_selectedMonth),
-                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
+                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18, overflow: TextOverflow.ellipsis)),
           ]),
           const SizedBox(height: 4),
           Text('$activeDays class days · $totalStudents enrolled students',

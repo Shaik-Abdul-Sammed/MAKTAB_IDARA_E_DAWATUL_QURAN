@@ -103,8 +103,8 @@ class _BackupHistoryScreenState extends State<BackupHistoryScreen> {
                             icon: const Icon(Icons.backup_rounded),
                             label: const Text('Export Backup ZIP'),
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF004D40),
                               foregroundColor: Colors.white,
+                              backgroundColor: const Color(0xFF004D40),
                               padding: const EdgeInsets.symmetric(vertical: 14),
                             ),
                           ),

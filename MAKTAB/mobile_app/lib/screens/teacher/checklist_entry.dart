@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:maktab_app/config/app_colors.dart';
 import 'package:flutter/services.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 import '../../../models/checklist.dart';
@@ -146,9 +147,12 @@ class _ChecklistEntryScreenState extends State<ChecklistEntryScreen> {
       appBar: AppBar(
         title: const Text(
           'Submit Daily Checklist',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18, overflow: TextOverflow.ellipsis),
         ),
-        backgroundColor: const Color(0xFF004D40),
+                flexibleSpace: Container(
+          decoration: const BoxDecoration(gradient: AppColors.primaryGradient),
+        ),
+        backgroundColor: Colors.transparent,
         iconTheme: const IconThemeData(color: Colors.white),
         centerTitle: false,
       ),

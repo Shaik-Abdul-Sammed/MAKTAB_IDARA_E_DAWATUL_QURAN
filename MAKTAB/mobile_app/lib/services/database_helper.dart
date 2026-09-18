@@ -42,7 +42,7 @@ class DatabaseHelper {
       return await ffi.databaseFactoryFfi.openDatabase(
         path,
         options: ffi.OpenDatabaseOptions(
-          version: 10,
+          version: 11,
           onConfigure: (db) async {
             await db.execute('PRAGMA foreign_keys = ON');
           },
@@ -59,7 +59,7 @@ class DatabaseHelper {
     return await openDatabase(
       path,
       password: key,
-      version: 10,
+      version: 11,
       onConfigure: (db) async {
         await db.execute('PRAGMA foreign_keys = ON');
       },
@@ -340,6 +340,15 @@ class DatabaseHelper {
   }
 
   Future<void> _onUpgrade(dynamic db, int oldVersion, int newVersion) async {
+    try {
+      await db.execute('ALTER TABLE attendance ADD COLUMN is_synced INTEGER DEFAULT 1');
+    } catch (_) {}
+    try {
+      await db.execute('ALTER TABLE students ADD COLUMN is_synced INTEGER DEFAULT 1');
+    } catch (_) {}
+    try {
+      await db.execute('ALTER TABLE fee_payments ADD COLUMN is_synced INTEGER DEFAULT 1');
+    } catch (_) {}
     try {
       await db.execute('ALTER TABLE users ADD COLUMN monthly_salary INTEGER DEFAULT 0');
     } catch (_) {}

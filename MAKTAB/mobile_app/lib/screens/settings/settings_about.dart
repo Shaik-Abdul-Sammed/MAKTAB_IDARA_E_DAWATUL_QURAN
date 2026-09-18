@@ -132,7 +132,7 @@ class SettingsAboutScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text(
           'About Maktab App',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18, overflow: TextOverflow.ellipsis),
         ),
         flexibleSpace: Container(
           decoration: const BoxDecoration(gradient: AppColors.primaryGradient),

@@ -286,7 +286,6 @@ class _BatchDetailContent extends StatelessWidget {
             ListTile(
               contentPadding: EdgeInsets.zero,
               leading: CircleAvatar(
-                backgroundColor: const Color(0xFF004D40),
                 child: Text(
                   teacher!.name.isNotEmpty ? teacher!.name[0].toUpperCase() : 'T',
                   style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
@@ -434,7 +433,6 @@ class _ErrorContent extends StatelessWidget {
               icon: const Icon(Icons.refresh),
               label: const Text('Retry'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF004D40),
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),

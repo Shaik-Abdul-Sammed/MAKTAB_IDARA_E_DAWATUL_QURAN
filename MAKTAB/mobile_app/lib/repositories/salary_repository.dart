@@ -21,6 +21,7 @@ class SalaryRepository {
         'id': id,
       });
     } catch (_) {}
+    CloudSyncService.instance.notifyDataChanged('salary_payments');
 
     return id;
   }
@@ -40,6 +41,7 @@ class SalaryRepository {
       await CloudSyncService.instance.pushSalaryPayment(payment);
       await QueueManager.enqueue('UPDATE_SALARY_PAYMENT', payment.toMap());
     } catch (_) {}
+    CloudSyncService.instance.notifyDataChanged('salary_payments');
 
     return count;
   }
@@ -57,6 +59,7 @@ class SalaryRepository {
       await CloudSyncService.instance.deleteSalaryPaymentCloud(id);
       await QueueManager.enqueue('DELETE_SALARY_PAYMENT', {'id': id});
     } catch (_) {}
+    CloudSyncService.instance.notifyDataChanged('salary_payments');
 
     return count;
   }

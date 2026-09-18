@@ -72,7 +72,6 @@ class _StudentQuranChartsScreenState extends State<StudentQuranChartsScreen> {
                       icon: const Icon(Icons.refresh),
                       label: const Text('Retry'),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF004D40),
                         foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
@@ -207,7 +206,7 @@ class _StudentStatsContent extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text('${p.totalCount} Enrolled Students',
-                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
+                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18, overflow: TextOverflow.ellipsis)),
               const SizedBox(height: 4),
               Text('${p.maleCount} Male · ${p.femaleCount} Female across ${p.batchStats.length} Batches',
                   style: const TextStyle(color: Colors.white70, fontSize: 13)),
@@ -339,7 +338,6 @@ class _RecentStudentTile extends StatelessWidget {
         children: [
           CircleAvatar(
             radius: 18,
-            backgroundColor: const Color(0xFF004D40),
             child: Text(initials, style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
           ),
           const SizedBox(width: 12),

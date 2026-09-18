@@ -60,11 +60,16 @@ class Attendance {
       rawDate = rawDate.substring(0, 10);
     }
 
+    String rawStatus = (map['status'] ?? 'Present').toString().trim();
+    if (rawStatus.isEmpty) {
+      rawStatus = 'Present';
+    }
+
     return Attendance(
       id: rawId,
       studentId: sId,
       date: rawDate,
-      status: (map['status'] ?? 'Present').toString(),
+      status: rawStatus,
       remarks: map['remarks']?.toString(),
       time: map['time']?.toString(),
     );

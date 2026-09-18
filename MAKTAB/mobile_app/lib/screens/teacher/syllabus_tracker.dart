@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:maktab_app/config/app_colors.dart';
 import '../../../models/syllabus.dart';
 import '../../../repositories/syllabus_repository.dart';
 
@@ -160,8 +161,11 @@ class _SyllabusTrackerScreenState extends State<SyllabusTrackerScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF9FBE7),
       appBar: AppBar(
-        title: const Text('Syllabus Tracker', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
-        backgroundColor: const Color(0xFF004D40),
+        title: const Text('Syllabus Tracker', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18, overflow: TextOverflow.ellipsis)),
+                flexibleSpace: Container(
+          decoration: const BoxDecoration(gradient: AppColors.primaryGradient),
+        ),
+        backgroundColor: Colors.transparent,
         iconTheme: const IconThemeData(color: Colors.white),
         centerTitle: true,
       ),

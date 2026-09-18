@@ -12,6 +12,7 @@ class TeacherAttendanceRepository {
     final id = await db.insert('teacher_attendance', attendance.toMap());
     final created = attendance.copyWith(id: id);
     await CloudSyncService.instance.pushTeacherAttendance(created);
+    CloudSyncService.instance.notifyDataChanged('teacher_attendance');
     return id;
   }
 
@@ -38,6 +39,8 @@ class TeacherAttendanceRepository {
       final created = attendance.copyWith(id: id);
       await CloudSyncService.instance.pushTeacherAttendance(created);
     }
+    // Notify listeners after every save so teacher home screen refreshes
+    CloudSyncService.instance.notifyDataChanged('teacher_attendance');
   }
 
   // ── Read ─────────────────────────────────────────────────────────────────────

@@ -188,7 +188,6 @@ class _BatchEditScreenState extends State<BatchEditScreen> {
             tag: 'batch_avatar_${b.id}',
             child: CircleAvatar(
               radius: 28,
-              backgroundColor: const Color(0xFF004D40),
               child: Text(initials, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
             ),
           ),

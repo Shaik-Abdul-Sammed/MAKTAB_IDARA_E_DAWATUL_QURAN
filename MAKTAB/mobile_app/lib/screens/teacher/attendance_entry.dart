@@ -480,7 +480,6 @@ class _AttendanceEntryScreenState extends State<AttendanceEntryScreen>
             icon: const Icon(Icons.mic_rounded, size: 16),
             label: const Text('Voice Attendance', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF004D40),
               foregroundColor: Colors.white,
             ),
           ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:maktab_app/config/app_colors.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:go_router/go_router.dart';
 import 'package:maktab_app/services/backup_restore_service.dart';
@@ -58,7 +59,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
       backgroundColor: const Color(0xFFF9FBE7),
       appBar: AppBar(
         title: const Text('Settings & Configuration'),
-        backgroundColor: const Color(0xFF004D40),
+                flexibleSpace: Container(
+          decoration: const BoxDecoration(gradient: AppColors.primaryGradient),
+        ),
+        backgroundColor: Colors.transparent,
         foregroundColor: Colors.white,
       ),
       body: _isLoading

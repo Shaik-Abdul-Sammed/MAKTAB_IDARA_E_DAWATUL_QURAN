@@ -8,9 +8,14 @@ class AttendanceRepository {
 
   Future<int> insertAttendance(Attendance attendance) async {
     final db = await _dbHelper.database;
-    final id = await db.insert('attendance', attendance.toMap());
+    final map = attendance.toMap();
+    map['is_synced'] = 0;
+    final id = await db.insert('attendance', map);
     final createdAtt = attendance.copyWith(id: id);
-    await CloudSyncService.instance.pushAttendance(createdAtt);
+    final pushOk = await CloudSyncService.instance.pushAttendance(createdAtt);
+    if (pushOk) {
+      await db.update('attendance', {'is_synced': 1}, where: 'id = ?', whereArgs: [id]);
+    }
     CloudSyncService.instance.notifyDataChanged('attendance');
     return id;
   }
@@ -20,13 +25,18 @@ class AttendanceRepository {
     final List<Attendance> createdList = [];
     await db.transaction((txn) async {
       for (var att in attendances) {
-        final insertedId = await txn.insert('attendance', att.toMap());
+        final map = att.toMap();
+        map['is_synced'] = 0;
+        final insertedId = await txn.insert('attendance', map);
         createdList.add(att.copyWith(id: insertedId));
       }
     });
     for (var created in createdList) {
       try {
-        await CloudSyncService.instance.pushAttendance(created);
+        final pushOk = await CloudSyncService.instance.pushAttendance(created);
+        if (pushOk && created.id != null) {
+          await db.update('attendance', {'is_synced': 1}, where: 'id = ?', whereArgs: [created.id]);
+        }
       } catch (e) {
         debugPrint('CloudSync push error for attendance ${created.id}: $e');
       }
@@ -38,9 +48,11 @@ class AttendanceRepository {
     final db = await _dbHelper.database;
     await db.transaction((txn) async {
       for (var att in attendances) {
+        final map = att.toMap();
+        map['is_synced'] = 0;
         await txn.update(
           'attendance',
-          att.toMap(),
+          map,
           where: 'id = ?',
           whereArgs: [att.id],
         );
@@ -48,7 +60,10 @@ class AttendanceRepository {
     });
     for (var att in attendances) {
       try {
-        await CloudSyncService.instance.pushAttendance(att);
+        final pushOk = await CloudSyncService.instance.pushAttendance(att);
+        if (pushOk && att.id != null) {
+          await db.update('attendance', {'is_synced': 1}, where: 'id = ?', whereArgs: [att.id]);
+        }
       } catch (e) {
         debugPrint('CloudSync push error for attendance ${att.id}: $e');
       }
@@ -119,12 +134,15 @@ class AttendanceRepository {
 
   Future<int> updateAttendance(Attendance attendance) async {
     final db = await _dbHelper.database;
-    return await db.update(
+    final res = await db.update(
       'attendance',
       attendance.toMap(),
       where: 'id = ?',
       whereArgs: [attendance.id],
     );
+    await CloudSyncService.instance.pushAttendance(attendance);
+    CloudSyncService.instance.notifyDataChanged('attendance');
+    return res;
   }
 
   // Method to check if attendance for a batch on a date already exists

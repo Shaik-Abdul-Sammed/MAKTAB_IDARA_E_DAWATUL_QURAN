@@ -179,9 +179,8 @@ class _TeacherEditScreenState extends State<TeacherEditScreen> {
             tag: 'teacher_avatar_${widget.teacher.id}',
             child: CircleAvatar(
               radius: 30,
-              backgroundColor: const Color(0xFF004D40),
               child: Text(initials,
-                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
+                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18, overflow: TextOverflow.ellipsis)),
             ),
           ),
           const SizedBox(width: 16),

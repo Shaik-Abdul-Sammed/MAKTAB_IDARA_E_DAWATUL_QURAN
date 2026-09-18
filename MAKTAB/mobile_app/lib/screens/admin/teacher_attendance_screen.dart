@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -9,6 +10,7 @@ import 'package:maktab_app/models/user.dart';
 import 'package:maktab_app/models/teacher_attendance.dart';
 import 'package:maktab_app/repositories/user_repository.dart';
 import 'package:maktab_app/repositories/teacher_attendance_repository.dart';
+import 'package:maktab_app/services/cloud_sync_service.dart';
 import 'package:maktab_app/utils/whatsapp_utility.dart';
 import 'package:maktab_app/widgets/voice_attendance_dialog.dart';
 
@@ -31,6 +33,7 @@ class _TeacherAttendanceScreenState extends State<TeacherAttendanceScreen> {
   final UserRepository _userRepository = UserRepository();
   final TeacherAttendanceRepository _attendanceRepository =
       TeacherAttendanceRepository();
+  StreamSubscription<String>? _syncSub;
 
   DateTime _selectedDate = DateTime.now();
   List<User> _teachers = [];
@@ -53,10 +56,16 @@ class _TeacherAttendanceScreenState extends State<TeacherAttendanceScreen> {
   void initState() {
     super.initState();
     _loadData();
+    _syncSub = CloudSyncService.instance.onDataSynced.listen((col) {
+      if (col == 'teacher_attendance' || col == 'teachers') {
+        _loadData();
+      }
+    });
   }
 
   @override
   void dispose() {
+    _syncSub?.cancel();
     for (final c in _remarksControllers.values) {
       c.dispose();
     }
@@ -427,7 +436,8 @@ class _TeacherAttendanceScreenState extends State<TeacherAttendanceScreen> {
             style: TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.bold,
-                fontSize: 18)),
+                fontSize: 18,
+                overflow: TextOverflow.ellipsis)),
         flexibleSpace: Container(
             decoration:
                 const BoxDecoration(gradient: AppColors.primaryGradient)),

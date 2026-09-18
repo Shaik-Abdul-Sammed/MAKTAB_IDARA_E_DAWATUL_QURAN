@@ -66,7 +66,6 @@ class _ExportConfigScreenState extends State<ExportConfigScreen> {
                 child: ElevatedButton(
                   onPressed: _save,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF004D40),
                     foregroundColor: Colors.white,
                   ),
                   child: const Text('Save Export Branding', style: TextStyle(fontWeight: FontWeight.bold)),

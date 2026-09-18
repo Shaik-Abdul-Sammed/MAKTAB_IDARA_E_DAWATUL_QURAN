@@ -181,7 +181,10 @@ class _TeacherFaceAttendanceScreenState extends State<TeacherFaceAttendanceScree
           'Face Verification Attendance',
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 17),
         ),
-        backgroundColor: const Color(0xFF004D40),
+                flexibleSpace: Container(
+          decoration: const BoxDecoration(gradient: AppColors.primaryGradient),
+        ),
+        backgroundColor: Colors.transparent,
         foregroundColor: Colors.white,
       ),
       body: SafeArea(

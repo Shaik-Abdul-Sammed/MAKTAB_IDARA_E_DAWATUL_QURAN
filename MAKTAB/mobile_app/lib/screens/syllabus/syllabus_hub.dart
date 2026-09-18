@@ -27,7 +27,6 @@ class _SyllabusHubScreenState extends State<SyllabusHubScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Attached Syllabus PDF: ${result.files.single.name}'),
-          backgroundColor: const Color(0xFF004D40),
         ),
       );
     }

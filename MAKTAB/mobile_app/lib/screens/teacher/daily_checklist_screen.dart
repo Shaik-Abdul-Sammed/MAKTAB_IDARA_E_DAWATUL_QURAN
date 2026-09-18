@@ -26,8 +26,8 @@ class DailyChecklistScreen extends StatelessWidget {
         ),
         floatingActionButton: Consumer<DailyChecklistProvider>(
           builder: (context, p, _) => FloatingActionButton.extended(
+          foregroundColor: const Color(0xFFFFD700),
             backgroundColor: const Color(0xFF004D40),
-            foregroundColor: const Color(0xFFFFD700),
             onPressed: () => _showAddChecklistDialog(context, p),
             icon: const Icon(Icons.add_rounded),
             label: const Text('Add Task', style: TextStyle(fontWeight: FontWeight.bold)),
@@ -116,7 +116,6 @@ class DailyChecklistScreen extends StatelessWidget {
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF004D40),
               foregroundColor: const Color(0xFFFFD700),
             ),
             onPressed: () {
@@ -181,7 +180,7 @@ class DailyChecklistScreen extends StatelessWidget {
               children: [
                 Text(
                   isDone ? 'MashaAllah! All Done 🎉' : 'Daily Maktab Readiness',
-                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
+                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18, overflow: TextOverflow.ellipsis),
                 ),
                 const SizedBox(height: 4),
                 Text(

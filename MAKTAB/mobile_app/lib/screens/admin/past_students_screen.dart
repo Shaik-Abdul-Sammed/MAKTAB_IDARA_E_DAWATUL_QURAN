@@ -103,7 +103,6 @@ class _PastStudentsScreenState extends State<PastStudentsScreen> {
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF004D40),
               foregroundColor: Colors.white,
             ),
             onPressed: () => Navigator.pop(context, true),
@@ -119,7 +118,6 @@ class _PastStudentsScreenState extends State<PastStudentsScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('${student.name} has been restored to active list.'),
-            backgroundColor: const Color(0xFF004D40),
           ),
         );
         _loadData();
@@ -171,7 +169,10 @@ class _PastStudentsScreenState extends State<PastStudentsScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Past / Archived Students'),
-        backgroundColor: const Color(0xFF004D40),
+                flexibleSpace: Container(
+          decoration: const BoxDecoration(gradient: AppColors.primaryGradient),
+        ),
+        backgroundColor: Colors.transparent,
         foregroundColor: Colors.white,
       ),
       body: Column(

@@ -123,7 +123,6 @@ class _BatchManagementScreenState extends State<BatchManagementScreen> {
                 ),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF004D40),
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                   ),
@@ -223,7 +222,6 @@ class _BatchManagementScreenState extends State<BatchManagementScreen> {
                 ),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF004D40),
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                   ),
@@ -340,7 +338,6 @@ class _BatchManagementScreenState extends State<BatchManagementScreen> {
                 ),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF004D40),
                     foregroundColor: Colors.white,
                   ),
                   onPressed: () async {

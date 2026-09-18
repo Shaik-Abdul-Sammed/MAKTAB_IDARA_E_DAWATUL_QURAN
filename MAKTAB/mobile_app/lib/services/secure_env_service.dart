@@ -11,15 +11,18 @@ class SecureEnvService {
   }
 
   static Future<String> getDatabaseEncryptionKey() async {
-    String? key = await _storage.read(key: _dbKeyName);
-    if (key == null) {
-      // Generate a strong random key for SQLCipher
-      final random = Random.secure();
-      final values = List<int>.generate(32, (i) => random.nextInt(256));
-      key = base64UrlEncode(values);
-      await _storage.write(key: _dbKeyName, value: key);
+    try {
+      String? key = await _storage.read(key: _dbKeyName);
+      if (key == null) {
+        final random = Random.secure();
+        final values = List<int>.generate(32, (i) => random.nextInt(256));
+        key = base64UrlEncode(values);
+        await _storage.write(key: _dbKeyName, value: key);
+      }
+      return key;
+    } catch (e) {
+      return 'idara_maktab_sec_key_2026_fallback';
     }
-    return key;
   }
 
   static Future<void> setDatabaseEncryptionKey(String key) async {

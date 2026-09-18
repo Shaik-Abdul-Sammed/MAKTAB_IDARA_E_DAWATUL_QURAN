@@ -124,7 +124,7 @@ class _SupportHelpScreenState extends State<SupportHelpScreen> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Maktab Support Desk', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
+              Text('Maktab Support Desk', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18, overflow: TextOverflow.ellipsis)),
               SizedBox(height: 4),
               Text('We are here to assist your institution', style: TextStyle(color: Colors.white70, fontSize: 12)),
             ],

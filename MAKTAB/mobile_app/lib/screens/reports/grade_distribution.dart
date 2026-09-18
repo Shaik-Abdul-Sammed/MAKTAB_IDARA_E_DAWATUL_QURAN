@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:maktab_app/config/app_colors.dart';
 
 class GradeDistributionScreen extends StatelessWidget {
   const GradeDistributionScreen({super.key});
@@ -10,9 +11,12 @@ class GradeDistributionScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text(
           'Exams Grade Curves',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18, overflow: TextOverflow.ellipsis),
         ),
-        backgroundColor: const Color(0xFF004D40), // Dark green
+                flexibleSpace: Container(
+          decoration: const BoxDecoration(gradient: AppColors.primaryGradient),
+        ),
+        backgroundColor: Colors.transparent,
         iconTheme: const IconThemeData(color: Colors.white),
         centerTitle: true,
       ),

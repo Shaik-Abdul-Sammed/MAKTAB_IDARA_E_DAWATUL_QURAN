@@ -26,7 +26,6 @@ class _WelcomeGeneralScreenState extends State<WelcomeGeneralScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF004D40), // Dark green background
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,

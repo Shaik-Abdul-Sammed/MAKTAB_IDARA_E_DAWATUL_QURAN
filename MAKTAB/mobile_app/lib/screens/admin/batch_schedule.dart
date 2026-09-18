@@ -70,7 +70,6 @@ class _BatchScheduleScreenState extends State<BatchScheduleScreen> {
                       icon: const Icon(Icons.refresh),
                       label: const Text('Retry'),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF004D40),
                         foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
@@ -159,7 +158,7 @@ class _ScheduleContent extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text('${p.batches.length} Active Batches Scheduled',
-                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
+                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18, overflow: TextOverflow.ellipsis)),
               const SizedBox(height: 4),
               Text('${p.totalStudents} Students Enrolled across all Timings',
                   style: const TextStyle(color: Colors.white70, fontSize: 13)),

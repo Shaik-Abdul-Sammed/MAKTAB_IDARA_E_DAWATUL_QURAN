@@ -504,7 +504,6 @@ class _FeeManagementScreenState extends State<FeeManagementScreen> {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: const Text('Payment Logged Successfully!'),
-                      backgroundColor: const Color(0xFF004D40),
                       action: SnackBarAction(
                         label: 'Send Receipt',
                         textColor: Colors.amber,

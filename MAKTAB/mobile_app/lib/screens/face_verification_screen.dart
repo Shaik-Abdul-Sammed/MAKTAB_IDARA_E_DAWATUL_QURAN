@@ -214,7 +214,6 @@ class _FaceVerificationScreenState extends State<FaceVerificationScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.primaryTeal,
       appBar: AppBar(
         title: const Text('Teacher Face & Biometric Check'),
         backgroundColor: AppColors.primaryDarkTeal,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:maktab_app/config/app_colors.dart';
 import 'package:maktab_app/widgets/empty_state_widget.dart';
 import 'package:maktab_app/models/batch.dart';
 import 'package:maktab_app/models/student.dart';
@@ -177,7 +178,10 @@ class _ReportsDashboardState extends State<ReportsDashboard> {
       backgroundColor: const Color(0xFFF9FBE7),
       appBar: AppBar(
         title: const Text('Reports & Analysis'),
-        backgroundColor: const Color(0xFF004D40),
+                flexibleSpace: Container(
+          decoration: const BoxDecoration(gradient: AppColors.primaryGradient),
+        ),
+        backgroundColor: Colors.transparent,
         foregroundColor: Colors.white,
         actions: [
           IconButton(

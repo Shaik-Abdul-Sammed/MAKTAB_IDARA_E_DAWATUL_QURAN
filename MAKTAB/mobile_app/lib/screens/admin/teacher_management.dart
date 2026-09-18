@@ -15,6 +15,9 @@ import 'package:maktab_app/providers/auth_provider.dart';
 import 'package:crypto/crypto.dart';
 import 'dart:convert';
 
+import 'dart:async';
+import 'package:maktab_app/services/cloud_sync_service.dart';
+
 class TeacherManagementScreen extends StatefulWidget {
   const TeacherManagementScreen({super.key});
 
@@ -25,6 +28,7 @@ class TeacherManagementScreen extends StatefulWidget {
 class _TeacherManagementScreenState extends State<TeacherManagementScreen> {
   final UserRepository _userRepository = UserRepository();
   final BatchRepository _batchRepository = BatchRepository();
+  StreamSubscription<String>? _syncSub;
   List<Batch> _allBatches = [];
   List<User> _teachers = [];
   bool _isLoading = true;
@@ -33,6 +37,17 @@ class _TeacherManagementScreenState extends State<TeacherManagementScreen> {
   void initState() {
     super.initState();
     _fetchTeachers();
+    _syncSub = CloudSyncService.instance.onDataSynced.listen((col) {
+      if (col == 'teachers' || col == 'batches') {
+        _fetchTeachers();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _syncSub?.cancel();
+    super.dispose();
   }
 
   Future<void> _fetchTeachers() async {
@@ -179,7 +194,6 @@ class _TeacherManagementScreenState extends State<TeacherManagementScreen> {
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF004D40),
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
               ),
@@ -362,7 +376,6 @@ class _TeacherManagementScreenState extends State<TeacherManagementScreen> {
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF004D40),
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
               ),
@@ -442,7 +455,6 @@ class _TeacherManagementScreenState extends State<TeacherManagementScreen> {
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF004D40),
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
               ),

@@ -137,7 +137,7 @@ class _QuranProgressScreenState extends State<QuranProgressScreen> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Quran Progress Tracker', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
+              Text('Quran Progress Tracker', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18, overflow: TextOverflow.ellipsis)),
               SizedBox(height: 4),
               Text('Record Sabaq, Sabaqi, and Manzil daily', style: TextStyle(color: Colors.white70, fontSize: 12)),
             ],
@@ -196,7 +196,6 @@ class _StudentRecitationTile extends StatelessWidget {
           child: ListTile(
             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             leading: CircleAvatar(
-              backgroundColor: const Color(0xFF004D40),
               child: Text(
                 student.name.isNotEmpty ? student.name[0].toUpperCase() : 'S',
                 style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),

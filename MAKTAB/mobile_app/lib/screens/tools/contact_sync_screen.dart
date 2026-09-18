@@ -82,7 +82,6 @@ class _ContactSyncScreenState extends State<ContactSyncScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('Contact vCard created for ${s.name} ($phone)'),
-        backgroundColor: const Color(0xFF004D40),
       ),
     );
   }

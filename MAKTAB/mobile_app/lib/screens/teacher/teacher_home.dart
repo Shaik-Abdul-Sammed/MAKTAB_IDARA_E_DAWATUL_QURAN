@@ -68,8 +68,6 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
   Future<void> _load() async {
     final auth = Provider.of<AuthProvider>(context, listen: false);
     _teacherId = auth.currentUser?.id ?? 0;
-    if (_teacherId == 0) return;
-
     setState(() => _isLoading = true);
 
     final today = DateFormat('yyyy-MM-dd').format(DateTime.now());

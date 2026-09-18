@@ -266,7 +266,6 @@ class _ErrorContent extends StatelessWidget {
               icon: const Icon(Icons.refresh),
               label: const Text('Retry'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF004D40),
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
@@ -417,7 +416,6 @@ class _TeacherTile extends StatelessWidget {
           tag: 'teacher_avatar_${teacher.id}',
           child: CircleAvatar(
             radius: 24,
-            backgroundColor: const Color(0xFF004D40),
             child: Text(initials,
                 style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
           ),

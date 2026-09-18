@@ -52,7 +52,12 @@ class User {
     }
 
     final activeVal = map['is_active'] ?? map['isActive'] ?? map['active'];
-    final bool active = activeVal == true || activeVal == 1 || activeVal == '1';
+    final bool active = activeVal == null
+        ? true
+        : (activeVal == true ||
+            activeVal == 1 ||
+            activeVal == '1' ||
+            activeVal.toString().toLowerCase() == 'true');
 
     return User(
       id: rawId,

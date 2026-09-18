@@ -29,6 +29,7 @@ class UserRepository {
     final id = await db.insert('users', user.toMap());
     final createdUser = user.copyWith(id: id);
     await CloudSyncService.instance.pushUser(createdUser);
+    CloudSyncService.instance.notifyDataChanged('teachers');
     return id;
   }
 
@@ -82,6 +83,7 @@ class UserRepository {
     if (user != null) {
       await CloudSyncService.instance.pushUser(user);
     }
+    CloudSyncService.instance.notifyDataChanged('teachers');
     return res;
   }
 
@@ -111,6 +113,7 @@ class UserRepository {
       final maktabId = 'MAKTAB-$mobile';
       await CloudSyncService.instance.setMaktabId(maktabId);
       await CloudSyncService.instance.pushUser(createdAdmin);
+      CloudSyncService.instance.notifyDataChanged('teachers');
       return true;
     }
     return false;
@@ -128,20 +131,26 @@ class UserRepository {
 
   Future<int> deleteUser(int id) async {
     final db = await _dbHelper.database;
-    return await db.delete(
+    final res = await db.delete(
       'users',
       where: 'id = ?',
       whereArgs: [id],
     );
+    await CloudSyncService.instance.deleteTeacherCloud(id);
+    CloudSyncService.instance.notifyDataChanged('teachers');
+    return res;
   }
 
   Future<int> updateUser(User user) async {
     final db = await _dbHelper.database;
-    return await db.update(
+    final res = await db.update(
       'users',
       user.toMap(),
       where: 'id = ?',
       whereArgs: [user.id],
     );
+    await CloudSyncService.instance.pushUser(user);
+    CloudSyncService.instance.notifyDataChanged('teachers');
+    return res;
   }
 }

@@ -30,14 +30,24 @@ class TeacherAttendance {
   }
 
   factory TeacherAttendance.fromMap(Map<String, dynamic> map) {
+    // Accept both snake_case (SQLite) and camelCase (Firebase) keys
+    final rawTeacherId = map['teacher_id'] ?? map['teacherId'];
+    final rawMarkedBy  = map['marked_by']  ?? map['markedBy'];
+
+    int? parseInt(dynamic v) {
+      if (v == null) return null;
+      if (v is int) return v;
+      return int.tryParse(v.toString());
+    }
+
     return TeacherAttendance(
-      id: map['id'],
-      teacherId: map['teacher_id'],
-      date: map['date'],
-      status: map['status'],
-      remarks: map['remarks'],
-      markedBy: map['marked_by'],
-      time: map['time'],
+      id:        parseInt(map['id']),
+      teacherId: parseInt(rawTeacherId) ?? 0,
+      date:      map['date']?.toString() ?? '',
+      status:    map['status']?.toString() ?? 'Present',
+      remarks:   map['remarks']?.toString(),
+      markedBy:  parseInt(rawMarkedBy),
+      time:      map['time']?.toString(),
     );
   }
 

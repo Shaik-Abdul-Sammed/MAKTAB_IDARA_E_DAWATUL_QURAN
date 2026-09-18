@@ -168,7 +168,6 @@ class _StudentAcademicHistoryScreenState extends State<StudentAcademicHistoryScr
               icon: const Icon(Icons.picture_as_pdf),
               label: const Text('Export Official Transcript PDF'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF004D40),
                 foregroundColor: Colors.white,
               ),
             ),

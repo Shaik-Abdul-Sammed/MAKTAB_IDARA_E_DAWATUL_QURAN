@@ -158,7 +158,7 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Local Notifications', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
+              Text('Local Notifications', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18, overflow: TextOverflow.ellipsis)),
               SizedBox(height: 4),
               Text('Managed via Flutter Local Notifications', style: TextStyle(color: Colors.white70, fontSize: 12)),
             ],

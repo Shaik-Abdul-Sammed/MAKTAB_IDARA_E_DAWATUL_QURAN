@@ -11,9 +11,13 @@ class StudentRepository {
     final db = await _dbHelper.database;
     final map = student.toMap();
     map['batch_id'] ??= 1;
+    map['is_synced'] = 0;
     final id = await db.insert('students', map);
     final createdStudent = student.copyWith(id: id, batchId: map['batch_id'] as int);
-    await CloudSyncService.instance.pushStudent(createdStudent);
+    final pushOk = await CloudSyncService.instance.pushStudent(createdStudent);
+    if (pushOk) {
+      await db.update('students', {'is_synced': 1}, where: 'id = ?', whereArgs: [id]);
+    }
     CloudSyncService.instance.notifyDataChanged('students');
     return id;
   }
@@ -76,12 +80,25 @@ class StudentRepository {
   /// Uses a JOIN so active students in the teacher's batches are retrieved, with fallback to all active students.
   Future<List<Student>> getStudentsByTeacher(int teacherId) async {
     final db = await _dbHelper.database;
+    // Trigger background pull for latest updates from cloud
+    final maktabId = await CloudSyncService.instance.getMaktabId();
+    CloudSyncService.instance.pullAllDataForMaktab(maktabId).catchError((_) => false);
+
+    if (teacherId <= 0) {
+      return getAllStudents();
+    }
+
     final List<Map<String, dynamic>> maps = await db.rawQuery('''
       SELECT s.*
       FROM students s
-      INNER JOIN batches b ON s.batch_id = b.id
-      WHERE (b.teacher_id = ? OR b.teacher_id IS NULL)
-        AND (s.is_deleted IS NULL OR s.is_deleted = 0)
+      LEFT JOIN batches b ON s.batch_id = b.id
+      WHERE (s.is_deleted IS NULL OR s.is_deleted = 0)
+        AND (
+          b.teacher_id = ?
+          OR b.teacher_id IS NULL
+          OR s.batch_id IS NULL
+          OR s.batch_id NOT IN (SELECT id FROM batches)
+        )
       ORDER BY s.name ASC
     ''', [teacherId]);
 
@@ -90,12 +107,7 @@ class StudentRepository {
     }
 
     // Fail-safe fallback: return all non-deleted students so Teacher home screen is never 0
-    final List<Map<String, dynamic>> fallbackMaps = await db.query(
-      'students',
-      where: 'is_deleted IS NULL OR is_deleted = 0',
-      orderBy: 'name ASC',
-    );
-    return List.generate(fallbackMaps.length, (i) => Student.fromMap(fallbackMaps[i]));
+    return getAllStudents();
   }
 
   // ── Past / Deleted Students ──────────────────────────────────────────────────

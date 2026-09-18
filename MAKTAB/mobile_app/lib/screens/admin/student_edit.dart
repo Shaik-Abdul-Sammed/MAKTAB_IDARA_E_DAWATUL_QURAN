@@ -307,7 +307,6 @@ class _StudentEditScreenState extends State<StudentEditScreen> {
                   onTap: _pickImage,
                   child: CircleAvatar(
                     radius: 28,
-                    backgroundColor: const Color(0xFF004D40),
                     backgroundImage: _selectedPhotoPath != null ? FileImage(File(_selectedPhotoPath!)) : null,
                     child: _selectedPhotoPath == null ? Text(initials, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)) : null,
                   ),

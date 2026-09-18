@@ -114,7 +114,7 @@ class _ExcelImportScreenState extends State<ExcelImportScreen> with SingleTicker
       appBar: AppBar(
         title: const Text(
           'Bulk Data Import',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18, overflow: TextOverflow.ellipsis),
         ),
         flexibleSpace: Container(
           decoration: const BoxDecoration(gradient: AppColors.primaryGradient),

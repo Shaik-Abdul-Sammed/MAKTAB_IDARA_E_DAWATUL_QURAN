@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:maktab_app/config/app_colors.dart';
 
 class SyllabusLevelAddScreen extends StatefulWidget {
   const SyllabusLevelAddScreen({super.key});
@@ -47,9 +48,12 @@ class _SyllabusLevelAddScreenState extends State<SyllabusLevelAddScreen> {
       appBar: AppBar(
         title: const Text(
           'Add Grade Level',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18, overflow: TextOverflow.ellipsis),
         ),
-        backgroundColor: const Color(0xFF004D40), // Dark green
+                flexibleSpace: Container(
+          decoration: const BoxDecoration(gradient: AppColors.primaryGradient),
+        ),
+        backgroundColor: Colors.transparent,
         iconTheme: const IconThemeData(color: Colors.white),
         centerTitle: true,
       ),

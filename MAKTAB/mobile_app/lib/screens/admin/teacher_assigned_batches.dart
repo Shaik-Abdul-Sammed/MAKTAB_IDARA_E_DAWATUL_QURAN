@@ -106,7 +106,10 @@ class _TeacherAssignedBatchesScreenState
             ),
           ],
         ),
-        backgroundColor: AppColors.primaryTeal,
+                flexibleSpace: Container(
+          decoration: const BoxDecoration(gradient: AppColors.primaryGradient),
+        ),
+        backgroundColor: Colors.transparent,
         foregroundColor: Colors.white,
         actions: [
           if (_isSaving)

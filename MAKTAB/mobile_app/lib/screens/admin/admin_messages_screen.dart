@@ -105,8 +105,8 @@ class _AdminMessagesScreenState extends State<AdminMessagesScreen> {
                           icon: const Icon(Icons.campaign),
                           label: const Text('App Broadcast'),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF004D40),
                             foregroundColor: Colors.white,
+                            backgroundColor: const Color(0xFF004D40),
                             minimumSize: const Size(0, 48),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
@@ -143,7 +143,6 @@ class _AdminMessagesScreenState extends State<AdminMessagesScreen> {
                             final teacher = _teachers[index];
                             return ListTile(
                               leading: CircleAvatar(
-                                backgroundColor: const Color(0xFF004D40),
                                 child: Text(
                                   teacher.name.substring(0, 1).toUpperCase(),
                                   style: const TextStyle(color: Colors.white),

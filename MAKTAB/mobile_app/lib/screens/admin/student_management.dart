@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:maktab_app/config/app_colors.dart';
 import 'package:maktab_app/widgets/empty_state_widget.dart';
 import 'package:go_router/go_router.dart';
 import 'package:maktab_app/models/student.dart';
@@ -136,7 +137,6 @@ class _StudentManagementScreenState extends State<StudentManagementScreen> {
                 ),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF004D40),
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                   ),
@@ -257,7 +257,6 @@ class _StudentManagementScreenState extends State<StudentManagementScreen> {
                 ),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF004D40),
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                   ),
@@ -320,7 +319,10 @@ class _StudentManagementScreenState extends State<StudentManagementScreen> {
       backgroundColor: const Color(0xFFF9FBE7), // Cream background
       appBar: AppBar(
         title: const Text('Student Management', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        backgroundColor: const Color(0xFF004D40),
+                flexibleSpace: Container(
+          decoration: const BoxDecoration(gradient: AppColors.primaryGradient),
+        ),
+        backgroundColor: Colors.transparent,
         iconTheme: const IconThemeData(color: Colors.white),
         centerTitle: true,
         actions: [

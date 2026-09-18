@@ -13,6 +13,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:maktab_app/l10n/app_localizations.dart';
 
 import 'package:maktab_app/services/notification_service.dart';
+import 'package:maktab_app/services/cloud_sync_service.dart';
 
 import 'dart:io' show Platform, File;
 import 'package:maktab_app/utils/logger.dart';
@@ -167,6 +168,8 @@ class _MaktabAppState extends State<MaktabApp> with WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       _resetInactivityTimer();
+      // Re-sync immediately when app comes back from background
+      CloudSyncService.instance.onAppResumed();
     }
   }
 
@@ -211,6 +214,13 @@ class _MaktabAppState extends State<MaktabApp> with WidgetsBindingObserver {
             centerTitle: false,
             titleSpacing: 8,
             elevation: 0,
+            // Prevent title text from overflowing / being clipped on any screen
+            titleTextStyle: TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+              fontSize: 18,
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
           splashColor: const Color(0xFFFFD700).withValues(alpha: 0.12),
           highlightColor: Colors.transparent,
