@@ -65,3 +65,18 @@ render.experimental.xml
 
 # Android Profiling
 *.hprof
+
+# Temporary & Editor swap/backup files
+*.swp
+*.swo
+*~
+*.bak
+.directory
+Thumbs.db
+ehthumbs.db
+.history/
+.shelf/
+
+# Additional Flutter/iOS overrides
+pubspec-overrides.yaml
+*.ipa

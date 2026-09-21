@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:maktab_app/config/app_colors.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:go_router/go_router.dart';
@@ -6,6 +7,7 @@ import 'package:maktab_app/services/backup_restore_service.dart';
 import 'package:provider/provider.dart';
 import 'package:maktab_app/providers/auth_provider.dart';
 import 'package:maktab_app/config/api_config.dart';
+import 'package:maktab_app/screens/settings/diagnostics_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -151,6 +153,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   onTap: _handleRestore,
                 ),
                 const SizedBox(height: 20),
+
+                if (kDebugMode) ...[
+                  _buildSectionHeader('Diagnostics & Sync'),
+                  ListTile(
+                    leading: const Icon(Icons.bug_report, color: Colors.deepOrange),
+                    title: const Text('Sync Diagnostics'),
+                    subtitle: const Text('Inspect RTDB probes, auth state, and write logs'),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const DiagnosticsScreen()),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 20),
+                ],
 
                 _buildSectionHeader('About App'),
                 const ListTile(

@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:firebase_auth/firebase_auth.dart' as fb_auth;
 import 'package:firebase_database/firebase_database.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -9,6 +9,8 @@ import 'package:crypto/crypto.dart';
 import 'package:maktab_app/models/user.dart';
 import 'package:maktab_app/repositories/user_repository.dart';
 import 'package:maktab_app/services/cloud_sync_service.dart';
+
+enum ProvisionResult { success, failed, pwMismatch }
 
 class AuthProvider with ChangeNotifier {
   final UserRepository _userRepository = UserRepository();
@@ -44,6 +46,12 @@ class AuthProvider with ChangeNotifier {
   String _lastAuthError = '';
 
   bool _isExplicitLoggingIn = false;
+
+  final List<String> _provisionFailures = [];
+  List<String> get provisionFailures => List.unmodifiable(_provisionFailures);
+
+  final List<String> _provisionPwMismatches = [];
+  List<String> get provisionPwMismatches => List.unmodifiable(_provisionPwMismatches);
 
   User? get currentUser => _currentUser;
   bool get isLoading => _isLoading;
@@ -121,7 +129,7 @@ class AuthProvider with ChangeNotifier {
 
   // ── Teacher Provisioning via Secondary FirebaseApp (Spark Plan Compatible) ──
 
-  Future<bool> provisionTeacherAuthAccount({
+  Future<ProvisionResult> provisionTeacherAuthAccount({
     required int teacherId,
     required String name,
     required String rawPin,
@@ -151,52 +159,147 @@ class AuthProvider with ChangeNotifier {
           email: derivedEmail,
           password: derivedPassword,
         ).timeout(const Duration(seconds: 8));
+        debugPrint('[PROVISION CREATE] $derivedEmail');
       } on fb_auth.FirebaseAuthException catch (e) {
         if (e.code == 'email-already-in-use') {
-          debugPrint('Teacher Firebase Auth account already exists.');
-          await secondaryAuth.signOut();
-          return true;
+          debugPrint('[PROVISION FALLBACK] $derivedEmail exists — signing in on secondary app');
+          try {
+            cred = await secondaryAuth.signInWithEmailAndPassword(
+              email: derivedEmail,
+              password: derivedPassword,
+            ).timeout(const Duration(seconds: 8));
+          } on fb_auth.FirebaseAuthException catch (e2) {
+            // Also attempt saltedHash if account was created with 64-char hash
+            bool recovered = false;
+            try {
+              cred = await secondaryAuth.signInWithEmailAndPassword(
+                email: derivedEmail,
+                password: saltedHash,
+              ).timeout(const Duration(seconds: 5));
+              recovered = true;
+            } catch (_) {}
+
+            if (!recovered && (e2.code == 'wrong-password' || e2.code == 'invalid-credential')) {
+              debugPrint('[PROVISION PW-MISMATCH] $derivedEmail — password differs from expected hash. Manual reset required.');
+              await secondaryAuth.signOut();
+              return ProvisionResult.pwMismatch;
+            }
+            if (!recovered) rethrow;
+          }
+        } else {
+          rethrow;
         }
-        rethrow;
       }
 
-      final teacherUid = cred.user?.uid;
-      if (teacherUid != null && _db != null) {
-        // Manager's primary Firebase session writes /users/$teacherUid profile with mobile & pinHash
-        await _db!.ref('users/$teacherUid').set({
-          'name': name,
-          'email': derivedEmail,
-          'role': 'teacher',
-          'maktabId': maktabId,
-          'teacherId': teacherId,
-          'mobile': mobile ?? '',
-          'pinHash': saltedHash,
-          'active': true,
-        }).timeout(const Duration(seconds: 5));
+      final teacherUid = cred?.user?.uid;
+      if (teacherUid != null) {
+        // Write /users/{teacherUid} from the secondary app so auth.uid == $uid
+        // (clause B of the /users/$uid write rule) — independent of manager profile correctness.
+        final secondaryDb = FirebaseDatabase.instanceFor(
+          app: secondaryApp,
+          databaseURL: _rtdbUrl,
+        );
+        try {
+          await secondaryDb.ref('users/$teacherUid').set({
+            'name': name,
+            'email': derivedEmail,
+            'role': 'teacher',
+            'maktabId': maktabId,
+            'teacherId': teacherId,
+            'mobile': mobile ?? '',
+            'pinHash': saltedHash,
+            'active': true,
+          }).timeout(const Duration(seconds: 6));
+
+          final verify = await secondaryDb
+              .ref('users/$teacherUid')
+              .get()
+              .timeout(const Duration(seconds: 3));
+
+          if (!verify.exists || verify.value == null) {
+            debugPrint('[PROVISION FAIL] write not confirmed teacherId=$teacherId uid=$teacherUid');
+            await secondaryAuth.signOut();
+            return ProvisionResult.failed;
+          }
+          debugPrint('[PROVISION OK] teacherId=$teacherId uid=$teacherUid');
+        } catch (e, st) {
+          debugPrint('[PROVISION EXCEPTION] teacherId=$teacherId error=$e\n$st');
+          await secondaryAuth.signOut();
+          return ProvisionResult.failed;
+        }
       }
       await secondaryAuth.signOut();
-      return true;
+      return ProvisionResult.success;
+
     } catch (e) {
       debugPrint('provisionTeacherAuthAccount Error: $e');
-      return false;
+      return ProvisionResult.failed;
     }
   }
 
   Future<void> _provisionAllTeachersInBackground() async {
     try {
+      _provisionFailures.clear();
+      _provisionPwMismatches.clear();
       final teachers = await _userRepository.getAllTeachers();
       for (var t in teachers) {
         if (t.id != null) {
-          await provisionTeacherAuthAccount(
+          final result = await provisionTeacherAuthAccount(
             teacherId: t.id!,
             name: t.name,
             rawPin: '1234',
             mobile: t.mobile,
           );
+          switch (result) {
+            case ProvisionResult.success:
+              break;
+            case ProvisionResult.failed:
+              _provisionFailures.add('Teacher ${t.id} (${t.name}) provisioning failed');
+              debugPrint('[PROVISION FAIL] teacherId=${t.id} name=${t.name}');
+              break;
+            case ProvisionResult.pwMismatch:
+              _provisionPwMismatches.add('Teacher ${t.id} (${t.name}) — password mismatch, manual reset required');
+              debugPrint('[PROVISION PW-MISMATCH] teacherId=${t.id} name=${t.name}');
+              break;
+          }
         }
       }
+      notifyListeners();
     } catch (e) {
       debugPrint('Background teacher provisioning note: $e');
+    }
+  }
+
+  Future<void> _backfillMissingTeacherProfiles() async {
+    try {
+      if (_db == null) return;
+      final usersSnap = await _db!.ref('users').get().timeout(const Duration(seconds: 6));
+      final existingUsers = (usersSnap.value as Map?)?.cast<String, dynamic>() ?? {};
+
+      final teachers = await _userRepository.getAllTeachers();
+      final missing = <String>[];
+
+      for (final t in teachers) {
+        if (t.id == null) continue;
+        final expectedEmail = 'teacher_${await CloudSyncService.instance.getMaktabId()}_${t.id}@maktab.app';
+        final found = existingUsers.values.any((v) {
+          if (v is! Map) return false;
+          return (v['email'] ?? '').toString() == expectedEmail;
+        });
+        if (!found) {
+          missing.add('teacherId=${t.id} email=$expectedEmail');
+        }
+      }
+
+      if (missing.isNotEmpty) {
+        debugPrint('[BACKFILL] Missing /users nodes for: ${missing.join(', ')}');
+        // Re-run provisioning for all teachers; the fallback path will create the nodes.
+        await _provisionAllTeachersInBackground();
+      } else {
+        debugPrint('[BACKFILL] All teacher /users nodes present.');
+      }
+    } catch (e) {
+      debugPrint('[BACKFILL ERROR] $e');
     }
   }
 
@@ -284,6 +387,20 @@ class AuthProvider with ChangeNotifier {
         final maktabId = data['maktabId'] as String?;
         final role = data['role'] as String? ?? 'teacher';
         final active = data['active'] as bool? ?? true;
+        final teacherId = data['teacherId'];
+
+        final localMaktabId = await CloudSyncService.instance.getMaktabId();
+        final remoteMaktabId = maktabId ?? '';
+
+        debugPrint('[PROFILE AUDIT RAW] ${jsonEncode(snapshot.value)}');
+        debugPrint('[MAKTAB MATCH] local="$localMaktabId" remote="$remoteMaktabId" equal=${localMaktabId == remoteMaktabId} localLen=${localMaktabId.length} remoteLen=${remoteMaktabId.length}');
+
+        debugPrint('[PROFILE AUDIT] uid=$uid');
+        debugPrint('  exists: true');
+        debugPrint('  role: "$role"');
+        debugPrint('  maktabId: "$maktabId"');
+        debugPrint('  active: $active (type: ${active.runtimeType})');
+        debugPrint('  teacherId: $teacherId');
 
         if (maktabId == null || maktabId.trim().isEmpty) {
           _lastAuthError = 'Profile configuration error: missing maktabId in /users/$uid profile.';
@@ -304,6 +421,7 @@ class AuthProvider with ChangeNotifier {
         }
 
         await CloudSyncService.instance.setMaktabId(maktabId);
+        logMaktabFingerprint('manager_login', maktabId);
 
         // Map to local User model
         _currentUser = User(
@@ -321,6 +439,7 @@ class AuthProvider with ChangeNotifier {
         CloudSyncService.instance.enableAlwaysOnSync(maktabId);
         if (role == 'manager' || role == 'admin' || role == 'operator') {
           _provisionAllTeachersInBackground();
+          unawaited(_backfillMissingTeacherProfiles());
         }
         return true;
       } else {
@@ -373,6 +492,7 @@ class AuthProvider with ChangeNotifier {
 
             CloudSyncService.instance.enableAlwaysOnSync(derivedMaktabId);
             _provisionAllTeachersInBackground();
+            unawaited(_backfillMissingTeacherProfiles());
             return true;
           } catch (e) {
             debugPrint('Auto-provisioning Manager profile error: $e');
@@ -534,11 +654,32 @@ class AuthProvider with ChangeNotifier {
 
       String activeMaktabId = await CloudSyncService.instance.getMaktabId();
 
+      if (kDebugMode) {
+        debugPrint('[TEACHER PIN]');
+        debugPrint('Local authentication: SUCCESS');
+        debugPrint('Teacher ID: ${teacher.id}');
+        debugPrint('Maktab ID: $activeMaktabId');
+      }
+
+      bool fbAuthSuccess = false;
+      String? fbUid;
+      String profileStatus = 'MISSING';
+      String profileRole = 'unknown';
+      String profileMaktabId = activeMaktabId;
+      bool profileActive = false;
+
       // Bind Teacher PIN authentication to a secure Firebase Auth identity
       try {
         if (_fbAuth != null) {
           final derivedEmail = 'teacher_${activeMaktabId}_${teacher.id ?? 1}@maktab.app';
           final derivedPassword = _hashPin(pin).padRight(32, '0').substring(0, 32);
+
+          if (kDebugMode) {
+            debugPrint('[TEACHER FIREBASE AUTH]');
+            debugPrint('Starting Firebase authentication');
+            debugPrint('Attempting: $derivedEmail');
+          }
+
           fb_auth.UserCredential? cred;
           try {
             cred = await _fbAuth!.signInWithEmailAndPassword(
@@ -566,42 +707,105 @@ class AuthProvider with ChangeNotifier {
                     password: derivedPassword,
                   ).timeout(const Duration(seconds: 5));
                 } catch (e3) {
-                  try {
-                    cred = await _fbAuth!.signInAnonymously().timeout(const Duration(seconds: 5));
-                  } catch (_) {}
+                  debugPrint('Teacher Firebase Auth login failed gracefully: $e3');
                 }
               }
             }
           }
 
-          if (cred?.user != null && _db != null) {
+          fbUid = cred?.user?.uid ?? _fbAuth!.currentUser?.uid;
+          fbAuthSuccess = fbUid != null && _fbAuth!.currentUser != null && !_fbAuth!.currentUser!.isAnonymous;
+
+          if (kDebugMode) {
+            debugPrint('[TEACHER FIREBASE AUTH]');
+            debugPrint('Authentication: ${fbAuthSuccess ? 'SUCCESS' : 'FAILED'}');
+            debugPrint('UID: ${fbUid ?? 'null'}');
+          }
+
+          if (fbUid != null && _db != null) {
             try {
-              final userUid = cred!.user!.uid;
-              final snapshot = await _db!.ref('users/$userUid/maktabId').get().timeout(const Duration(seconds: 3));
-              if (snapshot.exists && snapshot.value != null) {
-                activeMaktabId = snapshot.value.toString();
+              final snapshot = await _db!.ref('users/$fbUid').get().timeout(const Duration(seconds: 3));
+              if (snapshot.exists && snapshot.value is Map) {
+                profileStatus = 'FOUND';
+                final val = Map<String, dynamic>.from(snapshot.value as Map);
+                profileRole = val['role']?.toString() ?? 'teacher';
+                profileMaktabId = val['maktabId']?.toString() ?? activeMaktabId;
+                profileActive = val['active'] != false;
+
+                debugPrint('[PROFILE AUDIT RAW] ${jsonEncode(snapshot.value)}');
+                debugPrint('[MAKTAB MATCH] local="$activeMaktabId" remote="$profileMaktabId" equal=${activeMaktabId == profileMaktabId} localLen=${activeMaktabId.length} remoteLen=${profileMaktabId.length}');
+
+                activeMaktabId = profileMaktabId;
                 await CloudSyncService.instance.setMaktabId(activeMaktabId);
               } else {
-                await _db!.ref('users/$userUid').set({
-                  'name': teacher.name,
-                  'email': derivedEmail,
-                  'role': 'teacher',
-                  'maktabId': activeMaktabId,
-                  'teacherId': teacher.id ?? 1,
-                  'active': true,
-                  'mobile': teacher.mobile ?? '',
-                }).timeout(const Duration(seconds: 4));
+                debugPrint('[SELF-PROVISION FIRED] provisioning did not reach this teacher — self-healing uid=$fbUid teacherId=${teacher.id}');
+                if (teacher.id == null) {
+                  debugPrint('[SELF-PROVISION ABORT] teacher.id is null — refusing to write teacherId=1');
+                  profileStatus = 'MISSING';
+                } else {
+                  await _db!.ref('users/$fbUid').set({
+                    'name': teacher.name,
+                    'email': derivedEmail,
+                    'role': 'teacher',
+                    'maktabId': activeMaktabId,
+                    'teacherId': teacher.id,
+                    'active': true,
+                    'mobile': teacher.mobile ?? '',
+                    'pinHash': _hashPin(pin),
+                  }).timeout(const Duration(seconds: 4));
+
+                  final verify = await _db!.ref('users/$fbUid').get().timeout(const Duration(seconds: 3));
+                  if (verify.exists) {
+                    debugPrint('[SELF-PROVISION OK] uid=$fbUid teacherId=${teacher.id} maktabId=$activeMaktabId');
+                    profileStatus = 'FOUND';
+                    profileRole = 'teacher';
+                    profileMaktabId = activeMaktabId;
+                    profileActive = true;
+                  } else {
+                    debugPrint('[SELF-PROVISION FAIL] verification failed uid=$fbUid');
+                    profileStatus = 'MISSING';
+                  }
+                }
               }
             } catch (eProfile) {
               debugPrint('Error verifying/provisioning Teacher profile node in RTDB: $eProfile');
             }
+          }
+
+          if (kDebugMode) {
+            debugPrint('[PROFILE AUDIT] uid=$fbUid');
+            debugPrint('  exists: ${profileStatus == 'FOUND'}');
+            debugPrint('  role: "$profileRole"');
+            debugPrint('  maktabId: "$profileMaktabId"');
+            debugPrint('  active: $profileActive (type: ${profileActive.runtimeType})');
+            debugPrint('  teacherId: ${teacher.id}');
+
+            debugPrint('[TEACHER PROFILE]');
+            debugPrint('Profile: $profileStatus');
+            debugPrint('Role: $profileRole');
+            debugPrint('MaktabId: $profileMaktabId');
+            debugPrint('Active: $profileActive');
           }
         }
       } catch (e) {
         debugPrint('Firebase Teacher auth note: $e');
       }
 
-      CloudSyncService.instance.enableAlwaysOnSync(activeMaktabId);
+      if (fbAuthSuccess && profileStatus == 'FOUND' && profileActive) {
+        logMaktabFingerprint('teacher_login', activeMaktabId);
+        if (kDebugMode) {
+          debugPrint('[SYNC]');
+          debugPrint('Authentication verified: YES');
+          debugPrint('Starting CloudSyncService');
+        }
+        CloudSyncService.instance.enableAlwaysOnSync(activeMaktabId);
+      } else {
+        if (kDebugMode) {
+          debugPrint('[SYNC]');
+          debugPrint('Authentication verified: NO');
+          debugPrint('CloudSyncService deferred (offline / unauthenticated)');
+        }
+      }
 
       _isLoading = false;
       _isExplicitLoggingIn = false;

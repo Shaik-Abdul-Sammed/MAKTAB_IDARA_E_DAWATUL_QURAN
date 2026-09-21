@@ -553,6 +553,110 @@ class _AdminDashboardState extends State<AdminDashboard>
           child: CustomScrollView(
             physics: const BouncingScrollPhysics(),
             slivers: [
+              if (auth.provisionFailures.isNotEmpty)
+                SliverToBoxAdapter(
+                  child: Container(
+                    margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFF3CD),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFFFFEEBA)),
+                    ),
+                    child: InkWell(
+                      onTap: () {
+                        showDialog(
+                          context: context,
+                          builder: (ctx) => AlertDialog(
+                            title: const Text('Teacher Provisioning Failures'),
+                            content: SingleChildScrollView(
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: auth.provisionFailures
+                                    .map((f) => Padding(
+                                          padding: const EdgeInsets.only(bottom: 6),
+                                          child: Text('• $f', style: const TextStyle(fontSize: 13)),
+                                        ))
+                                    .toList(),
+                              ),
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.of(ctx).pop(),
+                                child: const Text('OK'),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                      child: Row(
+                        children: [
+                          const Icon(Icons.warning_amber_rounded, color: Color(0xFF856404), size: 22),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              '⚠️ ${auth.provisionFailures.length} teacher account(s) could not be provisioned. They may not be able to log in. Tap for details.',
+                              style: const TextStyle(color: Color(0xFF856404), fontSize: 12.5, fontWeight: FontWeight.w600),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              if (auth.provisionPwMismatches.isNotEmpty)
+                SliverToBoxAdapter(
+                  child: Container(
+                    margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF8D7DA),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFFF5C6CB)),
+                    ),
+                    child: InkWell(
+                      onTap: () {
+                        showDialog(
+                          context: context,
+                          builder: (ctx) => AlertDialog(
+                            title: const Text('Teacher Password Mismatches'),
+                            content: SingleChildScrollView(
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: auth.provisionPwMismatches
+                                    .map((f) => Padding(
+                                          padding: const EdgeInsets.only(bottom: 6),
+                                          child: Text('• $f', style: const TextStyle(fontSize: 13)),
+                                        ))
+                                    .toList(),
+                              ),
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.of(ctx).pop(),
+                                child: const Text('OK'),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                      child: Row(
+                        children: [
+                          const Icon(Icons.key_off_rounded, color: Color(0xFF721C24), size: 22),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              '🔑 ${auth.provisionPwMismatches.length} teacher account(s) have a password mismatch. Manual reset required. Tap for details.',
+                              style: const TextStyle(color: Color(0xFF721C24), fontSize: 12.5, fontWeight: FontWeight.w600),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
               // ── Welcome banner ──────────────────────────────────────────
               SliverToBoxAdapter(
                 child: Container(

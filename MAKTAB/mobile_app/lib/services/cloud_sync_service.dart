@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_database/firebase_database.dart';
@@ -15,12 +16,38 @@ import 'package:maktab_app/models/salary_payment.dart';
 import 'package:sqflite_sqlcipher/sqflite.dart' show ConflictAlgorithm;
 import 'package:maktab_app/services/database_helper.dart';
 
+class WriteRecord {
+  final String path;
+  final DateTime timestamp;
+  final bool success;
+  final Object? error;
+  WriteRecord(this.path, this.timestamp, this.success, this.error);
+
+  @override
+  String toString() => '[${timestamp.toIso8601String()}] $path -> ${success ? "SUCCESS" : "FAILED: $error"}';
+}
+
+void logMaktabFingerprint(String source, String maktabId) {
+  final bytes = utf8.encode(maktabId);
+  final hex = bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join();
+  debugPrint('[MAKTAB FINGERPRINT] source=$source value="$maktabId" length=${maktabId.length} hex=$hex');
+}
+
 /// 100% Free ($0/month target) Firebase Realtime Database Granular Cloud Sync Engine.
 /// Replaces external REST servers with native, granular Firebase Realtime Database listeners & updates.
 /// Local SQLite (`maktab.db`) remains the zero-latency offline cache.
 class CloudSyncService {
   static final CloudSyncService instance = CloudSyncService._init();
   CloudSyncService._init();
+
+  final List<WriteRecord> _writeRingBuffer = [];
+  void recordWrite(String path, bool success, [Object? error]) {
+    if (_writeRingBuffer.length >= 20) {
+      _writeRingBuffer.removeAt(0);
+    }
+    _writeRingBuffer.add(WriteRecord(path, DateTime.now(), success, error));
+  }
+  List<WriteRecord> get recentWrites => List.unmodifiable(_writeRingBuffer);
 
   static const String _rtdbUrl = 'https://maktab-management-99001-default-rtdb.asia-southeast1.firebasedatabase.app';
 
@@ -56,31 +83,84 @@ class CloudSyncService {
     }
   }
 
+  bool get isAuthValid {
+    final user = fb_auth.FirebaseAuth.instance.currentUser;
+    return user != null && !user.isAnonymous;
+  }
+
+  Future<void> _runStartupPermissionProbe(String maktabId) async {
+    final db = _db;
+    if (db == null) return;
+    final uid = fb_auth.FirebaseAuth.instance.currentUser?.uid;
+    final probePaths = [
+      'maktabs/$maktabId/students',
+      'maktabs/$maktabId/attendance',
+      if (uid != null) 'users/$uid',
+    ];
+    for (final path in probePaths) {
+      try {
+        final snap = await db.ref(path).get().timeout(
+          const Duration(seconds: 5),
+          onTimeout: () => throw TimeoutException('Probe $path timed out'),
+        );
+        int nodeCount = 0;
+        if (snap.exists && snap.value is Map) {
+          nodeCount = (snap.value as Map).length;
+        } else if (snap.exists && snap.value is List) {
+          nodeCount = (snap.value as List).length;
+        }
+        debugPrint('[STARTUP PROBE] path=$path exists=${snap.exists} isNull=${snap.value == null} nodeCount=$nodeCount');
+      } catch (e, st) {
+        debugPrint('[STARTUP PROBE ERROR] path=$path exception=$e\nstackTrace=$st');
+      }
+    }
+  }
+
   // ── Always-On Auto Sync ─────────────────────────────────────────────────────
 
   /// Start the persistent always-on sync engine.
   /// Safe to call multiple times — deduplicated internally.
   void enableAlwaysOnSync(String maktabId) {
     _activeMaktabId = maktabId;
-    _startPeriodicSync();
-    // Kick-off an immediate push-before-pull
-    syncAll().then((_) => pullAllDataForMaktab(maktabId)).catchError((_) => false);
+    if (!isAuthValid) {
+      if (kDebugMode) debugPrint('[CloudSyncService] enableAlwaysOnSync deferred: No authenticated non-anonymous Firebase user.');
+      return;
+    }
+    logMaktabFingerprint('cloud_sync', maktabId);
+    _runStartupPermissionProbe(maktabId).then((_) {
+      _startPeriodicSync();
+      // Kick-off an immediate push-before-pull
+      syncAll()
+          .then((_) => pullAllDataForMaktab(maktabId))
+          .then((_) => printDiagnosticSummary())
+          .catchError((_) => false);
+    }).catchError((e) {
+      debugPrint('[CloudSyncService] Startup probe execution note: $e');
+      _startPeriodicSync();
+      syncAll()
+          .then((_) => pullAllDataForMaktab(maktabId))
+          .then((_) => printDiagnosticSummary())
+          .catchError((_) => false);
+    });
   }
 
   /// Call this when the app resumes from background to force an immediate re-sync.
   void onAppResumed() {
     final mId = _activeMaktabId;
-    if (mId == null || mId.isEmpty) return;
+    if (mId == null || mId.isEmpty || !isAuthValid) return;
     // Restart realtime listeners in case they dropped while backgrounded
     startRealtimeSync(mId);
     // Immediately push local changes before pulling latest cloud data
-    syncAll().then((_) => pullAllDataForMaktab(mId)).catchError((_) => false);
+    syncAll()
+        .then((_) => pullAllDataForMaktab(mId))
+        .then((_) => printDiagnosticSummary())
+        .catchError((_) => false);
   }
 
   void _startPeriodicSync() {
     _periodicSyncTimer?.cancel();
     _periodicSyncTimer = Timer.periodic(const Duration(seconds: 30), (_) async {
-      if (_periodicSyncInProgress) return;
+      if (_periodicSyncInProgress || !isAuthValid) return;
       final mId = _activeMaktabId;
       if (mId == null || mId.isEmpty) return;
       _periodicSyncInProgress = true;
@@ -176,6 +256,10 @@ class CloudSyncService {
 
   void startRealtimeSync(String maktabId) {
     stopRealtimeSync();
+    if (!isAuthValid) {
+      if (kDebugMode) debugPrint('[CloudSyncService] startRealtimeSync deferred: No authenticated non-anonymous Firebase user.');
+      return;
+    }
     final db = _db;
     if (db == null) return;
 
@@ -191,8 +275,9 @@ class CloudSyncService {
     ];
 
     for (var col in collections) {
+      final path = 'maktabs/$maktabId/$col';
       try {
-        final sub = db.ref('maktabs/$maktabId/$col').onValue.listen((event) async {
+        final sub = db.ref(path).onValue.listen((event) async {
           if (!event.snapshot.exists || event.snapshot.value == null) return;
           try {
             final data = _normalizeRtdbSnapshotValue(event.snapshot.value);
@@ -200,9 +285,9 @@ class CloudSyncService {
           } catch (e) {
             debugPrint('Firebase Granular Sync error on $col: $e');
           }
-        }, onError: (e) {
-          debugPrint('Firebase stream note for $col: $e');
-        });
+        }, onError: (Object error) {
+          debugPrint('[RTDB ERROR] path=$path uid=${fb_auth.FirebaseAuth.instance.currentUser?.uid} email=${fb_auth.FirebaseAuth.instance.currentUser?.email} error=$error');
+        }, cancelOnError: false);
         _childSubscriptions.add(sub);
       } catch (_) {}
     }
@@ -454,34 +539,50 @@ class CloudSyncService {
   }
 
   Future<void> pushBatch(Batch batch) async {
+    String? maktabId;
+    int? id;
     try {
-      final maktabId = await getMaktabId();
-      final id = batch.id ?? DateTime.now().millisecondsSinceEpoch;
+      maktabId = await getMaktabId();
+      id = batch.id ?? DateTime.now().millisecondsSinceEpoch;
       final map = batch.toMap();
       map['id'] ??= id;
       final db = _db;
       if (db == null) return;
 
       final user = fb_auth.FirebaseAuth.instance.currentUser;
-      if (user == null) {
-        try {
-          await fb_auth.FirebaseAuth.instance.signInAnonymously().timeout(const Duration(seconds: 4));
-        } catch (_) {}
+      if (user == null || user.isAnonymous) {
+        if (kDebugMode) debugPrint('[CloudSyncService] Gated pushBatch: No authenticated Firebase user.');
+        return;
       }
 
-      await db.ref('maktabs/$maktabId/batches/$id').set(map).timeout(
+      final path = 'maktabs/$maktabId/batches/$id';
+      await db.ref(path).set(map).timeout(
         const Duration(seconds: 6),
         onTimeout: () => throw TimeoutException('pushBatch timed out'),
       );
+      recordWrite(path, true);
+
+      // B'1. Batches write verification
+      try {
+        final verifySnap = await db.ref(path).get().timeout(const Duration(seconds: 4));
+        debugPrint('[WRITE VERIFICATION] collection=batches path=$path exists=${verifySnap.exists} isNull=${verifySnap.value == null} matches=${verifySnap.exists && verifySnap.value != null}');
+      } catch (e, st) {
+        debugPrint('[WRITE VERIFICATION ERROR] collection=batches path=$path error=$e\n$st');
+      }
     } catch (e) {
-      debugPrint('Firebase pushBatch error: $e');
+      if (maktabId != null && id != null) {
+        recordWrite('maktabs/$maktabId/batches/$id', false, e);
+      }
+      if (kDebugMode) debugPrint('[CloudSyncService] pushBatch error: $e');
     }
   }
 
   Future<bool> pushStudent(Student student) async {
+    String? maktabId;
+    int? id;
     try {
-      final maktabId = await getMaktabId();
-      final id = student.id ?? DateTime.now().millisecondsSinceEpoch;
+      maktabId = await getMaktabId();
+      id = student.id ?? DateTime.now().millisecondsSinceEpoch;
       final map = student.toMap();
       map['id'] ??= id;
 
@@ -497,148 +598,200 @@ class CloudSyncService {
       if (db == null) return false;
 
       final user = fb_auth.FirebaseAuth.instance.currentUser;
-      if (user == null) {
-        try {
-          await fb_auth.FirebaseAuth.instance.signInAnonymously().timeout(const Duration(seconds: 4));
-        } catch (_) {}
+      if (user == null || user.isAnonymous) {
+        if (kDebugMode) debugPrint('[CloudSyncService] Gated pushStudent: No authenticated Firebase user.');
+        return false;
       }
 
-      await db.ref('maktabs/$maktabId/students/$id').set(map).timeout(
+      final path = 'maktabs/$maktabId/students/$id';
+      await db.ref(path).set(map).timeout(
         const Duration(seconds: 6),
         onTimeout: () => throw TimeoutException('pushStudent timed out'),
       );
+      recordWrite(path, true);
+
+      // A3. Manager write verification
+      try {
+        final verifySnap = await db.ref(path).get().timeout(const Duration(seconds: 4));
+        debugPrint('[WRITE VERIFICATION] collection=students path=$path exists=${verifySnap.exists} isNull=${verifySnap.value == null} matches=${verifySnap.exists && verifySnap.value != null}');
+      } catch (e, st) {
+        debugPrint('[WRITE VERIFICATION ERROR] collection=students path=$path error=$e\n$st');
+      }
+
       return true;
     } catch (e) {
-      debugPrint('Firebase pushStudent error: $e');
+      if (maktabId != null && id != null) {
+        recordWrite('maktabs/$maktabId/students/$id', false, e);
+      }
+      if (kDebugMode) debugPrint('[CloudSyncService] pushStudent error: $e | UID: ${fb_auth.FirebaseAuth.instance.currentUser?.uid}');
       return false;
     }
   }
 
   Future<bool> pushAttendance(Attendance attendance) async {
+    String? maktabId;
+    String? key;
     try {
-      final maktabId = await getMaktabId();
-      final key = '${attendance.studentId}_${attendance.date}';
+      maktabId = await getMaktabId();
+      key = '${attendance.studentId}_${attendance.date}';
       final map = attendance.toMap();
       map['id'] ??= attendance.id ?? DateTime.now().millisecondsSinceEpoch;
       final db = _db;
       if (db == null) return false;
 
       final user = fb_auth.FirebaseAuth.instance.currentUser;
-      if (user == null) {
-        try {
-          await fb_auth.FirebaseAuth.instance.signInAnonymously().timeout(const Duration(seconds: 4));
-        } catch (_) {}
+      if (user == null || user.isAnonymous) {
+        if (kDebugMode) debugPrint('[CloudSyncService] Gated pushAttendance: No authenticated Firebase user.');
+        return false;
       }
 
-      await db.ref('maktabs/$maktabId/attendance/$key').set(map).timeout(
+      final path = 'maktabs/$maktabId/attendance/$key';
+      await db.ref(path).set(map).timeout(
         const Duration(seconds: 6),
         onTimeout: () => throw TimeoutException('pushAttendance timed out'),
       );
+      recordWrite(path, true);
+
+      // B'1. Attendance write verification
+      try {
+        final verifySnap = await db.ref(path).get().timeout(const Duration(seconds: 4));
+        debugPrint('[WRITE VERIFICATION] collection=attendance path=$path exists=${verifySnap.exists} isNull=${verifySnap.value == null} matches=${verifySnap.exists && verifySnap.value != null}');
+      } catch (e, st) {
+        debugPrint('[WRITE VERIFICATION ERROR] collection=attendance path=$path error=$e\n$st');
+      }
+
       return true;
     } catch (e) {
-      debugPrint('Firebase pushAttendance error: $e');
+      if (maktabId != null && key != null) {
+        recordWrite('maktabs/$maktabId/attendance/$key', false, e);
+      }
+      if (kDebugMode) debugPrint('[CloudSyncService] pushAttendance error: $e | Path: maktabs/$maktabId/attendance/$key | UID: ${fb_auth.FirebaseAuth.instance.currentUser?.uid}');
       return false;
     }
   }
 
   Future<void> pushTeacherAttendance(TeacherAttendance ta) async {
+    String? maktabId;
+    int? id;
     try {
-      final maktabId = await getMaktabId();
-      final id = ta.id ?? DateTime.now().millisecondsSinceEpoch;
+      maktabId = await getMaktabId();
+      id = ta.id ?? DateTime.now().millisecondsSinceEpoch;
       final map = ta.toMap();
       map['id'] ??= id;
       final db = _db;
       if (db == null) return;
 
       final user = fb_auth.FirebaseAuth.instance.currentUser;
-      if (user == null) {
-        try {
-          await fb_auth.FirebaseAuth.instance.signInAnonymously().timeout(const Duration(seconds: 4));
-        } catch (_) {}
+      if (user == null || user.isAnonymous) {
+        if (kDebugMode) debugPrint('[CloudSyncService] Gated pushTeacherAttendance: No authenticated Firebase user.');
+        return;
       }
 
-      await db.ref('maktabs/$maktabId/teacher_attendance/$id').set(map).timeout(
+      final path = 'maktabs/$maktabId/teacher_attendance/$id';
+      await db.ref(path).set(map).timeout(
         const Duration(seconds: 6),
         onTimeout: () => throw TimeoutException('pushTeacherAttendance timed out'),
       );
+      recordWrite(path, true);
     } catch (e) {
-      debugPrint('Firebase pushTeacherAttendance error: $e');
+      if (maktabId != null && id != null) {
+        recordWrite('maktabs/$maktabId/teacher_attendance/$id', false, e);
+      }
+      if (kDebugMode) debugPrint('[CloudSyncService] pushTeacherAttendance error: $e');
     }
   }
 
   Future<void> pushQuranProgress(QuranProgress qp) async {
+    String? maktabId;
+    int? id;
     try {
-      final maktabId = await getMaktabId();
-      final id = qp.id ?? DateTime.now().millisecondsSinceEpoch;
+      maktabId = await getMaktabId();
+      id = qp.id ?? DateTime.now().millisecondsSinceEpoch;
       final map = qp.toMap();
       map['id'] ??= id;
       final db = _db;
       if (db == null) return;
 
       final user = fb_auth.FirebaseAuth.instance.currentUser;
-      if (user == null) {
-        try {
-          await fb_auth.FirebaseAuth.instance.signInAnonymously().timeout(const Duration(seconds: 4));
-        } catch (_) {}
+      if (user == null || user.isAnonymous) {
+        if (kDebugMode) debugPrint('[CloudSyncService] Gated pushQuranProgress: No authenticated Firebase user.');
+        return;
       }
 
-      await db.ref('maktabs/$maktabId/quran_progress/$id').set(map).timeout(
+      final path = 'maktabs/$maktabId/quran_progress/$id';
+      await db.ref(path).set(map).timeout(
         const Duration(seconds: 6),
         onTimeout: () => throw TimeoutException('pushQuranProgress timed out'),
       );
+      recordWrite(path, true);
     } catch (e) {
-      debugPrint('Firebase pushQuranProgress error: $e');
+      if (maktabId != null && id != null) {
+        recordWrite('maktabs/$maktabId/quran_progress/$id', false, e);
+      }
+      if (kDebugMode) debugPrint('[CloudSyncService] pushQuranProgress error: $e');
     }
   }
 
   Future<bool> pushFeePayment(FeePayment fee) async {
+    String? maktabId;
+    int? id;
     try {
-      final maktabId = await getMaktabId();
-      final id = fee.id ?? DateTime.now().millisecondsSinceEpoch;
+      maktabId = await getMaktabId();
+      id = fee.id ?? DateTime.now().millisecondsSinceEpoch;
       final map = fee.toMap();
       map['id'] ??= id;
       final db = _db;
       if (db == null) return false;
 
       final user = fb_auth.FirebaseAuth.instance.currentUser;
-      if (user == null) {
-        try {
-          await fb_auth.FirebaseAuth.instance.signInAnonymously().timeout(const Duration(seconds: 4));
-        } catch (_) {}
+      if (user == null || user.isAnonymous) {
+        if (kDebugMode) debugPrint('[CloudSyncService] Gated pushFeePayment: No authenticated Firebase user.');
+        return false;
       }
 
-      await db.ref('maktabs/$maktabId/fee_payments/$id').set(map).timeout(
+      final path = 'maktabs/$maktabId/fee_payments/$id';
+      await db.ref(path).set(map).timeout(
         const Duration(seconds: 6),
         onTimeout: () => throw TimeoutException('pushFeePayment timed out'),
       );
+      recordWrite(path, true);
       return true;
     } catch (e) {
-      debugPrint('Firebase pushFeePayment error: $e');
+      if (maktabId != null && id != null) {
+        recordWrite('maktabs/$maktabId/fee_payments/$id', false, e);
+      }
+      if (kDebugMode) debugPrint('[CloudSyncService] pushFeePayment error: $e');
       return false;
     }
   }
 
   Future<void> pushSalaryPayment(SalaryPayment sp) async {
+    String? maktabId;
+    int? id;
     try {
-      final maktabId = await getMaktabId();
-      final id = sp.id ?? DateTime.now().millisecondsSinceEpoch;
+      maktabId = await getMaktabId();
+      id = sp.id ?? DateTime.now().millisecondsSinceEpoch;
       final map = sp.toMap();
       map['id'] ??= id;
       final db = _db;
       if (db == null) return;
 
       final user = fb_auth.FirebaseAuth.instance.currentUser;
-      if (user == null) {
-        try {
-          await fb_auth.FirebaseAuth.instance.signInAnonymously().timeout(const Duration(seconds: 4));
-        } catch (_) {}
+      if (user == null || user.isAnonymous) {
+        debugPrint('pushSalaryPayment skipped: No authenticated non-anonymous Firebase user.');
+        return;
       }
 
-      await db.ref('maktabs/$maktabId/salary_payments/$id').set(map).timeout(
+      final path = 'maktabs/$maktabId/salary_payments/$id';
+      await db.ref(path).set(map).timeout(
         const Duration(seconds: 6),
         onTimeout: () => throw TimeoutException('pushSalaryPayment timed out'),
       );
+      recordWrite(path, true);
     } catch (e) {
+      if (maktabId != null && id != null) {
+        recordWrite('maktabs/$maktabId/salary_payments/$id', false, e);
+      }
       debugPrint('Firebase pushSalaryPayment error: $e');
     }
   }
@@ -805,5 +958,91 @@ class CloudSyncService {
       debugPrint('CloudSyncService pullAllDataForMaktab error: $e');
       return false;
     }
+  }
+
+  Future<String> getDiagnosticSummary() async {
+    final buffer = StringBuffer();
+    final now = DateTime.now().toIso8601String();
+    final localMaktabId = await getMaktabId();
+    final bytes = utf8.encode(localMaktabId);
+    final hex = bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join();
+    final user = fb_auth.FirebaseAuth.instance.currentUser;
+
+    buffer.writeln('=== SYNC DIAGNOSTIC SUMMARY ===');
+    buffer.writeln('Timestamp: $now');
+    buffer.writeln('App version: 1.0.0');
+    buffer.writeln('MaktabId (local): "$localMaktabId" (len=${localMaktabId.length}, hex=$hex)');
+    buffer.writeln('');
+    buffer.writeln('[Auth]');
+    buffer.writeln('  currentUser: ${user?.uid}');
+    buffer.writeln('  email: ${user?.email}');
+    buffer.writeln('  isAnonymous: ${user?.isAnonymous}');
+    buffer.writeln('  isEmailVerified: ${user?.emailVerified}');
+    buffer.writeln('');
+    buffer.writeln('[RTDB Probe]');
+    final db = _db;
+    if (db != null) {
+      if (user?.uid != null) {
+        try {
+          final uSnap = await db.ref('users/${user!.uid}').get().timeout(const Duration(seconds: 4));
+          buffer.writeln('  /users/${user.uid} exists: ${uSnap.exists}');
+          if (uSnap.exists && uSnap.value is Map) {
+            final uMap = Map<String, dynamic>.from(uSnap.value as Map);
+            buffer.writeln('  /users/${user.uid}.maktabId: "${uMap['maktabId']}"');
+            buffer.writeln('  /users/${user.uid}.active: ${uMap['active']} (type: ${uMap['active'].runtimeType})');
+            buffer.writeln('  /users/${user.uid}.role: "${uMap['role']}"');
+          }
+        } catch (e) {
+          buffer.writeln('  /users/${user?.uid} error: $e');
+        }
+      } else {
+        buffer.writeln('  /users/{uid}: Not checked (currentUser is null)');
+      }
+
+      final probeCols = ['students', 'attendance', 'batches', 'teachers'];
+      for (final col in probeCols) {
+        try {
+          final snap = await db.ref('maktabs/$localMaktabId/$col').get().timeout(const Duration(seconds: 4));
+          int count = 0;
+          if (snap.exists && snap.value is Map) {
+            count = (snap.value as Map).length;
+          } else if (snap.exists && snap.value is List) {
+            count = (snap.value as List).length;
+          }
+          buffer.writeln('  /maktabs/$localMaktabId/$col count: $count');
+        } catch (e) {
+          buffer.writeln('  /maktabs/$localMaktabId/$col error: $e');
+        }
+      }
+    } else {
+      buffer.writeln('  RTDB Database instance: NULL');
+    }
+
+    buffer.writeln('');
+    buffer.writeln('[Last 10 Writes]');
+    final lastWrites = _writeRingBuffer.reversed.take(10).toList().reversed.toList();
+    if (lastWrites.isEmpty) {
+      buffer.writeln('  No writes recorded yet.');
+    } else {
+      for (final w in lastWrites) {
+        buffer.writeln('  ${w.toString()}');
+      }
+    }
+    buffer.writeln('=== END SUMMARY ===');
+    return buffer.toString();
+  }
+
+  Future<void> printDiagnosticSummary() async {
+    try {
+      final summary = await getDiagnosticSummary();
+      debugPrint(summary);
+    } catch (e) {
+      debugPrint('[CloudSyncService] printDiagnosticSummary error: $e');
+    }
+  }
+
+  Future<void> rerunProbe() async {
+    final maktabId = await getMaktabId();
+    await _runStartupPermissionProbe(maktabId);
   }
 }
