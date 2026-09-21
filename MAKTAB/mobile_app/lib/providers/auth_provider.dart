@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:firebase_auth/firebase_auth.dart' as fb_auth;
@@ -44,6 +45,7 @@ class AuthProvider with ChangeNotifier {
   int _failedAttempts = 0;
   DateTime? _lockoutEndTime;
   String _lastAuthError = '';
+  bool _lastErrorIsRetryable = false;
 
   bool _isExplicitLoggingIn = false;
 
@@ -74,6 +76,7 @@ class AuthProvider with ChangeNotifier {
   bool get hasRegisteredAdminUser => _hasRegisteredAdmin;
   int get failedAttempts => _failedAttempts;
   String get lastAuthError => _lastAuthError;
+  bool get lastErrorIsRetryable => _lastErrorIsRetryable;
 
   bool get isLockedOut {
     if (_lockoutEndTime == null) return false;
@@ -416,6 +419,7 @@ class AuthProvider with ChangeNotifier {
     _isLoading = true;
     _isExplicitLoggingIn = true;
     _lastAuthError = '';
+    _lastErrorIsRetryable = false;
     notifyListeners();
 
     try {
@@ -440,6 +444,7 @@ class AuthProvider with ChangeNotifier {
           _failedAttempts = 0;
           _lockoutEndTime = null;
           _lastAuthError = '';
+          _lastErrorIsRetryable = false;
           _isLoading = false;
           _isExplicitLoggingIn = false;
           notifyListeners();
@@ -447,17 +452,28 @@ class AuthProvider with ChangeNotifier {
         }
       }
     } on fb_auth.FirebaseAuthException catch (e) {
-      _failedAttempts++;
-      if (_failedAttempts >= 5) {
-        _lockoutEndTime = DateTime.now().add(const Duration(seconds: 30));
-        _lastAuthError = '5 failed attempts! Lockout active for 30s.';
+      if (e.code == 'network-request-failed') {
+        _lastAuthError = 'Cannot reach server. Check your internet connection and try again.';
+        _lastErrorIsRetryable = true;
       } else {
-        _lastAuthError = e.message ?? 'Authentication failed.';
+        _failedAttempts++;
+        if (_failedAttempts >= 5) {
+          _lockoutEndTime = DateTime.now().add(const Duration(seconds: 30));
+          _lastAuthError = '5 failed attempts! Lockout active for 30s.';
+        } else {
+          _lastAuthError = e.message ?? 'Login failed.';
+        }
+        _lastErrorIsRetryable = false;
       }
+    } on SocketException catch (_) {
+      _lastAuthError = 'Cannot reach server. Check your internet connection and try again.';
+      _lastErrorIsRetryable = true;
+    } on TimeoutException catch (_) {
+      _lastAuthError = 'Cannot reach server. Check your internet connection and try again.';
+      _lastErrorIsRetryable = true;
     } catch (e) {
-      _lastAuthError = e is TimeoutException
-          ? e.message ?? 'Login request timed out. Check connection.'
-          : 'Network or connection error. Please try again.';
+      _lastAuthError = 'Network or connection error. Please try again.';
+      _lastErrorIsRetryable = false;
     }
 
     _isLoading = false;
@@ -631,6 +647,7 @@ class AuthProvider with ChangeNotifier {
     _isLoading = true;
     _isExplicitLoggingIn = true;
     _lastAuthError = '';
+    _lastErrorIsRetryable = false;
     notifyListeners();
 
     final input = teacherIdOrMobile.trim();
@@ -735,6 +752,20 @@ class AuthProvider with ChangeNotifier {
             } catch (_) {}
           }
         }
+      } on fb_auth.FirebaseAuthException catch (e) {
+        if (e.code == 'network-request-failed') {
+          _lastAuthError = 'Cannot reach server. Check your internet connection and try again.';
+          _lastErrorIsRetryable = true;
+        } else {
+          _lastAuthError = e.message ?? 'Login failed.';
+          _lastErrorIsRetryable = false;
+        }
+      } on SocketException catch (_) {
+        _lastAuthError = 'Cannot reach server. Check your internet connection and try again.';
+        _lastErrorIsRetryable = true;
+      } on TimeoutException catch (_) {
+        _lastAuthError = 'Cannot reach server. Check your internet connection and try again.';
+        _lastErrorIsRetryable = true;
       } catch (e) {
         debugPrint('Firebase direct Teacher Auth fallback note: $e');
       }
@@ -920,15 +951,18 @@ class AuthProvider with ChangeNotifier {
       return true;
     }
 
-    _failedAttempts++;
-    if (_failedAttempts >= 5) {
-      _lockoutEndTime = DateTime.now().add(const Duration(seconds: 30));
-      _lastAuthError = '5 failed attempts! Security lockout active for 30 seconds.';
-    } else {
-      _lastAuthError = 'Invalid Teacher ID or PIN. ${5 - _failedAttempts} attempts remaining until lockout.';
+    if (!_lastErrorIsRetryable) {
+      _failedAttempts++;
+      if (_failedAttempts >= 5) {
+        _lockoutEndTime = DateTime.now().add(const Duration(seconds: 30));
+        _lastAuthError = '5 failed attempts! Security lockout active for 30 seconds.';
+      } else {
+        _lastAuthError = 'Invalid Teacher ID or PIN. ${5 - _failedAttempts} attempts remaining until lockout.';
+      }
     }
 
     _isLoading = false;
+    _isExplicitLoggingIn = false;
     notifyListeners();
     return false;
   }

@@ -114,12 +114,22 @@ class _LoginScreenState extends State<LoginScreen> {
         router.go('/teacher');
       }
     } else {
-      messenger.showSnackBar(
-        SnackBar(
-          content: Text(auth.lastAuthError.isNotEmpty ? auth.lastAuthError : 'Authentication failed. Check credentials.'),
-          backgroundColor: Colors.redAccent,
-        ),
-      );
+      if (auth.lastErrorIsRetryable) {
+        messenger.showSnackBar(
+          SnackBar(
+            content: Text(auth.lastAuthError.isNotEmpty ? auth.lastAuthError : 'Cannot reach server. Check your internet connection and try again.'),
+            action: SnackBarAction(label: 'Retry', onPressed: _handleLogin),
+            duration: const Duration(seconds: 8),
+          ),
+        );
+      } else {
+        messenger.showSnackBar(
+          SnackBar(
+            content: Text(auth.lastAuthError.isNotEmpty ? auth.lastAuthError : 'Authentication failed. Check credentials.'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
     }
   }
 
