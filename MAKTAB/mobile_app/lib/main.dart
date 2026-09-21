@@ -14,6 +14,8 @@ import 'package:maktab_app/l10n/app_localizations.dart';
 
 import 'package:maktab_app/services/notification_service.dart';
 import 'package:maktab_app/services/cloud_sync_service.dart';
+import 'package:maktab_app/services/database_helper.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'dart:io' show Platform, File;
 import 'package:maktab_app/utils/logger.dart';
@@ -37,6 +39,28 @@ Future<bool> _isDeviceRooted() async {
     } catch (_) {}
   }
   return false;
+}
+
+Future<void> _cleanupSeededData() async {
+  try {
+    final prefs = await SharedPreferences.getInstance();
+    final cleaned = prefs.getBool('seeded_data_cleaned_v1') ?? false;
+    if (cleaned) return;
+
+    final db = await DatabaseHelper.instance.database;
+    // Remove the demo manager (K. ABDUL RAWOOF) if present
+    await db.delete('users', where: 'name = ?', whereArgs: ['K. ABDUL RAWOOF']);
+    // Remove any demo students that were seeded (ADM-2026-001 to ADM-2026-010, IDs 101 to 110)
+    await db.delete(
+      'students',
+      where: "admission_number IN ('ADM-2026-001','ADM-2026-002','ADM-2026-003','ADM-2026-004','ADM-2026-005','ADM-2026-006','ADM-2026-007','ADM-2026-008','ADM-2026-009','ADM-2026-010') OR (id >= 101 AND id <= 110)",
+    );
+
+    await prefs.setBool('seeded_data_cleaned_v1', true);
+    debugPrint('[CLEANUP] Removed seeded demo data');
+  } catch (e) {
+    debugPrint('[CLEANUP ERROR] $e');
+  }
 }
 
 void main() async {
@@ -105,6 +129,9 @@ void main() async {
       debugPrint('Jailbreak detection error: $e');
     }
   }
+
+  // One-time cleanup of legacy demo/seeded data from existing devices
+  await _cleanupSeededData();
 
   // Initialize AuthProvider
   final authProvider = AuthProvider();

@@ -54,30 +54,19 @@ class StudentRepository {
     final List<Map<String, dynamic>> maps = await db.rawQuery('''
       SELECT s.*
       FROM students s
-      LEFT JOIN batches b ON s.batch_id = b.id
       WHERE (s.is_deleted IS NULL OR s.is_deleted = 0)
-        AND (
-          s.batch_id = ?
-          OR LOWER(b.name) = (SELECT LOWER(name) FROM batches WHERE id = ?)
-        )
+        AND s.batch_id = ?
       ORDER BY s.name ASC
-    ''', [batchId, batchId]);
+    ''', [batchId]);
 
     if (maps.isNotEmpty) {
       return List.generate(maps.length, (i) => Student.fromMap(maps[i]));
     }
 
-    // Fail-safe fallback: Return all non-deleted students so Teacher UI is never blank
-    final List<Map<String, dynamic>> fallbackMaps = await db.query(
-      'students',
-      where: 'is_deleted IS NULL OR is_deleted = 0',
-      orderBy: 'name ASC',
-    );
-    return List.generate(fallbackMaps.length, (i) => Student.fromMap(fallbackMaps[i]));
+    return [];
   }
 
   /// Returns all students in batches assigned to [teacherId].
-  /// Uses a JOIN so active students in the teacher's batches are retrieved, with fallback to all active students.
   Future<List<Student>> getStudentsByTeacher(int teacherId) async {
     final db = await _dbHelper.database;
     // Trigger background pull for latest updates from cloud
@@ -85,20 +74,15 @@ class StudentRepository {
     CloudSyncService.instance.pullAllDataForMaktab(maktabId).catchError((_) => false);
 
     if (teacherId <= 0) {
-      return getAllStudents();
+      return [];
     }
 
     final List<Map<String, dynamic>> maps = await db.rawQuery('''
       SELECT s.*
       FROM students s
-      LEFT JOIN batches b ON s.batch_id = b.id
+      INNER JOIN batches b ON s.batch_id = b.id
       WHERE (s.is_deleted IS NULL OR s.is_deleted = 0)
-        AND (
-          b.teacher_id = ?
-          OR b.teacher_id IS NULL
-          OR s.batch_id IS NULL
-          OR s.batch_id NOT IN (SELECT id FROM batches)
-        )
+        AND b.teacher_id = ?
       ORDER BY s.name ASC
     ''', [teacherId]);
 
@@ -106,8 +90,7 @@ class StudentRepository {
       return List.generate(maps.length, (i) => Student.fromMap(maps[i]));
     }
 
-    // Fail-safe fallback: return all non-deleted students so Teacher home screen is never 0
-    return getAllStudents();
+    return [];
   }
 
   // ── Past / Deleted Students ──────────────────────────────────────────────────

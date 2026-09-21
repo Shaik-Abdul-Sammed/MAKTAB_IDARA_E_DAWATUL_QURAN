@@ -43,6 +43,7 @@ class _AttendanceEntryScreenState extends State<AttendanceEntryScreen>
 
   String _batchName = '';
   String _teacherName = '';
+  bool _isToolbarExpanded = false;
 
   @override
   void initState() {
@@ -367,12 +368,8 @@ class _AttendanceEntryScreenState extends State<AttendanceEntryScreen>
               children: [
                 // ── #10: Progress bar
                 _buildProgressBar(p),
-                // ── Action buttons
-                _buildActionBar(p),
-                // ── Stats bar
-                _buildSummaryBar(p),
-                // ── #7: Search bar
-                _buildSearchBar(p),
+                // ── Compact Expandable Toolbar (replaces Action Bar, Summary Bar, Search)
+                _buildExpandableToolbar(p),
                 // ── #8: Tabs
                 _buildTabs(p),
                 // ── Student list
@@ -458,6 +455,7 @@ class _AttendanceEntryScreenState extends State<AttendanceEntryScreen>
 
     showDialog(
       context: context,
+      barrierDismissible: false,
       builder: (context) => VoiceAttendanceDialog(
         title: 'Voice Attendance Assistant',
         items: items,
@@ -470,88 +468,149 @@ class _AttendanceEntryScreenState extends State<AttendanceEntryScreen>
     );
   }
 
-  Widget _buildActionBar(AttendanceProvider p) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-      child: Row(children: [
-        Expanded(
-          child: ElevatedButton.icon(
-            onPressed: () => _openVoiceAttendance(p),
-            icon: const Icon(Icons.mic_rounded, size: 16),
-            label: const Text('Voice Attendance', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-            style: ElevatedButton.styleFrom(
-              foregroundColor: Colors.white,
-            ),
+  Widget _buildExpandableToolbar(AttendanceProvider p) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
           ),
-        ),
-        const SizedBox(width: 6),
-        Expanded(
-          child: OutlinedButton.icon(
-            onPressed: p.markAllPresent,
-            icon: const Icon(Icons.check_circle_outline, size: 15),
-            label: const Text('All Present', style: TextStyle(fontSize: 11)),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: Colors.green.shade700,
-              side: BorderSide(color: Colors.green.shade700),
-            ),
-          ),
-        ),
-        const SizedBox(width: 6),
-        Expanded(
-          child: OutlinedButton.icon(
-            onPressed: p.markAllAbsent,
-            icon: const Icon(Icons.cancel_outlined, size: 15),
-            label: const Text('All Absent', style: TextStyle(fontSize: 11)),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: Colors.red.shade700,
-              side: BorderSide(color: Colors.red.shade700),
-            ),
-          ),
-        ),
-      ]),
-    );
-  }
-
-  Widget _buildSummaryBar(AttendanceProvider p) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            _StatItem(label: 'Present', value: p.presentCount.toString(), color: Colors.green.shade700),
-            _StatItem(label: 'Absent',  value: p.absentCount.toString(),  color: Colors.red.shade700),
-            _StatItem(label: 'Late',    value: p.lateCount.toString(),    color: Colors.amber.shade700),
-            _StatItem(label: 'Leave',   value: p.leaveCount.toString(),   color: Colors.orange.shade700),
-          ],
-        ),
+        ],
       ),
-    );
-  }
-
-  // ── #7: Search bar
-  Widget _buildSearchBar(AttendanceProvider p) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      child: TextField(
-        controller: _searchController,
-        onChanged: p.setSearch,
-        decoration: InputDecoration(
-          hintText: 'Search students...',
-          prefixIcon: const Icon(Icons.search, color: Color(0xFF004D40)),
-          suffixIcon: _searchController.text.isNotEmpty
-              ? IconButton(
-                  icon: const Icon(Icons.close, size: 18),
-                  onPressed: () { _searchController.clear(); p.setSearch(''); },
-                )
-              : null,
-          filled: true,
-          fillColor: Colors.white,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-        ),
+      child: Column(
+        children: [
+          // Default: [Mark All Present] [⋮ more] [Search]
+          Row(
+            children: [
+              ElevatedButton.icon(
+                onPressed: p.markAllPresent,
+                icon: const Icon(Icons.check_circle_outline, size: 14),
+                label: const Text('Mark All Present', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF004D40),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
+                  visualDensity: VisualDensity.compact,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+              ),
+              IconButton(
+                icon: Icon(_isToolbarExpanded ? Icons.expand_less : Icons.more_vert, color: const Color(0xFF004D40), size: 20),
+                tooltip: _isToolbarExpanded ? 'Collapse' : 'More options',
+                onPressed: () => setState(() => _isToolbarExpanded = !_isToolbarExpanded),
+              ),
+              Expanded(
+                child: SizedBox(
+                  height: 36,
+                  child: TextField(
+                    controller: _searchController,
+                    onChanged: p.setSearch,
+                    decoration: InputDecoration(
+                      hintText: 'Search...',
+                      hintStyle: const TextStyle(fontSize: 12),
+                      prefixIcon: const Icon(Icons.search, size: 16, color: Color(0xFF004D40)),
+                      suffixIcon: _searchController.text.isNotEmpty
+                          ? IconButton(
+                              icon: const Icon(Icons.close, size: 14),
+                              onPressed: () {
+                                _searchController.clear();
+                                p.setSearch('');
+                              },
+                            )
+                          : null,
+                      filled: true,
+                      fillColor: Colors.grey.shade100,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          if (_isToolbarExpanded) ...[
+            const SizedBox(height: 8),
+            const Divider(height: 1),
+            const SizedBox(height: 8),
+            // Expanded: Clear All, Voice Input, Share WhatsApp
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: p.markAllAbsent,
+                    icon: const Icon(Icons.cancel_outlined, size: 14),
+                    label: const Text('Clear All', style: TextStyle(fontSize: 11)),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.red.shade700,
+                      side: BorderSide(color: Colors.red.shade300),
+                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
+                      visualDensity: VisualDensity.compact,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () => _openVoiceAttendance(p),
+                    icon: const Icon(Icons.mic_rounded, size: 14),
+                    label: const Text('Voice Input', style: TextStyle(fontSize: 11)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF004D40),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
+                      visualDensity: VisualDensity.compact,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () {
+                      final present = p.students.where((s) => (p.studentStatuses[s.id] ?? 'Present') == 'Present').toList();
+                      final absent = p.students.where((s) => (p.studentStatuses[s.id] ?? 'Present') != 'Present').toList();
+                      _shareAttendanceReport(present, absent);
+                    },
+                    icon: const Icon(Icons.share, size: 14),
+                    label: const Text('Share WhatsApp', style: TextStyle(fontSize: 11)),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: const Color(0xFF25D366),
+                      side: const BorderSide(color: Color(0xFF25D366)),
+                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
+                      visualDensity: VisualDensity.compact,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            // Summary Chips
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade50,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  _StatItem(label: 'Present', value: p.presentCount.toString(), color: Colors.green.shade700),
+                  _StatItem(label: 'Absent',  value: p.absentCount.toString(),  color: Colors.red.shade700),
+                  _StatItem(label: 'Late',    value: p.lateCount.toString(),    color: Colors.amber.shade700),
+                  _StatItem(label: 'Leave',   value: p.leaveCount.toString(),   color: Colors.orange.shade700),
+                ],
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }

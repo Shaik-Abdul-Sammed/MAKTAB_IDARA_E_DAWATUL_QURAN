@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+import '../../providers/auth_provider.dart';
 import '../../models/batch.dart';
 import '../../models/student.dart';
 import '../../repositories/batch_repository.dart';
@@ -29,11 +31,21 @@ class _QuranProgressScreenState extends State<QuranProgressScreen> {
   Future<void> _loadInitialData() async {
     setState(() => _isLoading = true);
     try {
-      final batches = await BatchRepository().getAllBatches();
+      final auth = Provider.of<AuthProvider>(context, listen: false);
+      final user = auth.currentUser;
+      final List<Batch> batches;
+      if (user?.role == 'teacher' && user?.id != null) {
+        batches = await BatchRepository().fetchTeacherBatches(user!.id!);
+      } else {
+        batches = await BatchRepository().getAllBatches();
+      }
       _batches = batches;
       if (batches.isNotEmpty) {
         _selectedBatchId = batches.first.id;
         _students = await StudentRepository().getStudentsByBatch(_selectedBatchId!);
+      } else {
+        _selectedBatchId = null;
+        _students = [];
       }
       if (mounted) setState(() => _isLoading = false);
     } catch (_) {
@@ -87,6 +99,13 @@ class _QuranProgressScreenState extends State<QuranProgressScreen> {
                 ShimmerLoader(height: 80),
                 const SizedBox(height: 12),
                 ShimmerLoader(height: 80),
+              ] else if (_batches.isEmpty) ...[
+                const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(32),
+                    child: Text('No batches assigned.', style: TextStyle(color: Colors.black45)),
+                  ),
+                ),
               ] else if (_students.isEmpty) ...[
                 const Center(
                   child: Padding(
@@ -148,7 +167,9 @@ class _QuranProgressScreenState extends State<QuranProgressScreen> {
   }
 
   Widget _buildBatchChips() {
-    if (_batches.isEmpty) return const SizedBox.shrink();
+    if (_batches.isEmpty) {
+      return const Text('No batches assigned.', style: TextStyle(color: Colors.black45, fontSize: 13));
+    }
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: Row(

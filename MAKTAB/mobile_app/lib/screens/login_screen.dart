@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:maktab_app/providers/auth_provider.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:maktab_app/services/backup_restore_service.dart';
+import 'package:maktab_app/services/remember_me_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -22,6 +23,36 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _obscurePassword = true;
   bool _obscurePin = true;
   String _selectedRole = 'manager'; // Default selected role ('manager' or 'teacher')
+  bool _rememberManager = false;
+  bool _rememberTeacher = false;
+  String? _rememberedManagerEmail;
+  String? _rememberedTeacherId;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRememberedCredentials();
+  }
+
+  Future<void> _loadRememberedCredentials() async {
+    final managerCreds = await RememberMeService.loadManagerCredentials();
+    final teacherCreds = await RememberMeService.loadTeacherCredentials();
+    if (!mounted) return;
+    setState(() {
+      if (managerCreds['remember'] == 'true') {
+        _rememberManager = true;
+        _emailController.text = managerCreds['email'] ?? '';
+        _passwordController.text = managerCreds['password'] ?? '';
+        _rememberedManagerEmail = managerCreds['email'];
+      }
+      if (teacherCreds['remember'] == 'true') {
+        _rememberTeacher = true;
+        _teacherIdController.text = teacherCreds['id'] ?? '';
+        _pinController.text = teacherCreds['pin'] ?? '';
+        _rememberedTeacherId = teacherCreds['id'];
+      }
+    });
+  }
 
   @override
   void dispose() {
@@ -55,6 +86,26 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!mounted) return;
 
     if (success) {
+      if (_selectedRole == 'manager') {
+        if (_rememberManager) {
+          await RememberMeService.saveManagerCredentials(
+            email: _emailController.text.trim(),
+            password: _passwordController.text.trim(),
+          );
+        } else {
+          await RememberMeService.clearManagerCredentials();
+        }
+      } else {
+        if (_rememberTeacher) {
+          await RememberMeService.saveTeacherCredentials(
+            teacherIdOrMobile: _teacherIdController.text.trim(),
+            pin: _pinController.text.trim(),
+          );
+        } else {
+          await RememberMeService.clearTeacherCredentials();
+        }
+      }
+
       // Direct user based on authorized profile role
       final role = auth.currentUser?.role;
       if (role == 'admin' || role == 'manager' || role == 'operator') {
@@ -384,22 +435,73 @@ class _LoginScreenState extends State<LoginScreen> {
                               return null;
                             },
                           ),
-                          const SizedBox(height: 12),
+                          const SizedBox(height: 8),
 
-                          // Forgot Password Link
-                          Align(
-                            alignment: Alignment.centerRight,
-                            child: TextButton(
-                              onPressed: _showForgotPasswordDialog,
-                              child: const Text(
-                                'Forgot Password?',
-                                style: TextStyle(
-                                  color: Color(0xFF004D40),
-                                  fontWeight: FontWeight.w600,
+                          // Remember Me & Forgot Password Row
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  SizedBox(
+                                    width: 24,
+                                    height: 24,
+                                    child: Checkbox(
+                                      value: _rememberManager,
+                                      activeColor: const Color(0xFF004D40),
+                                      onChanged: (val) {
+                                        setState(() {
+                                          _rememberManager = val ?? false;
+                                        });
+                                      },
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  const Text(
+                                    'Remember me',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              TextButton(
+                                onPressed: _showForgotPasswordDialog,
+                                child: const Text(
+                                  'Forgot Password?',
+                                  style: TextStyle(
+                                    color: Color(0xFF004D40),
+                                    fontWeight: FontWeight.w600,
+                                  ),
                                 ),
                               ),
-                            ),
+                            ],
                           ),
+                          if (_rememberedManagerEmail != null && _rememberedManagerEmail!.isNotEmpty) ...[
+                            const SizedBox(height: 8),
+                            SizedBox(
+                              width: double.infinity,
+                              child: OutlinedButton.icon(
+                                icon: const Icon(Icons.flash_on, size: 18, color: Color(0xFF004D40)),
+                                label: Text(
+                                  'Quick Login as $_rememberedManagerEmail',
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    color: Color(0xFF004D40),
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                style: OutlinedButton.styleFrom(
+                                  side: const BorderSide(color: Color(0xFF004D40)),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                  padding: const EdgeInsets.symmetric(vertical: 12),
+                                ),
+                                onPressed: auth.isLoading ? null : _handleLogin,
+                              ),
+                            ),
+                          ],
                         ] else ...[
                           // Teacher ID / Mobile Field
                           TextFormField(
@@ -450,7 +552,57 @@ class _LoginScreenState extends State<LoginScreen> {
                               return null;
                             },
                           ),
-                          const SizedBox(height: 16),
+                          const SizedBox(height: 8),
+
+                          // Remember Me Row
+                          Row(
+                            children: [
+                              SizedBox(
+                                width: 24,
+                                height: 24,
+                                child: Checkbox(
+                                  value: _rememberTeacher,
+                                  activeColor: const Color(0xFF004D40),
+                                  onChanged: (val) {
+                                    setState(() {
+                                      _rememberTeacher = val ?? false;
+                                    });
+                                  },
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              const Text(
+                                'Remember Teacher ID',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                          if (_rememberedTeacherId != null && _rememberedTeacherId!.isNotEmpty) ...[
+                            const SizedBox(height: 8),
+                            SizedBox(
+                              width: double.infinity,
+                              child: OutlinedButton.icon(
+                                icon: const Icon(Icons.flash_on, size: 18, color: Color(0xFF004D40)),
+                                label: Text(
+                                  'Quick Login as $_rememberedTeacherId',
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    color: Color(0xFF004D40),
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                style: OutlinedButton.styleFrom(
+                                  side: const BorderSide(color: Color(0xFF004D40)),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                  padding: const EdgeInsets.symmetric(vertical: 12),
+                                ),
+                                onPressed: auth.isLoading ? null : _handleLogin,
+                              ),
+                            ),
+                          ],
                         ],
                         const SizedBox(height: 12),
 

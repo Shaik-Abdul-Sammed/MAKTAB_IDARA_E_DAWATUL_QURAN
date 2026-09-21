@@ -53,6 +53,21 @@ class AuthProvider with ChangeNotifier {
   final List<String> _provisionPwMismatches = [];
   List<String> get provisionPwMismatches => List.unmodifiable(_provisionPwMismatches);
 
+  Future<void> _provisionerLock = Future.value();
+
+  Future<T> _withProvisionerLock<T>(Future<T> Function() action) {
+    final completer = Completer<T>();
+    _provisionerLock = _provisionerLock.catchError((_) {}).then((_) async {
+      try {
+        final result = await action();
+        completer.complete(result);
+      } catch (e, st) {
+        completer.completeError(e, st);
+      }
+    });
+    return completer.future;
+  }
+
   User? get currentUser => _currentUser;
   bool get isLoading => _isLoading;
   bool get isAuthenticated => _currentUser != null || (_fbAuth?.currentUser != null);
@@ -76,12 +91,14 @@ class AuthProvider with ChangeNotifier {
     return diff > 0 ? diff : 0;
   }
 
-  String _hashPin(String pin) {
+  static String hashPin(String pin) {
     const salt = 'idara_maktab_sec_salt_2026';
     final bytes = utf8.encode('$salt$pin');
     final digest = sha256.convert(bytes);
     return digest.toString();
   }
+
+  String _hashPin(String pin) => hashPin(pin);
 
   Future<void> checkRegistrationStatus() async {
     _hasRegisteredAdmin = await _userRepository.hasRegisteredAdmin();
@@ -132,19 +149,24 @@ class AuthProvider with ChangeNotifier {
   Future<ProvisionResult> provisionTeacherAuthAccount({
     required int teacherId,
     required String name,
-    required String rawPin,
+    required String pinHash,
     String? mobile,
-  }) async {
-    try {
-      final maktabId = await CloudSyncService.instance.getMaktabId();
-      final derivedEmail = 'teacher_${maktabId}_$teacherId@maktab.app';
-      final saltedHash = _hashPin(rawPin);
-      final derivedPassword = saltedHash.padRight(32, '0').substring(0, 32);
+    String? maktabId,
+  }) {
+    return _withProvisionerLock(() async {
+      try {
+        final activeMaktabId = maktabId ?? await CloudSyncService.instance.getMaktabId();
+        final derivedEmail = 'teacher_${activeMaktabId}_$teacherId@maktab.app';
+        final derivedPassword = pinHash.padRight(32, '0').substring(0, 32);
+
+      final pinHashPrefix = pinHash.length >= 8 ? pinHash.substring(0, 8) : pinHash;
+      final derivedPasswordPrefix = derivedPassword.length >= 8 ? derivedPassword.substring(0, 8) : derivedPassword;
+      debugPrint('[DERIVATION] teacherId=$teacherId pinHashPrefix=$pinHashPrefix... derivedPasswordPrefix=$derivedPasswordPrefix...');
 
       FirebaseApp secondaryApp;
-      try {
+      if (Firebase.apps.any((a) => a.name == 'TeacherProvisioner')) {
         secondaryApp = Firebase.app('TeacherProvisioner');
-      } catch (_) {
+      } else {
         secondaryApp = await Firebase.initializeApp(
           name: 'TeacherProvisioner',
           options: Firebase.app().options,
@@ -169,12 +191,12 @@ class AuthProvider with ChangeNotifier {
               password: derivedPassword,
             ).timeout(const Duration(seconds: 8));
           } on fb_auth.FirebaseAuthException catch (e2) {
-            // Also attempt saltedHash if account was created with 64-char hash
+            // Also attempt pinHash if account was created with 64-char hash
             bool recovered = false;
             try {
               cred = await secondaryAuth.signInWithEmailAndPassword(
                 email: derivedEmail,
-                password: saltedHash,
+                password: pinHash,
               ).timeout(const Duration(seconds: 5));
               recovered = true;
             } catch (_) {}
@@ -204,10 +226,10 @@ class AuthProvider with ChangeNotifier {
             'name': name,
             'email': derivedEmail,
             'role': 'teacher',
-            'maktabId': maktabId,
+            'maktabId': activeMaktabId,
             'teacherId': teacherId,
             'mobile': mobile ?? '',
-            'pinHash': saltedHash,
+            'pinHash': pinHash,
             'active': true,
           }).timeout(const Duration(seconds: 6));
 
@@ -231,14 +253,38 @@ class AuthProvider with ChangeNotifier {
       await secondaryAuth.signOut();
       return ProvisionResult.success;
 
+      } catch (e) {
+        debugPrint('provisionTeacherAuthAccount Error: $e');
+        return ProvisionResult.failed;
+      }
+    });
+  }
+
+  Future<void> _repairTeacherPinHashes() async {
+    try {
+      final teachers = await _userRepository.getAllTeachers();
+      for (final t in teachers) {
+        if (t.id == null) continue;
+        final currentPinHash = t.pinHash.trim();
+        // If pinHash looks like a 64-char hex string, leave it alone.
+        if (RegExp(r'^[0-9a-fA-F]{64}$').hasMatch(currentPinHash)) {
+          continue;
+        }
+        // If it looks like a plaintext PIN (all digits, length < 8), replace it with _hashPin(pinHash)
+        if (currentPinHash.isNotEmpty && currentPinHash.length < 8 && RegExp(r'^\d+$').hasMatch(currentPinHash)) {
+          final migratedHash = _hashPin(currentPinHash);
+          await _userRepository.updateUserPin(t.id!, migratedHash);
+          debugPrint('[PINHASH MIGRATED] teacherId=${t.id}');
+        }
+      }
     } catch (e) {
-      debugPrint('provisionTeacherAuthAccount Error: $e');
-      return ProvisionResult.failed;
+      debugPrint('Teacher pinHash repair error: $e');
     }
   }
 
   Future<void> _provisionAllTeachersInBackground() async {
     try {
+      await _repairTeacherPinHashes();
       _provisionFailures.clear();
       _provisionPwMismatches.clear();
       final teachers = await _userRepository.getAllTeachers();
@@ -247,7 +293,7 @@ class AuthProvider with ChangeNotifier {
           final result = await provisionTeacherAuthAccount(
             teacherId: t.id!,
             name: t.name,
-            rawPin: '1234',
+            pinHash: t.pinHash,
             mobile: t.mobile,
           );
           switch (result) {
@@ -273,28 +319,83 @@ class AuthProvider with ChangeNotifier {
   Future<void> _backfillMissingTeacherProfiles() async {
     try {
       if (_db == null) return;
-      final usersSnap = await _db!.ref('users').get().timeout(const Duration(seconds: 6));
-      final existingUsers = (usersSnap.value as Map?)?.cast<String, dynamic>() ?? {};
-
       final teachers = await _userRepository.getAllTeachers();
       final missing = <String>[];
 
+      final maktabId = await CloudSyncService.instance.getMaktabId();
+
+      FirebaseApp secondaryApp;
+      if (Firebase.apps.any((a) => a.name == 'TeacherProvisioner')) {
+        secondaryApp = Firebase.app('TeacherProvisioner');
+      } else {
+        secondaryApp = await Firebase.initializeApp(
+          name: 'TeacherProvisioner',
+          options: Firebase.app().options,
+        );
+      }
+      final secondaryAuth = fb_auth.FirebaseAuth.instanceFor(app: secondaryApp);
+      final secondaryDb = FirebaseDatabase.instanceFor(
+        app: secondaryApp,
+        databaseURL: _rtdbUrl,
+      );
+
       for (final t in teachers) {
         if (t.id == null) continue;
-        final expectedEmail = 'teacher_${await CloudSyncService.instance.getMaktabId()}_${t.id}@maktab.app';
-        final found = existingUsers.values.any((v) {
-          if (v is! Map) return false;
-          return (v['email'] ?? '').toString() == expectedEmail;
+        final derivedEmail = 'teacher_${maktabId}_${t.id}@maktab.app';
+        final derivedPassword = t.pinHash.padRight(32, '0').substring(0, 32);
+
+        bool needsProvision = false;
+        await _withProvisionerLock(() async {
+          try {
+            // Sign in as teacher on secondary app to check their own /users/$uid node
+            fb_auth.UserCredential cred;
+            try {
+              cred = await secondaryAuth.signInWithEmailAndPassword(
+                email: derivedEmail,
+                password: derivedPassword,
+              );
+            } catch (_) {
+              // Try unpadded hash if padded failed
+              cred = await secondaryAuth.signInWithEmailAndPassword(
+                email: derivedEmail,
+                password: t.pinHash,
+              );
+            }
+
+            final uid = cred.user?.uid;
+            if (uid != null) {
+              final snap = await secondaryDb.ref('users/$uid').get()
+                  .timeout(const Duration(seconds: 5));
+              if (!snap.exists) {
+                missing.add('teacherId=${t.id} uid=$uid');
+                needsProvision = true;
+              }
+            }
+          } on fb_auth.FirebaseAuthException catch (e) {
+            if (e.code == 'user-not-found' || e.code == 'wrong-password' || e.code == 'invalid-credential') {
+              // Account doesn't exist yet or password changed — provision will handle on next cycle
+              debugPrint('[BACKFILL] teacherId=${t.id} unprovisioned (${e.code})');
+            }
+          } catch (e) {
+            debugPrint('[BACKFILL] teacherId=${t.id} check failed: $e');
+          } finally {
+            await secondaryAuth.signOut();
+          }
         });
-        if (!found) {
-          missing.add('teacherId=${t.id} email=$expectedEmail');
+
+        if (needsProvision) {
+          // Re-provision this specific teacher
+          await provisionTeacherAuthAccount(
+            name: t.name,
+            pinHash: t.pinHash,
+            teacherId: t.id!,
+            maktabId: maktabId,
+          );
         }
       }
 
       if (missing.isNotEmpty) {
         debugPrint('[BACKFILL] Missing /users nodes for: ${missing.join(', ')}');
-        // Re-run provisioning for all teachers; the fallback path will create the nodes.
-        await _provisionAllTeachersInBackground();
       } else {
         debugPrint('[BACKFILL] All teacher /users nodes present.');
       }
@@ -438,8 +539,11 @@ class AuthProvider with ChangeNotifier {
 
         CloudSyncService.instance.enableAlwaysOnSync(maktabId);
         if (role == 'manager' || role == 'admin' || role == 'operator') {
-          _provisionAllTeachersInBackground();
-          unawaited(_backfillMissingTeacherProfiles());
+          unawaited(
+            _provisionAllTeachersInBackground()
+                .then((_) => _backfillMissingTeacherProfiles())
+                .catchError((e) => debugPrint('[PROVISION CHAIN ERROR] $e')),
+          );
         }
         return true;
       } else {
@@ -491,8 +595,11 @@ class AuthProvider with ChangeNotifier {
             await prefs.setInt('logged_in_user_id', 1);
 
             CloudSyncService.instance.enableAlwaysOnSync(derivedMaktabId);
-            _provisionAllTeachersInBackground();
-            unawaited(_backfillMissingTeacherProfiles());
+            unawaited(
+              _provisionAllTeachersInBackground()
+                  .then((_) => _backfillMissingTeacherProfiles())
+                  .catchError((e) => debugPrint('[PROVISION CHAIN ERROR] $e')),
+            );
             return true;
           } catch (e) {
             debugPrint('Auto-provisioning Manager profile error: $e');
@@ -692,7 +799,7 @@ class AuthProvider with ChangeNotifier {
               await provisionTeacherAuthAccount(
                 teacherId: teacher.id!,
                 name: teacher.name,
-                rawPin: pin,
+                pinHash: _hashPin(pin),
                 mobile: teacher.mobile,
               );
               try {

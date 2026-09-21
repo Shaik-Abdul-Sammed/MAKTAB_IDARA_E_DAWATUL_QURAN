@@ -214,7 +214,7 @@ class _TeacherManagementScreenState extends State<TeacherManagementScreen> {
                     await context.read<AuthProvider>().provisionTeacherAuthAccount(
                       teacherId: newTeacherId,
                       name: nameController.text.trim(),
-                      rawPin: pinController.text,
+                      pinHash: newUser.pinHash,
                       mobile: mobileController.text.trim(),
                     );
                   }

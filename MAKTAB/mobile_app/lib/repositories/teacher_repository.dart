@@ -3,6 +3,7 @@ import '../domain/dtos/user_dto.dart';
 import '../services/database_helper.dart';
 import '../services/cloud_sync_service.dart';
 import '../models/user.dart';
+import 'user_repository.dart';
 
 class TeacherRepository implements IUserRepository {
   final DatabaseHelper _dbHelper = DatabaseHelper.instance;
@@ -56,11 +57,6 @@ class TeacherRepository implements IUserRepository {
 
   @override
   Future<int> deleteUser(int id) async {
-    final db = await _dbHelper.database;
-    return await db.delete(
-      'users',
-      where: 'id = ?',
-      whereArgs: [id],
-    );
+    return await UserRepository().deleteUser(id);
   }
 }

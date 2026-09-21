@@ -156,6 +156,9 @@ After all 4 diagnostic outputs are collected, verify manually in **Firebase Cons
 
 Report each as **EXISTS** / **MISSING** / **WRONG VALUE** with the actual value seen.
 
+> [!IMPORTANT]
+> **Rule Scope vs Query Scope**: In Firebase Realtime Database, `.read` rules cascade DOWN, never UP. An app listener or `.get()` query on `/maktabs/$maktabId/students` evaluates security rules at the collection level (`/students`). If `.read` is only defined at the `$studentId` child level, collection queries fail immediately with `[permission-denied]`. Security rules must be defined at the collection level to permit whole-collection queries.
+
 ---
 
 ## What to Paste to the AI

@@ -180,6 +180,23 @@ class _TeacherListScreenState extends State<TeacherListScreen> {
       builder: (context, p, _) {
         return AnimatedSwitcher(
           duration: const Duration(milliseconds: 300),
+          layoutBuilder: (Widget? currentChild, List<Widget> previousChildren) {
+            final seenKeys = <Key?>{};
+            if (currentChild?.key != null) seenKeys.add(currentChild!.key);
+            final dedupedPrevious = <Widget>[];
+            for (final child in previousChildren.reversed) {
+              if (child.key == null || seenKeys.add(child.key)) {
+                dedupedPrevious.add(child);
+              }
+            }
+            return Stack(
+              alignment: Alignment.center,
+              children: <Widget>[
+                ...dedupedPrevious.reversed,
+                ?currentChild,
+              ],
+            );
+          },
           child: switch (p.status) {
             TeacherListStatus.initial || TeacherListStatus.loading =>
               const _ShimmerContent(key: ValueKey('shimmer')),

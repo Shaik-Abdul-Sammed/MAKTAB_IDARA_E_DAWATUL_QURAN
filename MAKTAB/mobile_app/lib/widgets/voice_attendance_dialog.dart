@@ -1,3 +1,4 @@
+// ignore_for_file: deprecated_member_use
 import 'package:flutter/material.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 import '../models/student.dart';
@@ -38,6 +39,8 @@ class _VoiceAttendanceDialogState extends State<VoiceAttendanceDialog> {
   String _statusFeedback = 'Tap the microphone and say commands like:\n"Ahmad Present", "Zaid Absent", or "Mark all present"';
   late Map<int, String> _statuses;
 
+  String _localeId = 'en_IN';
+
   @override
   void initState() {
     super.initState();
@@ -48,7 +51,7 @@ class _VoiceAttendanceDialogState extends State<VoiceAttendanceDialog> {
 
   Future<void> _initSpeech() async {
     try {
-      await _speech.initialize(
+      final available = await _speech.initialize(
         onStatus: (val) {
           if (val == 'done' || val == 'notListening') {
             if (mounted) setState(() => _isListening = false);
@@ -63,6 +66,17 @@ class _VoiceAttendanceDialogState extends State<VoiceAttendanceDialog> {
           }
         },
       );
+      if (available) {
+        final locales = await _speech.locales();
+        final hasEnIn = locales.any((l) => l.localeId == 'en_IN');
+        if (hasEnIn) {
+          _localeId = 'en_IN';
+        } else {
+          final def = await _speech.systemLocale();
+          _localeId = def?.localeId ?? 'en_IN';
+          debugPrint('[VOICE] Warning: locale en_IN not available, falling back to $_localeId');
+        }
+      }
       if (mounted) setState(() {});
     } catch (e) {
       if (mounted) {
@@ -75,23 +89,49 @@ class _VoiceAttendanceDialogState extends State<VoiceAttendanceDialog> {
 
   void _toggleListening() async {
     if (!_isListening) {
-      bool available = await _speech.initialize();
-      if (available) {
-        setState(() {
-          _isListening = true;
-          _statusFeedback = 'Listening... Speak name and status (e.g. "Bilal Present")';
-        });
-        _speech.listen(
-          onResult: (val) {
-            setState(() {
-              _lastWords = val.recognizedWords;
-              _parseVoiceCommand(_lastWords);
-            });
-          },
-        );
-      } else {
-        setState(() => _statusFeedback = 'Microphone permission or speech service missing.');
+      final available = await _speech.initialize(
+        onError: (e) => debugPrint('[VOICE ERR] $e'),
+        onStatus: (s) => debugPrint('[VOICE STATUS] $s'),
+      );
+      if (!available) {
+        if (mounted) {
+          showDialog(
+            context: context,
+            builder: (ctx) => AlertDialog(
+              title: const Text('Microphone Unavailable'),
+              content: const Text(
+                'Microphone access is required for voice attendance. Please grant permission in Settings > Apps > Maktab > Permissions.',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  child: const Text('OK'),
+                ),
+              ],
+            ),
+          );
+        }
+        return;
       }
+
+      setState(() {
+        _isListening = true;
+        _statusFeedback = 'Listening... Speak name and status (e.g. "Bilal Present")';
+      });
+      await _speech.listen(
+        onResult: (val) {
+          setState(() {
+            _lastWords = val.recognizedWords;
+            _parseVoiceCommand(_lastWords);
+          });
+        },
+        localeId: _localeId,
+        listenFor: const Duration(seconds: 60),
+        pauseFor: const Duration(seconds: 5),
+        partialResults: true,
+        cancelOnError: false,
+        listenMode: stt.ListenMode.dictation,
+      );
     } else {
       _speech.stop();
       setState(() => _isListening = false);
@@ -127,6 +167,14 @@ class _VoiceAttendanceDialogState extends State<VoiceAttendanceDialog> {
       setState(() {
         _statusFeedback = 'Recognized: "$speechText"\n(Could not match student/teacher name)';
       });
+      if ((_statuses.isEmpty || result.studentStatuses.isEmpty) && speechText.isNotEmpty) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text('No students matched. Try speaking slowly and clearly, or tap a name to mark manually.'),
+            duration: Duration(seconds: 4),
+          ));
+        }
+      }
     }
   }
 
@@ -280,9 +328,12 @@ class _VoiceAttendanceDialogState extends State<VoiceAttendanceDialog> {
                       backgroundColor: const Color(0xFF004D40),
                       foregroundColor: Colors.white,
                     ),
-                    onPressed: () {
+                    onPressed: () async {
                       widget.onComplete(_statuses);
-                      Navigator.pop(context);
+                      await Future.delayed(const Duration(milliseconds: 600));
+                      if (context.mounted) {
+                        Navigator.pop(context);
+                      }
                     },
                     child: const Text('Apply Voice Results'),
                   ),

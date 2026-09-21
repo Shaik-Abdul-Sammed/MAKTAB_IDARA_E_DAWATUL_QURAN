@@ -170,10 +170,10 @@ void main() {
       final provisioned = await auth.provisionTeacherAuthAccount(
         teacherId: 10,
         name: 'Test Teacher',
-        rawPin: '123456',
+        pinHash: AuthProvider.hashPin('123456'),
       );
-      // In offline/mock test environment without Firebase init, gracefully returns true or false without throwing crash
-      expect(provisioned, isA<bool>());
+      // In offline/mock test environment without Firebase init, gracefully returns ProvisionResult
+      expect(provisioned, isA<ProvisionResult>());
     });
 
     test('loginWithEmail fails gracefully when Firebase Auth is not initialized locally', () async {

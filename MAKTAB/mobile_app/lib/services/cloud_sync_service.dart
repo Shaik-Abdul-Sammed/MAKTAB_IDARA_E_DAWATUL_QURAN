@@ -66,6 +66,59 @@ class CloudSyncService {
   final List<StreamSubscription<DatabaseEvent>> _childSubscriptions = [];
   final StreamController<String> _syncController = StreamController<String>.broadcast();
 
+  static const List<String> _managerCollections = [
+    'teachers',
+    'batches',
+    'students',
+    'attendance',
+    'teacher_attendance',
+    'quran_progress',
+    'fee_payments',
+    'salary_payments',
+  ];
+
+  static const List<String> _teacherCollections = [
+    'teachers',
+    'batches',
+    'students',
+    'attendance',
+    'teacher_attendance',
+    'quran_progress',
+  ];
+
+  String? _currentRole;
+
+  void setCurrentRole(String? role) {
+    _currentRole = role?.trim().toLowerCase();
+  }
+
+  List<String> get _activeCollections {
+    if (_currentRole == 'teacher') return _teacherCollections;
+    final email = fb_auth.FirebaseAuth.instance.currentUser?.email?.toLowerCase() ?? '';
+    if (_currentRole == null && email.startsWith('teacher_')) {
+      return _teacherCollections;
+    }
+    return _managerCollections;
+  }
+
+  Future<void> _resolveUserRole() async {
+    final uid = fb_auth.FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return;
+    final db = _db;
+    if (db == null) return;
+    try {
+      final snap = await db.ref('users/$uid/role').get().timeout(
+        const Duration(seconds: 4),
+      );
+      if (snap.exists && snap.value != null) {
+        _currentRole = snap.value.toString().trim().toLowerCase();
+        debugPrint('[CloudSyncService] Resolved user role from RTDB: $_currentRole');
+      }
+    } catch (e) {
+      debugPrint('[CloudSyncService] Could not resolve role for $uid: $e');
+    }
+  }
+
   /// Active maktabId used by the periodic auto-sync timer
   String? _activeMaktabId;
 
@@ -74,6 +127,9 @@ class CloudSyncService {
 
   /// Whether a periodic syncAll is already running (prevent overlap)
   bool _periodicSyncInProgress = false;
+
+  /// Single-flight guard to prevent concurrent pulls
+  Future<bool>? _activePullFuture;
 
   Stream<String> get onDataSynced => _syncController.stream;
 
@@ -127,7 +183,7 @@ class CloudSyncService {
       return;
     }
     logMaktabFingerprint('cloud_sync', maktabId);
-    _runStartupPermissionProbe(maktabId).then((_) {
+    _resolveUserRole().then((_) => _runStartupPermissionProbe(maktabId)).then((_) {
       _startPeriodicSync();
       // Kick-off an immediate push-before-pull
       syncAll()
@@ -263,16 +319,7 @@ class CloudSyncService {
     final db = _db;
     if (db == null) return;
 
-    final collections = [
-      'teachers',
-      'batches',
-      'students',
-      'attendance',
-      'teacher_attendance',
-      'quran_progress',
-      'fee_payments',
-      'salary_payments',
-    ];
+    final collections = _activeCollections;
 
     for (var col in collections) {
       final path = 'maktabs/$maktabId/$col';
@@ -826,6 +873,20 @@ class CloudSyncService {
   Future<void> deleteTeacherCloud(int id) async {
     try {
       final maktabId = await getMaktabId();
+      // Also delete /users/{uid} if we know the uid. Query RTDB for teachers, find the one with teacherId == X:
+      final teacherSnap = await _db?.ref('maktabs/$maktabId/teachers').get();
+      if (teacherSnap?.value is Map) {
+        final map = teacherSnap!.value as Map;
+        for (final entry in map.entries) {
+          final node = entry.value;
+          if (node is Map && (node['teacherId'] == id || entry.key == id.toString())) {
+            final uid = node['uid'];
+            if (uid != null) {
+              await _db?.ref('users/$uid').remove();
+            }
+          }
+        }
+      }
       await _db?.ref('maktabs/$maktabId/teachers/$id').remove();
     } catch (e) {
       debugPrint('Firebase deleteTeacherCloud error: $e');
@@ -891,38 +952,43 @@ class CloudSyncService {
     }
   }
 
-  Future<bool> pullAllDataForMaktab(String maktabId) async {
+  Future<bool> pullAllDataForMaktab(String maktabId) {
+    return _activePullFuture ??= _doPullAllDataForMaktab(maktabId).whenComplete(() {
+      _activePullFuture = null;
+    });
+  }
+
+  Future<bool> _doPullAllDataForMaktab(String maktabId) async {
     try {
       final db = _db;
       if (db == null) return false;
 
-      final collections = [
-        'teachers',
-        'batches',
-        'students',
-        'attendance',
-        'teacher_attendance',
-        'quran_progress',
-        'fee_payments',
-        'salary_payments',
-      ];
+      final collections = _activeCollections;
 
-      bool anyPulled = false;
+      final pulledCollections = <String>[];
+      final failedCollections = <String>[];
+
       for (var col in collections) {
         try {
           final snapshot = await db.ref('maktabs/$maktabId/$col').get().timeout(
-            const Duration(seconds: 4),
+            const Duration(seconds: 20),
             onTimeout: () => throw TimeoutException('pull $col timed out'),
           );
           if (snapshot.exists && snapshot.value != null) {
             final data = _normalizeRtdbSnapshotValue(snapshot.value);
             await _mergeCollectionToSQLite(col, data);
-            anyPulled = true;
+            pulledCollections.add(col);
           }
         } catch (e) {
-          debugPrint('CloudSyncService error pulling $col for maktab $maktabId: $e');
+          failedCollections.add(col);
         }
       }
+
+      debugPrint(
+        '[PULL] maktab=$maktabId collections=${pulledCollections.join(",")} failures=${failedCollections.join(",")}',
+      );
+
+      bool anyPulled = pulledCollections.isNotEmpty;
 
       // Fallback check: if primary maktabId returned no student data, search other maktab nodes in RTDB
       if (!anyPulled) {
@@ -952,7 +1018,6 @@ class CloudSyncService {
         } catch (_) {}
       }
 
-      startRealtimeSync(maktabId);
       return anyPulled;
     } catch (e) {
       debugPrint('CloudSyncService pullAllDataForMaktab error: $e');

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:maktab_app/config/app_colors.dart';
+import 'package:provider/provider.dart';
+import '../../providers/auth_provider.dart';
 import '../../../models/batch.dart';
 import '../../../repositories/batch_repository.dart';
 
@@ -24,14 +26,21 @@ class _TeacherBatchesScreenState extends State<TeacherBatchesScreen> {
   Future<void> _loadRecords() async {
     setState(() => _isLoading = true);
     try {
-        final repo = BatchRepository();
-    final records = await repo.getAllBatches();
-        if (mounted) {
-            setState(() {
-                _items = records;
-                _isLoading = false;
-            });
-        }
+      final auth = Provider.of<AuthProvider>(context, listen: false);
+      final user = auth.currentUser;
+      final repo = BatchRepository();
+      final List<Batch> records;
+      if (user?.role == 'teacher' && user?.id != null) {
+        records = await repo.fetchTeacherBatches(user!.id!);
+      } else {
+        records = await repo.getAllBatches();
+      }
+      if (mounted) {
+        setState(() {
+          _items = records;
+          _isLoading = false;
+        });
+      }
     } catch (e) {
         if (mounted) {
             setState(() => _isLoading = false);

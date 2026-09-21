@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:maktab_app/config/app_colors.dart';
+import 'package:provider/provider.dart';
+import '../../providers/auth_provider.dart';
 import '../../../models/student.dart';
 import '../../../repositories/student_repository.dart';
 
@@ -24,14 +26,21 @@ class _StudentHealthInfoScreenState extends State<StudentHealthInfoScreen> {
   Future<void> _loadRecords() async {
     setState(() => _isLoading = true);
     try {
-        final repo = StudentRepository();
-    final records = await repo.getAllStudents();
-        if (mounted) {
-            setState(() {
-                _items = records;
-                _isLoading = false;
-            });
-        }
+      final auth = Provider.of<AuthProvider>(context, listen: false);
+      final user = auth.currentUser;
+      final repo = StudentRepository();
+      final List<Student> records;
+      if (user?.role == 'teacher' && user?.id != null) {
+        records = await repo.getStudentsByTeacher(user!.id!);
+      } else {
+        records = await repo.getAllStudents();
+      }
+      if (mounted) {
+        setState(() {
+          _items = records;
+          _isLoading = false;
+        });
+      }
     } catch (e) {
         if (mounted) {
             setState(() => _isLoading = false);

@@ -54,7 +54,7 @@ class TeacherFormProvider extends ChangeNotifier {
         await authProvider.provisionTeacherAuthAccount(
           teacherId: id,
           name: name.trim(),
-          rawPin: pin.trim(),
+          pinHash: dto.pinHash,
           mobile: mobile.trim(),
         );
       } catch (e) {
@@ -105,7 +105,7 @@ class TeacherFormProvider extends ChangeNotifier {
           await authProvider.provisionTeacherAuthAccount(
             teacherId: existing.id!,
             name: name.trim(),
-            rawPin: newPin.trim(),
+            pinHash: updated.pinHash,
             mobile: mobile.trim(),
           );
         } catch (e) {

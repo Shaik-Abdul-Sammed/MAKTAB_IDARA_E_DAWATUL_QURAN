@@ -120,7 +120,7 @@ class _TeacherAddScreenState extends State<TeacherAddScreen> {
       await context.read<AuthProvider>().provisionTeacherAuthAccount(
         teacherId: newTeacherId,
         name: nameText,
-        rawPin: pinText,
+        pinHash: AuthProvider.hashPin(pinText),
         mobile: mobileText,
       );
 

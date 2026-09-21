@@ -1,10 +1,12 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:maktab_app/config/app_colors.dart';
 import '../../models/student.dart';
 import '../../models/batch.dart';
+import '../../providers/auth_provider.dart';
 import '../../providers/student_list_provider.dart';
 import '../../repositories/student_repository.dart';
 import '../../repositories/batch_repository.dart';
@@ -25,6 +27,8 @@ class _StudentListScreenState extends State<StudentListScreen> {
   late final ScrollController _scrollController;
   Timer? _debounce;
   List<Batch> _batches = [];
+  bool _isTeacher = false;
+  int? _teacherId;
 
   @override
   void initState() {
@@ -36,13 +40,38 @@ class _StudentListScreenState extends State<StudentListScreen> {
     _loadBatches();
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final auth = Provider.of<AuthProvider>(context, listen: false);
+    final user = auth.currentUser;
+    final isTeacher = user?.role == 'teacher';
+    if (_isTeacher != isTeacher || _teacherId != user?.id) {
+      _isTeacher = isTeacher;
+      _teacherId = user?.id;
+      _loadBatches();
+    }
+  }
+
   Future<void> _loadBatches() async {
     try {
-      final list = await BatchRepository().getAllBatches();
+      List<Batch> list;
+      if (_isTeacher && _teacherId != null) {
+        list = await BatchRepository().fetchTeacherBatches(_teacherId!);
+      } else {
+        list = await BatchRepository().getAllBatches();
+      }
       if (mounted) {
         setState(() => _batches = list);
       }
     } catch (_) {}
+  }
+
+  List<Student> _getScopedStudents(List<Student> students) {
+    if (!_isTeacher) return students;
+    if (_batches.isEmpty) return const [];
+    final teacherBatchIds = _batches.map((b) => b.id).toSet();
+    return students.where((s) => teacherBatchIds.contains(s.batchId)).toList();
   }
 
   @override
@@ -190,6 +219,7 @@ class _StudentListScreenState extends State<StudentListScreen> {
   }
 
   Widget _buildBatchFilterRow() {
+    if (_isTeacher && _batches.isEmpty) return const SizedBox.shrink();
     return Consumer<StudentListProvider>(
       builder: (context, p, _) {
         return SingleChildScrollView(
@@ -231,19 +261,25 @@ class _StudentListScreenState extends State<StudentListScreen> {
   }
 
   Widget _buildSummaryRow() {
+    if (_isTeacher && _batches.isEmpty) return const SizedBox.shrink();
     return Consumer<StudentListProvider>(
-      builder: (_, p, _) => Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-        child: Row(
-          children: [
-            _Chip(label: '${p.filteredStudents.length} Students', color: const Color(0xFF004D40)),
-            const SizedBox(width: 8),
-            _Chip(label: '${p.maleCount} Male', color: Colors.blue.shade700),
-            const SizedBox(width: 8),
-            _Chip(label: '${p.femaleCount} Female', color: Colors.pink.shade700),
-          ],
-        ),
-      ),
+      builder: (_, p, _) {
+        final scoped = _getScopedStudents(p.filteredStudents);
+        final maleCount = scoped.where((s) => (s.gender ?? '').toLowerCase() == 'male').length;
+        final femaleCount = scoped.where((s) => (s.gender ?? '').toLowerCase() == 'female').length;
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          child: Row(
+            children: [
+              _Chip(label: '${scoped.length} Students', color: const Color(0xFF004D40)),
+              const SizedBox(width: 8),
+              _Chip(label: '$maleCount Male', color: Colors.blue.shade700),
+              const SizedBox(width: 8),
+              _Chip(label: '$femaleCount Female', color: Colors.pink.shade700),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -252,6 +288,23 @@ class _StudentListScreenState extends State<StudentListScreen> {
       builder: (context, p, _) {
         return AnimatedSwitcher(
           duration: const Duration(milliseconds: 300),
+          layoutBuilder: (Widget? currentChild, List<Widget> previousChildren) {
+            final seenKeys = <Key?>{};
+            if (currentChild?.key != null) seenKeys.add(currentChild!.key);
+            final dedupedPrevious = <Widget>[];
+            for (final child in previousChildren.reversed) {
+              if (child.key == null || seenKeys.add(child.key)) {
+                dedupedPrevious.add(child);
+              }
+            }
+            return Stack(
+              alignment: Alignment.center,
+              children: <Widget>[
+                ...dedupedPrevious.reversed,
+                ?currentChild,
+              ],
+            );
+          },
           child: switch (p.status) {
             StudentListStatus.initial || StudentListStatus.loading =>
               const _ShimmerContent(key: ValueKey('shimmer')),
@@ -260,18 +313,24 @@ class _StudentListScreenState extends State<StudentListScreen> {
                 message: p.errorMessage,
                 onRetry: p.fetchStudents,
               ),
-            StudentListStatus.success => p.filteredStudents.isEmpty
-                ? _EmptyContent(
+            StudentListStatus.success => () {
+                final scoped = _getScopedStudents(p.filteredStudents);
+                if (scoped.isEmpty) {
+                  return _EmptyContent(
                     key: const ValueKey('empty'),
                     isFiltered: p.searchQuery.isNotEmpty || p.selectedBatchFilter != null,
-                  )
-                : _StudentListView(
-                    key: const ValueKey('list'),
-                    students: p.filteredStudents,
-                    scrollController: _scrollController,
-                    onDelete: _confirmDelete,
-                    onRefresh: p.fetchStudents,
-                  ),
+                    noBatches: _isTeacher && _batches.isEmpty,
+                  );
+                }
+                return _StudentListView(
+                  key: const ValueKey('list'),
+                  students: scoped,
+                  batches: _batches,
+                  scrollController: _scrollController,
+                  onDelete: _confirmDelete,
+                  onRefresh: p.fetchStudents,
+                );
+              }(),
           },
         );
       },
@@ -289,11 +348,14 @@ class _Chip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withValues(alpha: 0.4)),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
-      child: Text(label, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: color)),
+      child: Text(
+        label,
+        style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.w600),
+      ),
     );
   }
 }
@@ -348,10 +410,35 @@ class _ErrorContent extends StatelessWidget {
 
 class _EmptyContent extends StatelessWidget {
   final bool isFiltered;
-  const _EmptyContent({super.key, required this.isFiltered});
+  final bool noBatches;
+  const _EmptyContent({
+    super.key,
+    required this.isFiltered,
+    this.noBatches = false,
+  });
 
   @override
   Widget build(BuildContext context) {
+    if (noBatches) {
+      return const Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.class_outlined, size: 72, color: Color(0xFFB0BEC5)),
+            SizedBox(height: 16),
+            Text(
+              'No batches assigned yet.',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF004D40)),
+            ),
+            SizedBox(height: 8),
+            Text(
+              'Contact Admin to assign your batches.',
+              style: TextStyle(color: Colors.black45, fontSize: 13),
+            ),
+          ],
+        ),
+      );
+    }
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -376,6 +463,7 @@ class _EmptyContent extends StatelessWidget {
 
 class _StudentListView extends StatelessWidget {
   final List<Student> students;
+  final List<Batch> batches;
   final ScrollController scrollController;
   final Future<void> Function(Student) onDelete;
   final Future<void> Function() onRefresh;
@@ -383,6 +471,7 @@ class _StudentListView extends StatelessWidget {
   const _StudentListView({
     super.key,
     required this.students,
+    required this.batches,
     required this.scrollController,
     required this.onDelete,
     required this.onRefresh,
@@ -390,6 +479,7 @@ class _StudentListView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final batchMap = {for (final b in batches) b.id: b.name};
     return RefreshIndicator(
       onRefresh: onRefresh,
       color: const Color(0xFF004D40),
@@ -444,7 +534,10 @@ class _StudentListView extends StatelessWidget {
                 return false;
               }
             },
-            child: _StudentTile(student: student),
+            child: _StudentTile(
+              student: student,
+              batchName: batchMap[student.batchId],
+            ),
           );
         },
       ),
@@ -454,13 +547,20 @@ class _StudentListView extends StatelessWidget {
 
 class _StudentTile extends StatelessWidget {
   final Student student;
-  const _StudentTile({required this.student});
+  final String? batchName;
+  const _StudentTile({required this.student, this.batchName});
 
   @override
   Widget build(BuildContext context) {
     final initials = student.name.isNotEmpty
         ? student.name.trim().split(' ').map((e) => e.isNotEmpty ? e[0] : '').take(2).join().toUpperCase()
         : 'S';
+
+    final hasPhoto = student.photoPath != null &&
+        student.photoPath!.isNotEmpty &&
+        File(student.photoPath!).existsSync();
+
+    final isSynced = student.isSynced ?? true;
 
     final genderIcon = (student.gender ?? '').toLowerCase() == 'female'
         ? Icons.female_rounded
@@ -487,45 +587,89 @@ class _StudentTile extends StatelessWidget {
         child: Material(
           color: Colors.transparent,
           child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-        leading: Hero(
-          tag: 'student_avatar_${student.id}',
-          child: CircleAvatar(
-            radius: 24,
-            child: Text(initials,
-                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
-          ),
-        ),
-        title: Row(
-          children: [
-            Expanded(
-              child: Text(
-                student.name,
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF1A1A1A)),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            leading: Hero(
+              tag: 'student_avatar_${student.id}',
+              child: CircleAvatar(
+                radius: 24,
+                backgroundColor: AppColors.primaryTeal,
+                backgroundImage: hasPhoto ? FileImage(File(student.photoPath!)) : null,
+                child: hasPhoto
+                    ? null
+                    : Text(
+                        initials,
+                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
+                      ),
               ),
             ),
-            Icon(genderIcon, size: 16, color: genderColor),
-          ],
-        ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 2),
-            Text(
-              'ADM: ${student.admissionNumber} ${student.fatherName != null ? '· S/O ${student.fatherName}' : ''}',
-              style: const TextStyle(fontSize: 12, color: Colors.black54),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+            title: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    student.name,
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF1A1A1A)),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                const SizedBox(width: 4),
+                Icon(genderIcon, size: 16, color: genderColor),
+              ],
             ),
-          ],
-        ),
-        trailing: const Icon(Icons.chevron_right, color: Colors.black26),
-        onTap: () => context.push('/admin/students/${student.id}'),
-      ),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 2),
+                Text(
+                  'ADM: ${student.admissionNumber} ${student.fatherName != null ? '· S/O ${student.fatherName}' : ''}',
+                  style: const TextStyle(fontSize: 12, color: Colors.black54),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                if (batchName != null && batchName!.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF004D40).withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(color: const Color(0xFF004D40).withValues(alpha: 0.2)),
+                    ),
+                    child: Text(
+                      batchName!,
+                      style: const TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF004D40),
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Tooltip(
+                  message: isSynced ? 'Synced with cloud' : 'Pending cloud sync',
+                  child: Icon(
+                    isSynced ? Icons.cloud_done_rounded : Icons.cloud_off_rounded,
+                    size: 18,
+                    color: isSynced ? Colors.green.shade600 : Colors.amber.shade800,
+                  ),
+                ),
+                const SizedBox(width: 4),
+                const Icon(Icons.chevron_right, color: Colors.black26),
+              ],
+            ),
+            onTap: () => context.push('/admin/students/${student.id}'),
+          ),
         ),
       ),
     );
   }
+}
+
+extension _StudentSyncExt on Student {
+  bool? get isSynced => null;
 }

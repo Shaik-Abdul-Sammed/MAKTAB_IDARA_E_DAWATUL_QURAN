@@ -42,7 +42,7 @@ class DatabaseHelper {
       return await ffi.databaseFactoryFfi.openDatabase(
         path,
         options: ffi.OpenDatabaseOptions(
-          version: 11,
+          version: 14,
           onConfigure: (db) async {
             await db.execute('PRAGMA foreign_keys = ON');
           },
@@ -59,7 +59,7 @@ class DatabaseHelper {
     return await openDatabase(
       path,
       password: key,
-      version: 11,
+      version: 14,
       onConfigure: (db) async {
         await db.execute('PRAGMA foreign_keys = ON');
       },
@@ -122,7 +122,8 @@ class DatabaseHelper {
         upi_id TEXT,
         preferred_payment_mode TEXT,
         is_active $boolType DEFAULT 1,
-        created_at $textType
+        created_at $textType,
+        is_synced INTEGER DEFAULT 1
       )
     ''');
 
@@ -145,7 +146,8 @@ class DatabaseHelper {
         teacher_notes $textNullable,
         fees_amount $integerNullable,
         is_deleted $integerNullable DEFAULT 0,
-        deleted_at $textNullable
+        deleted_at $textNullable,
+        is_synced INTEGER DEFAULT 1
       )
     ''');
     await db.execute('CREATE INDEX idx_stu_batch ON students(batch_id)');
@@ -158,6 +160,7 @@ class DatabaseHelper {
         name $textType,
         timing $textType,
         teacher_id $integerNullable,
+        is_synced INTEGER DEFAULT 1,
         FOREIGN KEY (teacher_id) REFERENCES users (id) ON DELETE SET NULL
       )
     ''');
@@ -172,7 +175,7 @@ class DatabaseHelper {
         timestamp TEXT NOT NULL,
         notes TEXT,
         voice_note_path TEXT,
-        FOREIGN KEY (student_id) REFERENCES students (id) ON DELETE CASCADE
+        is_synced INTEGER DEFAULT 1
       )
     ''');
 
@@ -186,7 +189,7 @@ class DatabaseHelper {
         status $textType,
         remarks $textNullable,
         time $textNullable,
-        FOREIGN KEY (student_id) REFERENCES students (id) ON DELETE CASCADE
+        is_synced INTEGER DEFAULT 1
       )
     ''');
     await db.execute('CREATE INDEX idx_att_date ON attendance(date)');
@@ -202,7 +205,7 @@ class DatabaseHelper {
         remarks $textNullable,
         marked_by $integerNullable,
         time $textNullable,
-        FOREIGN KEY (teacher_id) REFERENCES users (id) ON DELETE CASCADE
+        is_synced INTEGER DEFAULT 1
       )
     ''');
     await db.execute('CREATE INDEX idx_teach_att_date ON teacher_attendance(date)');
@@ -219,7 +222,7 @@ class DatabaseHelper {
         ayah_to $integerType,
         grade $textType,
         remarks $textNullable,
-        FOREIGN KEY (student_id) REFERENCES students (id) ON DELETE CASCADE
+        is_synced INTEGER DEFAULT 1
       )
     ''');
     await db.execute('CREATE INDEX idx_qp_student_date ON quran_progress(student_id, date)');
@@ -333,13 +336,161 @@ class DatabaseHelper {
         notes TEXT,
         created_at TEXT NOT NULL,
         updated_at TEXT NOT NULL,
-        FOREIGN KEY (teacher_id) REFERENCES users (id) ON DELETE CASCADE
+        is_synced INTEGER DEFAULT 1
       )
     ''');
     await db.execute('CREATE INDEX IF NOT EXISTS idx_sp_teacher_month ON salary_payments(teacher_id, salary_month)');
   }
 
   Future<void> _onUpgrade(dynamic db, int oldVersion, int newVersion) async {
+    if (oldVersion < 13) {
+      const syncedTables = [
+        'students',
+        'attendance',
+        'fee_payments',
+        'batches',
+        'users',
+        'teacher_attendance',
+        'quran_progress',
+        'salary_payments',
+      ];
+      for (final table in syncedTables) {
+        try {
+          final columns = await db.rawQuery("PRAGMA table_info($table)");
+          final hasIsSynced = columns.any((c) => c['name'] == 'is_synced');
+          if (!hasIsSynced) {
+            await db.execute("ALTER TABLE $table ADD COLUMN is_synced INTEGER DEFAULT 1");
+          }
+        } catch (e) {
+          debugPrint('Error ensuring is_synced on $table: $e');
+        }
+      }
+    }
+
+    if (oldVersion < 14) {
+      const idType = 'INTEGER PRIMARY KEY AUTOINCREMENT';
+      const textType = 'TEXT NOT NULL';
+      const textNullable = 'TEXT';
+      const integerType = 'INTEGER NOT NULL';
+      const integerNullable = 'INTEGER';
+
+      try {
+        await db.execute('DROP TABLE IF EXISTS attendance_old');
+        await db.execute('ALTER TABLE attendance RENAME TO attendance_old');
+        await db.execute('''
+          CREATE TABLE attendance (
+            id $idType,
+            student_id $integerType,
+            date $textType,
+            status $textType,
+            remarks $textNullable,
+            time $textNullable,
+            is_synced INTEGER DEFAULT 1
+          )
+        ''');
+        await db.execute('INSERT INTO attendance SELECT * FROM attendance_old');
+        await db.execute('DROP TABLE attendance_old');
+        await db.execute('CREATE INDEX IF NOT EXISTS idx_att_date ON attendance(date)');
+        await db.execute('CREATE INDEX IF NOT EXISTS idx_att_student_date ON attendance(student_id, date)');
+      } catch (e) {
+        debugPrint('Error migrating attendance in v14: $e');
+      }
+
+      try {
+        await db.execute('DROP TABLE IF EXISTS teacher_attendance_old');
+        await db.execute('ALTER TABLE teacher_attendance RENAME TO teacher_attendance_old');
+        await db.execute('''
+          CREATE TABLE teacher_attendance (
+            id $idType,
+            teacher_id $integerType,
+            date $textType,
+            status $textType,
+            remarks $textNullable,
+            marked_by $integerNullable,
+            time $textNullable,
+            is_synced INTEGER DEFAULT 1
+          )
+        ''');
+        await db.execute('INSERT INTO teacher_attendance SELECT * FROM teacher_attendance_old');
+        await db.execute('DROP TABLE teacher_attendance_old');
+        await db.execute('CREATE INDEX IF NOT EXISTS idx_teach_att_date ON teacher_attendance(date)');
+        await db.execute('CREATE INDEX IF NOT EXISTS idx_teach_att_teacher_date ON teacher_attendance(teacher_id, date)');
+      } catch (e) {
+        debugPrint('Error migrating teacher_attendance in v14: $e');
+      }
+
+      try {
+        await db.execute('DROP TABLE IF EXISTS quran_progress_old');
+        await db.execute('ALTER TABLE quran_progress RENAME TO quran_progress_old');
+        await db.execute('''
+          CREATE TABLE quran_progress (
+            id $idType,
+            student_id $integerType,
+            date $textType,
+            surah $textType,
+            ayah_from $integerType,
+            ayah_to $integerType,
+            grade $textType,
+            remarks $textNullable,
+            is_synced INTEGER DEFAULT 1
+          )
+        ''');
+        await db.execute('INSERT INTO quran_progress SELECT * FROM quran_progress_old');
+        await db.execute('DROP TABLE quran_progress_old');
+        await db.execute('CREATE INDEX IF NOT EXISTS idx_qp_student_date ON quran_progress(student_id, date)');
+      } catch (e) {
+        debugPrint('Error migrating quran_progress in v14: $e');
+      }
+
+      try {
+        await db.execute('DROP TABLE IF EXISTS fee_payments_old');
+        await db.execute('ALTER TABLE fee_payments RENAME TO fee_payments_old');
+        await db.execute('''
+          CREATE TABLE IF NOT EXISTS fee_payments (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            student_id INTEGER NOT NULL,
+            amount INTEGER NOT NULL,
+            mode TEXT NOT NULL,
+            timestamp TEXT NOT NULL,
+            notes TEXT,
+            voice_note_path TEXT,
+            is_synced INTEGER DEFAULT 1
+          )
+        ''');
+        await db.execute('INSERT INTO fee_payments SELECT * FROM fee_payments_old');
+        await db.execute('DROP TABLE fee_payments_old');
+      } catch (e) {
+        debugPrint('Error migrating fee_payments in v14: $e');
+      }
+
+      try {
+        await db.execute('DROP TABLE IF EXISTS salary_payments_old');
+        await db.execute('ALTER TABLE salary_payments RENAME TO salary_payments_old');
+        await db.execute('''
+          CREATE TABLE IF NOT EXISTS salary_payments (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            teacher_id INTEGER NOT NULL,
+            maktab_id TEXT NOT NULL,
+            salary_month TEXT NOT NULL,
+            amount INTEGER NOT NULL,
+            payment_date TEXT NOT NULL,
+            payment_mode TEXT NOT NULL,
+            upi_id_snapshot TEXT,
+            transaction_reference TEXT,
+            status TEXT NOT NULL,
+            notes TEXT,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            is_synced INTEGER DEFAULT 1
+          )
+        ''');
+        await db.execute('INSERT INTO salary_payments SELECT * FROM salary_payments_old');
+        await db.execute('DROP TABLE salary_payments_old');
+        await db.execute('CREATE INDEX IF NOT EXISTS idx_sp_teacher_month ON salary_payments(teacher_id, salary_month)');
+      } catch (e) {
+        debugPrint('Error migrating salary_payments in v14: $e');
+      }
+    }
     try {
       await db.execute('ALTER TABLE attendance ADD COLUMN is_synced INTEGER DEFAULT 1');
     } catch (_) {}

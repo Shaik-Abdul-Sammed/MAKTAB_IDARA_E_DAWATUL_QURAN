@@ -380,6 +380,7 @@ class _TeacherAttendanceScreenState extends State<TeacherAttendanceScreen> {
 
     showDialog(
       context: context,
+      barrierDismissible: false,
       builder: (context) => VoiceAttendanceDialog(
         title: 'Voice Attendance for Teachers',
         items: items,

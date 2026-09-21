@@ -70,9 +70,6 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
       List<Batch> list;
       if (user?.role == 'teacher' && user?.id != null) {
         list = await BatchRepository().fetchTeacherBatches(user!.id!);
-        if (list.isEmpty) {
-          list = await BatchRepository().getAllBatches();
-        }
       } else {
         list = await BatchRepository().getAllBatches();
       }

@@ -77,15 +77,12 @@ class AttendanceRepository {
       SELECT a.* FROM attendance a
       INNER JOIN students s ON a.student_id = s.id
       LEFT JOIN batches b ON s.batch_id = b.id
-      WHERE (
-        s.batch_id = ?
-        OR LOWER(b.name) = (SELECT LOWER(name) FROM batches WHERE id = ?)
-      )
-    ''', [batchId, batchId]);
+      WHERE s.batch_id = ?
+    ''', [batchId]);
     if (maps.isNotEmpty) {
       return List.generate(maps.length, (i) => Attendance.fromMap(maps[i]));
     }
-    return getAllAttendance();
+    return [];
   }
 
   Future<List<Attendance>> getAllAttendance() async {
@@ -114,22 +111,14 @@ class AttendanceRepository {
       INNER JOIN students s ON a.student_id = s.id
       LEFT JOIN batches b ON s.batch_id = b.id
       WHERE substr(a.date, 1, 10) = substr(?, 1, 10)
-        AND (
-          s.batch_id = ?
-          OR LOWER(b.name) = (SELECT LOWER(name) FROM batches WHERE id = ?)
-        )
-    ''', [date, batchId, batchId]);
+        AND s.batch_id = ?
+    ''', [date, batchId]);
 
     if (maps.isNotEmpty) {
       return List.generate(maps.length, (i) => Attendance.fromMap(maps[i]));
     }
 
-    // Fail-safe fallback: return any attendance recorded on that date
-    final List<Map<String, dynamic>> fallbackMaps = await db.rawQuery('''
-      SELECT * FROM attendance
-      WHERE substr(date, 1, 10) = substr(?, 1, 10)
-    ''', [date]);
-    return List.generate(fallbackMaps.length, (i) => Attendance.fromMap(fallbackMaps[i]));
+    return [];
   }
 
   Future<int> updateAttendance(Attendance attendance) async {
@@ -171,14 +160,10 @@ class AttendanceRepository {
         COUNT(DISTINCT CASE WHEN a.status IS NOT NULL AND a.status != 'Present' THEN s.id END) as absent,
         COUNT(DISTINCT CASE WHEN a.status IS NOT NULL THEN s.id END) as marked
       FROM students s
-      LEFT JOIN batches b ON s.batch_id = b.id
       LEFT JOIN attendance a ON a.student_id = s.id AND substr(a.date, 1, 10) = substr(?, 1, 10)
       WHERE (s.is_deleted IS NULL OR s.is_deleted = 0)
-        AND (
-          s.batch_id = ?
-          OR LOWER(b.name) = (SELECT LOWER(name) FROM batches WHERE id = ?)
-        )
-    ''', [date, batchId, batchId]);
+        AND s.batch_id = ?
+    ''', [date, batchId]);
 
     int total = 0, present = 0, absent = 0, marked = 0;
     if (rows.isNotEmpty) {
@@ -187,27 +172,6 @@ class AttendanceRepository {
       present = (row['present'] as int?) ?? 0;
       absent = (row['absent'] as int?) ?? 0;
       marked = (row['marked'] as int?) ?? (present + absent);
-    }
-
-    // Fail-safe fallback: If specific batch count is 0, count all active students in the Maktab
-    if (total == 0) {
-      final allRows = await db.rawQuery('''
-        SELECT
-          COUNT(DISTINCT s.id) as total,
-          COUNT(DISTINCT CASE WHEN a.status = 'Present' THEN s.id END) as present,
-          COUNT(DISTINCT CASE WHEN a.status IS NOT NULL AND a.status != 'Present' THEN s.id END) as absent,
-          COUNT(DISTINCT CASE WHEN a.status IS NOT NULL THEN s.id END) as marked
-        FROM students s
-        LEFT JOIN attendance a ON a.student_id = s.id AND substr(a.date, 1, 10) = substr(?, 1, 10)
-        WHERE (s.is_deleted IS NULL OR s.is_deleted = 0)
-      ''', [date]);
-      if (allRows.isNotEmpty) {
-        final row = allRows.first;
-        total = (row['total'] as int?) ?? 0;
-        present = (row['present'] as int?) ?? 0;
-        absent = (row['absent'] as int?) ?? 0;
-        marked = (row['marked'] as int?) ?? (present + absent);
-      }
     }
 
     return {'total': total, 'present': present, 'absent': absent, 'marked': marked};

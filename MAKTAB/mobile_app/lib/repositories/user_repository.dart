@@ -1,4 +1,7 @@
+import 'package:flutter/foundation.dart';
 import 'package:maktab_app/models/user.dart';
+import 'package:maktab_app/models/student.dart';
+import 'package:maktab_app/models/batch.dart';
 import 'package:maktab_app/services/database_helper.dart';
 import 'package:maktab_app/services/database_seeder.dart';
 import 'package:maktab_app/services/cloud_sync_service.dart';
@@ -131,12 +134,40 @@ class UserRepository {
 
   Future<int> deleteUser(int id) async {
     final db = await _dbHelper.database;
+
+    // Step 1 — Orphan students in the teacher's batches (SQLite):
+    await db.rawUpdate('''
+      UPDATE students SET batch_id = NULL
+      WHERE batch_id IN (SELECT id FROM batches WHERE teacher_id = ?)
+    ''', [id]);
+    debugPrint('[DELETE-TEACHER] Orphaned students from teacher $id batches');
+
+    // Step 2 — Orphan teacher_id on the batches (SQLite):
+    await db.update('batches', {'teacher_id': null}, where: 'teacher_id = ?', whereArgs: [id]);
+
+    // Step 3 — Push the orphans to RTDB so other devices see the change:
+    final orphanedStudents = await db.query('students', where: 'batch_id IS NULL AND is_synced = 1');
+    for (final s in orphanedStudents) {
+      await CloudSyncService.instance.pushStudent(Student.fromMap(s));
+    }
+    final orphanedBatches = await db.query('batches', where: 'teacher_id IS NULL AND is_synced = 1');
+    for (final b in orphanedBatches) {
+      await CloudSyncService.instance.pushBatch(Batch.fromMap(b));
+    }
+
+    // Step 4 — Delete the SQLite users row. (Existing behavior.)
     final res = await db.delete(
       'users',
       where: 'id = ?',
       whereArgs: [id],
     );
+
+    // Step 5 — Delete RTDB nodes:
     await CloudSyncService.instance.deleteTeacherCloud(id);
+
+    // Step 6 — Firebase Auth account: The client SDK cannot delete another user's Auth account. Add an explicit log:
+    debugPrint('[DELETE-TEACHER] Firebase Auth account for teacher $id not deleted — requires Cloud Function with Admin SDK. Account remains orphaned.');
+
     CloudSyncService.instance.notifyDataChanged('teachers');
     return res;
   }

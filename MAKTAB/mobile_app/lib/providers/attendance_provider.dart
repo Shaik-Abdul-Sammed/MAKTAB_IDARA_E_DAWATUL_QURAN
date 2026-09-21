@@ -112,6 +112,10 @@ class AttendanceProvider extends ChangeNotifier {
   Future<void> loadBatchAttendance(int batchId) async {
     _status = AttendanceStatus.loading;
     _errorMessage = '';
+    _students = [];
+    _studentStatuses = {};
+    _studentRemarks = {};
+    _existingAttendanceIds = {};
     notifyListeners();
     try {
       _students = await _studentRepo.getStudentsByBatch(batchId);

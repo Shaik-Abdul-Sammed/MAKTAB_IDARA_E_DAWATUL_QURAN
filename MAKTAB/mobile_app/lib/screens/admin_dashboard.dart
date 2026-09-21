@@ -177,53 +177,58 @@ class _AdminDashboardState extends State<AdminDashboard>
                           ),
                         ),
                         Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              AnimatedScale(
-                                scale: hover ? 1.05 : 1.0,
-                                duration: const Duration(milliseconds: 200),
-                                child: Container(
-                                  padding: const EdgeInsets.all(10),
-                                  decoration: BoxDecoration(
-                                    color: (iconColor ?? teal).withValues(alpha: 0.12),
-                                    shape: BoxShape.circle,
-                                    boxShadow: hover ? [
-                                      BoxShadow(color: (iconColor ?? teal).withValues(alpha: 0.3), blurRadius: 8)
-                                    ] : [],
+                          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                          child: Center(
+                            child: SingleChildScrollView(
+                              physics: const NeverScrollableScrollPhysics(),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  AnimatedScale(
+                                    scale: hover ? 1.05 : 1.0,
+                                    duration: const Duration(milliseconds: 200),
+                                    child: Container(
+                                      padding: const EdgeInsets.all(8),
+                                      decoration: BoxDecoration(
+                                        color: (iconColor ?? teal).withValues(alpha: 0.12),
+                                        shape: BoxShape.circle,
+                                        boxShadow: hover ? [
+                                          BoxShadow(color: (iconColor ?? teal).withValues(alpha: 0.3), blurRadius: 8)
+                                        ] : [],
+                                      ),
+                                      child: Icon(icon, color: iconColor ?? teal, size: 24),
+                                    ),
                                   ),
-                                  child: Icon(icon, color: iconColor ?? teal, size: 26),
-                                ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    title,
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w700,
+                                      color: AppColors.textPrimary,
+                                      letterSpacing: 0.2,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  if (badge != null)
+                                    Container(
+                                      margin: const EdgeInsets.only(top: 4),
+                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: Colors.redAccent,
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      child: Text(
+                                        badge,
+                                        style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                                      ),
+                                    ),
+                                ],
                               ),
-                              const SizedBox(height: 6),
-                              Text(
-                                title,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppColors.textPrimary,
-                                  letterSpacing: 0.2,
-                                ),
-                                textAlign: TextAlign.center,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              if (badge != null)
-                                Container(
-                                  margin: const EdgeInsets.only(top: 4),
-                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                  decoration: BoxDecoration(
-                                    color: Colors.redAccent,
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                  child: Text(
-                                    badge,
-                                    style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
-                                  ),
-                                ),
-                              const SizedBox(height: 4),
-                            ],
+                            ),
                           ),
                         ),
                       ],

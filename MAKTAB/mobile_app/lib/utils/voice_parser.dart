@@ -125,23 +125,74 @@ class VoiceParser {
     return false;
   }
 
+  static const Set<String> _honorifics = {'mr', 'mrs', 'shaik', 'syed'};
+
+  static int _levenshtein(String a, String b) {
+    final s1 = a.toLowerCase();
+    final s2 = b.toLowerCase();
+    if (s1 == s2) return 0;
+    if (s1.isEmpty) return s2.length;
+    if (s2.isEmpty) return s1.length;
+
+    List<int> v0 = List<int>.generate(s2.length + 1, (i) => i);
+    List<int> v1 = List<int>.filled(s2.length + 1, 0);
+
+    for (int i = 0; i < s1.length; i++) {
+      v1[0] = i + 1;
+      for (int j = 0; j < s2.length; j++) {
+        final cost = (s1[i] == s2[j]) ? 0 : 1;
+        v1[j + 1] = [
+          v1[j] + 1,
+          v0[j + 1] + 1,
+          v0[j] + cost,
+        ].reduce((min, val) => val < min ? val : min);
+      }
+      for (int j = 0; j <= s2.length; j++) {
+        v0[j] = v1[j];
+      }
+    }
+    return v0[s2.length];
+  }
+
+  static double _similarity(String a, String b) {
+    if (a.isEmpty || b.isEmpty) return 0;
+    final dist = _levenshtein(a, b);
+    final maxLen = a.length > b.length ? a.length : b.length;
+    return 1 - (dist / maxLen);
+  }
+
   static bool _isNameMatch(String fullName, String segment) {
     final cleanName = fullName.toLowerCase().trim();
-    final nameTokens = cleanName.split(RegExp(r'\s+'));
+    final cleanSegment = segment.toLowerCase().trim();
 
     // Direct substring match
-    if (segment.contains(cleanName)) return true;
+    if (cleanSegment.contains(cleanName)) return true;
 
-    // Check if any significant token (length >= 3) of student's name exists in segment
-    for (var token in nameTokens) {
-      if (token.length >= 3 && token != 'shaik' && token != 'syed' && token != 'mohammad' && token != 'md') {
-        if (segment.contains(token)) return true;
+    final nameTokens = cleanName.split(RegExp(r'\s+'));
+    final segmentTokens = cleanSegment.split(RegExp(r'\s+'));
+
+    // Fuzzy matching: accept any token pair where _similarity(target, token) >= 0.75
+    for (final nameToken in nameTokens) {
+      if (nameToken.length < 3 || _honorifics.contains(nameToken)) continue;
+
+      for (final segToken in segmentTokens) {
+        if (segToken.length < 3) continue;
+        if (_similarity(nameToken, segToken) >= 0.75) {
+          return true;
+        }
+      }
+    }
+
+    // Direct token containment fallback
+    for (final token in nameTokens) {
+      if (token.length >= 3 && !_honorifics.contains(token)) {
+        if (cleanSegment.contains(token)) return true;
       }
     }
 
     // Fallback match for first/last name
-    if (nameTokens.isNotEmpty && nameTokens.last.length >= 3 && segment.contains(nameTokens.last)) {
-      return true;
+    if (nameTokens.isNotEmpty && nameTokens.last.length >= 3 && !_honorifics.contains(nameTokens.last)) {
+      if (cleanSegment.contains(nameTokens.last)) return true;
     }
 
     return false;
