@@ -42,7 +42,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     super.initState();
     _syncSub = CloudSyncService.instance.onDataSynced.listen((collection) {
       if (mounted && (collection == 'attendance' || collection == 'students' || collection == 'batches')) {
-        _loadBatches();
+        _refreshBatchStats();
       }
     });
     _loadBatches();
@@ -54,18 +54,17 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     super.dispose();
   }
 
-  Future<void> _loadBatches() async {
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
+  Future<void> _loadBatches({bool syncCloud = true}) async {
+    if (_batches.isEmpty) {
+      setState(() {
+        _isLoading = true;
+        _errorMessage = null;
+      });
+    }
     try {
       final auth = Provider.of<AuthProvider>(context, listen: false);
       final user = auth.currentUser;
       _isTeacher = user?.role == 'teacher';
-      // Trigger background sync for latest data from cloud
-      final maktabId = await CloudSyncService.instance.getMaktabId();
-      CloudSyncService.instance.pullAllDataForMaktab(maktabId).catchError((_) => false);
 
       List<Batch> list;
       if (user?.role == 'teacher' && user?.id != null) {
@@ -77,18 +76,19 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
       final teachersList = await UserRepository().getAllTeachers();
       final Map<int, String> teacherMap = {for (var t in teachersList) t.id!: t.name};
 
-      // Load stats for each batch
+      // Load stats for all batches in a single batched query
       final dateStr = DateFormat('yyyy-MM-dd').format(_selectedDate);
       final repo = AttendanceRepository();
+      final rawMap = await repo.getAllAttendanceCountsForDate(dateStr);
       final Map<int, _BatchStat> stats = {};
       for (final b in list) {
         if (b.id != null) {
-          final raw = await repo.getAttendanceCountsForBatchDate(dateStr, b.id!);
+          final raw = rawMap[b.id];
           stats[b.id!] = _BatchStat(
-            total: raw['total'] ?? 0,
-            present: raw['present'] ?? 0,
-            absent: raw['absent'] ?? 0,
-            marked: raw['marked'] ?? 0,
+            total: raw?['total'] ?? 0,
+            present: raw?['present'] ?? 0,
+            absent: raw?['absent'] ?? 0,
+            marked: raw?['marked'] ?? 0,
           );
         }
       }
@@ -101,6 +101,16 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
           _isLoading = false;
         });
       }
+
+      // Trigger background sync for latest data from cloud if requested
+      if (syncCloud) {
+        final maktabId = await CloudSyncService.instance.getMaktabId();
+        CloudSyncService.instance.pullAllDataForMaktab(maktabId).then((_) {
+          if (mounted) {
+            _refreshBatchStats();
+          }
+        }).catchError((_) => false);
+      }
     } catch (e) {
       if (mounted) {
         setState(() {
@@ -108,6 +118,33 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
           _isLoading = false;
         });
       }
+    }
+  }
+
+  Future<void> _refreshBatchStats() async {
+    try {
+      final dateStr = DateFormat('yyyy-MM-dd').format(_selectedDate);
+      final repo = AttendanceRepository();
+      final rawMap = await repo.getAllAttendanceCountsForDate(dateStr);
+      final Map<int, _BatchStat> stats = {};
+      for (final b in _batches) {
+        if (b.id != null) {
+          final raw = rawMap[b.id];
+          stats[b.id!] = _BatchStat(
+            total: raw?['total'] ?? 0,
+            present: raw?['present'] ?? 0,
+            absent: raw?['absent'] ?? 0,
+            marked: raw?['marked'] ?? 0,
+          );
+        }
+      }
+      if (mounted) {
+        setState(() {
+          _batchStats = stats;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error refreshing batch stats: $e');
     }
   }
 
@@ -181,63 +218,67 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
         ],
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          physics: const BouncingScrollPhysics(),
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // ── Date Banner with arrow navigation (#3, #4)
-              _buildDateBanner(displayDate),
-              const SizedBox(height: 12),
+        child: RefreshIndicator(
+          onRefresh: () => _loadBatches(syncCloud: true),
+          color: const Color(0xFF004D40),
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // ── Date Banner with arrow navigation (#3, #4)
+                _buildDateBanner(displayDate),
+                const SizedBox(height: 12),
 
-              // ── Summary Header (#5)
-              if (!_isLoading && _errorMessage == null && totalBatches > 0)
-                _buildSummaryHeader(totalBatches, markedBatches, pendingBatches),
+                // ── Summary Header (#5)
+                if (!_isLoading && _errorMessage == null && totalBatches > 0)
+                  _buildSummaryHeader(totalBatches, markedBatches, pendingBatches),
 
-              const SizedBox(height: 16),
-              const Text('Select Batch to Mark Attendance',
-                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF004D40))),
-              const SizedBox(height: 10),
-
-              if (_isLoading) ...[
-                ShimmerLoader(height: 110),
+                const SizedBox(height: 16),
+                const Text('Select Batch to Mark Attendance',
+                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF004D40))),
                 const SizedBox(height: 10),
-                ShimmerLoader(height: 110),
-                const SizedBox(height: 10),
-                ShimmerLoader(height: 110),
-              ] else if (_errorMessage != null) ...[
-                Center(
-                  child: Column(
-                    children: [
-                      Text(_errorMessage!, style: const TextStyle(color: Colors.red)),
-                      const SizedBox(height: 12),
-                      ElevatedButton(onPressed: _loadBatches, child: const Text('Retry')),
-                    ],
+
+                if (_isLoading) ...[
+                  ShimmerLoader(height: 110),
+                  const SizedBox(height: 10),
+                  ShimmerLoader(height: 110),
+                  const SizedBox(height: 10),
+                  ShimmerLoader(height: 110),
+                ] else if (_errorMessage != null) ...[
+                  Center(
+                    child: Column(
+                      children: [
+                        Text(_errorMessage!, style: const TextStyle(color: Colors.red)),
+                        const SizedBox(height: 12),
+                        ElevatedButton(onPressed: _loadBatches, child: const Text('Retry')),
+                      ],
+                    ),
                   ),
-                ),
-              ] else if (_batches.isEmpty) ...[
-                _buildNoBatchesState(),
-              ] else ...[
-                ListView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: _batches.length,
-                  itemBuilder: (context, index) {
-                    final batch = _batches[index];
-                    final stat = _batchStats[batch.id];
-                    return _BatchAttendanceCard(
-                      batch: batch,
-                      dateStr: formattedDate,
-                      teacherName: _teachers[batch.teacherId],
-                      stat: stat,
-                      isToday: _isToday,
-                      onRefresh: _loadBatches,
-                    );
-                  },
-                ),
+                ] else if (_batches.isEmpty) ...[
+                  _buildNoBatchesState(),
+                ] else ...[
+                  ListView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: _batches.length,
+                    itemBuilder: (context, index) {
+                      final batch = _batches[index];
+                      final stat = _batchStats[batch.id];
+                      return _BatchAttendanceCard(
+                        batch: batch,
+                        dateStr: formattedDate,
+                        teacherName: _teachers[batch.teacherId],
+                        stat: stat,
+                        isToday: _isToday,
+                        onRefresh: () => _loadBatches(syncCloud: false),
+                      );
+                    },
+                  ),
+                ],
               ],
-            ],
+            ),
           ),
         ),
       ),

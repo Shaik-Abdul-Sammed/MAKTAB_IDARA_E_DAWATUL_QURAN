@@ -86,14 +86,12 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
     final attendances = results[2] as List<TeacherAttendance>;
     final summary = results[3] as Map<String, int>;
 
-    // Count presents for each batch today
-    final Map<int, int> presentCounts = {};
-    for (final b in batches) {
-      if (b.id == null) continue;
-      final recs = await _attRepo.getAttendanceByDateAndBatch(today, b.id!);
-      presentCounts[b.id!] =
-          recs.where((a) => a.status == 'Present').length;
-    }
+    // Count presents for each batch today using batched query
+    final rawCounts = await _attRepo.getAllAttendanceCountsForDate(today);
+    final Map<int, int> presentCounts = {
+      for (final b in batches)
+        if (b.id != null) b.id!: rawCounts[b.id]?['present'] ?? 0,
+    };
 
     if (!mounted) return;
     setState(() {
@@ -309,9 +307,12 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
                                   .length,
                               onMarkAllPresent: () =>
                                   _markAllPresent(_myBatches[i]),
-                              onTap: () => context.push(
-                                '/teacher/attendance',
-                              ),
+                              onTap: () async {
+                                await context.push(
+                                  '/teacher/attendance',
+                                );
+                                if (mounted) _load();
+                              },
                             ),
                             childCount: _myBatches.length,
                           ),

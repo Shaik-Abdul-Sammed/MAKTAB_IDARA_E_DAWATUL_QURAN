@@ -168,7 +168,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 _buildTextField(
                   id: 'field_name',
                   controller: _nameController,
-                  hint: 'e.g. S.Abdul Rawoof',
+                  hint: 'e.g. Shaik. Abdul Rawoof',
                   icon: Icons.person_outline,
                   validator: (val) {
                     if (val == null || val.trim().isEmpty) {

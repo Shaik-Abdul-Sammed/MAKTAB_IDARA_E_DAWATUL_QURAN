@@ -42,7 +42,7 @@ class DatabaseHelper {
       return await ffi.databaseFactoryFfi.openDatabase(
         path,
         options: ffi.OpenDatabaseOptions(
-          version: 16,
+          version: 17,
           onConfigure: (db) async {
             await db.execute('PRAGMA foreign_keys = ON');
           },
@@ -59,7 +59,7 @@ class DatabaseHelper {
     return await openDatabase(
       path,
       password: key,
-      version: 16,
+      version: 17,
       onConfigure: (db) async {
         await db.execute('PRAGMA foreign_keys = ON');
       },
@@ -791,6 +791,34 @@ class DatabaseHelper {
         debugPrint('[MIGRATION v16] Rebuilt messages table without FK');
       } catch (e) {
         debugPrint('[MIGRATION v16 ERROR] $e');
+      }
+    }
+
+    if (oldVersion < 17) {
+      try {
+        final rowsWithId3or4 = await db.query('users', where: 'id IN (3, 4)');
+        debugPrint('[MIGRATION v17] Local users rows with id IN (3, 4): $rowsWithId3or4');
+
+        // Safely remove only orphaned test teacher accounts by name/pattern.
+        // Legacy test record "MOULANA ABDUL WAHEED SAHB" is targeted, while
+        // active teacher "MOULANA ABDUL WAHEED" (20261) is preserved.
+        await db.delete(
+          'users',
+          where: "name LIKE '%Test%' OR name LIKE '%Demo%' OR name LIKE '%R22%' OR name = 'MOULANA ABDUL WAHEED SAHB'",
+        );
+        debugPrint('[MIGRATION v17] Removed test teacher accounts');
+      } catch (e) {
+        debugPrint('[MIGRATION v17 ERROR] $e');
+      }
+      try {
+        await db.update(
+          'users',
+          {'name': 'Shaik. Abdul Rawoof'},
+          where: "role IN ('manager', 'admin', 'operator') OR name LIKE '%Sammed%'",
+        );
+        debugPrint('[MIGRATION v17] Updated manager name in local users table');
+      } catch (e) {
+        debugPrint('[MIGRATION v17 ERROR] Manager name update: $e');
       }
     }
   }

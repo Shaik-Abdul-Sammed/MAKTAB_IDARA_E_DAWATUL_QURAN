@@ -17,6 +17,7 @@ import 'package:maktab_app/widgets/language_toggle.dart';
 import 'package:maktab_app/l10n/app_localizations.dart';
 import 'package:maktab_app/widgets/universal_search_delegate.dart';
 import 'package:maktab_app/services/analytics_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:ui';
 
 
@@ -41,10 +42,12 @@ class _AdminDashboardState extends State<AdminDashboard>
   int _totalBatches = 0;
   List<Map<String, dynamic>> _recentAttendance = [];
   List<AnomalyAlert> _aiAlerts = [];
+  bool _aiInsightsExpanded = false;
 
   @override
   void initState() {
     super.initState();
+    _loadAiInsightsExpandedState();
     _fetchDashboardStats();
 
     // Main body fade+slide
@@ -81,6 +84,25 @@ class _AdminDashboardState extends State<AdminDashboard>
     }
   }
 
+  Future<void> _loadAiInsightsExpandedState() async {
+    final prefs = await SharedPreferences.getInstance();
+    final expanded = prefs.getBool('ai_insights_expanded') ?? false;
+    if (mounted && expanded != _aiInsightsExpanded) {
+      setState(() {
+        _aiInsightsExpanded = expanded;
+      });
+    }
+  }
+
+  Future<void> _toggleAiInsights() async {
+    final newState = !_aiInsightsExpanded;
+    setState(() {
+      _aiInsightsExpanded = newState;
+    });
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('ai_insights_expanded', newState);
+  }
+
 
   @override
   void dispose() {
@@ -90,10 +112,10 @@ class _AdminDashboardState extends State<AdminDashboard>
   }
 
   String _formatManagerName(String? rawName) {
-    if (rawName == null || rawName.trim().isEmpty) return 'K. ABDUL RAWOOF';
+    if (rawName == null || rawName.trim().isEmpty) return 'Shaik. Abdul Rawoof';
     final trimmed = rawName.trim();
     final upper = trimmed.toUpperCase();
-    if (upper.startsWith('MANAGER') || upper.startsWith('ADMIN') || upper.startsWith('K.')) {
+    if (upper.startsWith('MANAGER') || upper.startsWith('ADMIN') || upper.startsWith('K.') || upper.startsWith('SHAIK')) {
       return trimmed;
     }
     return 'Manager $trimmed';
@@ -246,7 +268,7 @@ class _AdminDashboardState extends State<AdminDashboard>
 
   Widget _buildStatCard(String label, int value, IconData icon, Color color) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -259,27 +281,29 @@ class _AdminDashboardState extends State<AdminDashboard>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Container(
-                width: 32,
-                height: 32,
+                width: 28,
+                height: 28,
                 decoration: BoxDecoration(
                   color: color.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(icon, size: 18, color: color),
+                child: Icon(icon, size: 16, color: color),
               ),
-              const Spacer(),
-              Icon(Icons.trending_up_rounded, size: 16, color: color.withValues(alpha: 0.5)),
+              Icon(Icons.trending_up_rounded, size: 14, color: color.withValues(alpha: 0.5)),
             ],
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 8),
           AnimatedCounter(
             count: value,
-            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: color),
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: color),
           ),
           const SizedBox(height: 2),
           Text(label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.textMuted)),
         ],
       ),
@@ -311,100 +335,121 @@ class _AdminDashboardState extends State<AdminDashboard>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF004D40).withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(8),
+              InkWell(
+                onTap: _toggleAiInsights,
+                borderRadius: BorderRadius.circular(8),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF004D40).withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(Icons.auto_awesome_rounded, size: 18, color: Color(0xFF004D40)),
                     ),
-                    child: const Icon(Icons.auto_awesome_rounded, size: 18, color: Color(0xFF004D40)),
-                  ),
-                  const SizedBox(width: 8),
-                  const Text(
-                    'AI Smart Insights & Alerts',
-                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF004D40)),
-                  ),
-                  const Spacer(),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: Colors.red.shade50,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.red.shade200),
+                    const SizedBox(width: 8),
+                    const Expanded(
+                      child: Text(
+                        'AI Smart Insights & Alerts',
+                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF004D40)),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
                     ),
-                    child: Text(
-                      '${_aiAlerts.length} Action Needed',
-                      style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.red.shade900),
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: Colors.red.shade50,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.red.shade200),
+                      ),
+                      child: Text(
+                        '${_aiAlerts.length} Action Needed',
+                        style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.red.shade900),
+                      ),
                     ),
-                  ),
-                ],
+                    const SizedBox(width: 4),
+                    Icon(
+                      _aiInsightsExpanded ? Icons.expand_less : Icons.expand_more,
+                      size: 20,
+                      color: const Color(0xFF004D40),
+                    ),
+                  ],
+                ),
               ),
-              const SizedBox(height: 10),
-              ListView.separated(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: _aiAlerts.length > 3 ? 3 : _aiAlerts.length,
-                separatorBuilder: (context, index) => const SizedBox(height: 8),
-                itemBuilder: (context, index) {
-                  final alert = _aiAlerts[index];
-                  final isCritical = alert.severity == AlertSeverity.critical;
-                  final isWarning = alert.severity == AlertSeverity.warning;
+              AnimatedCrossFade(
+                firstChild: const SizedBox(width: double.infinity, height: 0),
+                secondChild: Padding(
+                  padding: const EdgeInsets.only(top: 10),
+                  child: ListView.separated(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: _aiAlerts.length > 3 ? 3 : _aiAlerts.length,
+                    separatorBuilder: (context, index) => const SizedBox(height: 8),
+                    itemBuilder: (context, index) {
+                      final alert = _aiAlerts[index];
+                      final isCritical = alert.severity == AlertSeverity.critical;
+                      final isWarning = alert.severity == AlertSeverity.warning;
 
-                  final bgColor = isCritical
-                      ? Colors.red.shade50
-                      : isWarning
-                          ? Colors.amber.shade50
-                          : Colors.blue.shade50;
-                  final borderColor = isCritical
-                      ? Colors.red.shade200
-                      : isWarning
-                          ? Colors.amber.shade300
-                          : Colors.blue.shade200;
-                  final textColor = isCritical
-                      ? Colors.red.shade900
-                      : isWarning
-                          ? Colors.amber.shade900
-                          : Colors.blue.shade900;
-                  final icon = isCritical
-                      ? Icons.error_outline_rounded
-                      : isWarning
-                          ? Icons.warning_amber_rounded
-                          : Icons.info_outline_rounded;
+                      final bgColor = isCritical
+                          ? Colors.red.shade50
+                          : isWarning
+                              ? Colors.amber.shade50
+                              : Colors.blue.shade50;
+                      final borderColor = isCritical
+                          ? Colors.red.shade200
+                          : isWarning
+                              ? Colors.amber.shade300
+                              : Colors.blue.shade200;
+                      final textColor = isCritical
+                          ? Colors.red.shade900
+                          : isWarning
+                              ? Colors.amber.shade900
+                              : Colors.blue.shade900;
+                      final icon = isCritical
+                          ? Icons.error_outline_rounded
+                          : isWarning
+                              ? Icons.warning_amber_rounded
+                              : Icons.info_outline_rounded;
 
-                  return Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: bgColor,
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: borderColor),
-                    ),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Icon(icon, size: 18, color: textColor),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                alert.title,
-                                style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: textColor),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                alert.subtitle,
-                                style: TextStyle(fontSize: 11, color: textColor.withValues(alpha: 0.85)),
-                              ),
-                            ],
-                          ),
+                      return Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: bgColor,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: borderColor),
                         ),
-                      ],
-                    ),
-                  );
-                },
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Icon(icon, size: 18, color: textColor),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    alert.title,
+                                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: textColor),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    alert.subtitle,
+                                    style: TextStyle(fontSize: 11, color: textColor.withValues(alpha: 0.85)),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                crossFadeState: _aiInsightsExpanded ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+                duration: const Duration(milliseconds: 250),
               ),
             ],
           ),
@@ -419,13 +464,19 @@ class _AdminDashboardState extends State<AdminDashboard>
       children: [
         Icon(icon, size: 18, color: AppColors.primaryTeal),
         const SizedBox(width: 8),
-        Text(title,
+        Flexible(
+          child: Text(
+            title,
             style: const TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.bold,
               color: AppColors.primaryTeal,
               letterSpacing: 0.3,
-            )),
+            ),
+            overflow: TextOverflow.ellipsis,
+            maxLines: 1,
+          ),
+        ),
         const SizedBox(width: 8),
         Expanded(child: Container(height: 1, color: AppColors.primaryTeal.withValues(alpha: 0.12))),
       ],
@@ -759,18 +810,25 @@ class _AdminDashboardState extends State<AdminDashboard>
                   child: LayoutBuilder(
                     builder: (context, constraints) {
                       final isTablet = constraints.maxWidth >= 800;
-                      return Row(
-                        children: [
-                          Expanded(child: _buildStatCard('Students', _totalStudents, AppIcons.students, AppColors.primaryTeal)),
-                          const SizedBox(width: 10),
-                          Expanded(child: _buildStatCard('Teachers', _totalTeachers, AppIcons.teachers, const Color(0xFF1976D2))),
-                          const SizedBox(width: 10),
-                          Expanded(child: _buildStatCard('Batches', _totalBatches, AppIcons.batches, const Color(0xFF388E3C))),
-                          if (isTablet) ...[
-                            const SizedBox(width: 10),
-                            Expanded(child: _buildStatCard('Attendance', 0, Icons.how_to_reg_rounded, const Color(0xFF7B1FA2))),
-                          ],
-                        ],
+                      return SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        physics: const NeverScrollableScrollPhysics(),
+                        child: SizedBox(
+                          width: constraints.maxWidth,
+                          child: Row(
+                            children: [
+                              Expanded(child: _buildStatCard('Students', _totalStudents, AppIcons.students, AppColors.primaryTeal)),
+                              const SizedBox(width: 8),
+                              Expanded(child: _buildStatCard('Teachers', _totalTeachers, AppIcons.teachers, const Color(0xFF1976D2))),
+                              const SizedBox(width: 8),
+                              Expanded(child: _buildStatCard('Batches', _totalBatches, AppIcons.batches, const Color(0xFF388E3C))),
+                              if (isTablet) ...[
+                                const SizedBox(width: 8),
+                                Expanded(child: _buildStatCard('Attendance', 0, Icons.how_to_reg_rounded, const Color(0xFF7B1FA2))),
+                              ],
+                            ],
+                          ),
+                        ),
                       );
                     },
                   ),
@@ -1147,12 +1205,16 @@ class _AdminDashboardState extends State<AdminDashboard>
         leading: Icon(icon, color: iconColor ?? AppColors.primaryTeal, size: 22),
         title: Row(
           children: [
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-                color: textColor ?? const Color(0xFF1A1A1A),
+            Expanded(
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: textColor ?? const Color(0xFF1A1A1A),
+                ),
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
               ),
             ),
             if (badge != null) ...[

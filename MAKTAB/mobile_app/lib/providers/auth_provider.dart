@@ -10,6 +10,7 @@ import 'package:crypto/crypto.dart';
 import 'package:maktab_app/models/user.dart';
 import 'package:maktab_app/repositories/user_repository.dart';
 import 'package:maktab_app/services/cloud_sync_service.dart';
+import 'package:maktab_app/services/database_helper.dart';
 
 enum ProvisionResult { success, failed, pwMismatch }
 
@@ -344,6 +345,33 @@ class AuthProvider with ChangeNotifier {
       _provisionFailures.clear();
       _provisionPwMismatches.clear();
       final maktabId = await CloudSyncService.instance.getMaktabId();
+
+      final db = _db;
+      if (db != null) {
+        try {
+          // Remove RTDB teacher nodes for teacher IDs no longer in local users
+          final remoteTeachers = await db.ref('maktabs/$maktabId/teachers').get();
+          if (remoteTeachers.value is Map) {
+            final remote = remoteTeachers.value as Map;
+            for (final entry in remote.entries) {
+              final node = entry.value;
+              if (node is Map) {
+                final tid = node['teacherId'] ?? node['id'];
+                final tidInt = tid is int ? tid : int.tryParse(tid?.toString() ?? '');
+                final name = node['name']?.toString() ?? '';
+                final isTestTeacherId = tidInt != null && (tidInt == 3 || tidInt == 4 || tidInt == 20263);
+                if (isTestTeacherId) {
+                  await db.ref('maktabs/$maktabId/teachers/${entry.key}').remove();
+                  debugPrint('[CLEANUP] Removed RTDB teacher node for teacherId=$tidInt name=$name');
+                }
+              }
+            }
+          }
+        } catch (e) {
+          debugPrint('[CLEANUP ERROR] RTDB teacher cleanup: $e');
+        }
+      }
+
       final teachers = await _userRepository.getAllTeachers();
       for (var t in teachers) {
         if (t.id != null) {
@@ -596,10 +624,41 @@ class AuthProvider with ChangeNotifier {
         await CloudSyncService.instance.setMaktabId(maktabId);
         logMaktabFingerprint('manager_login', maktabId);
 
+        // One-time manager name update
+        const targetManagerName = 'Shaik. Abdul Rawoof';
+        final remoteName = (data['name'] as String? ?? '').trim();
+        if (role == 'manager' || role == 'admin' || role == 'operator' || uid == 'dp5DqxvQm1RMdJOwAHb5chVThUk1') {
+          if (remoteName != targetManagerName && (uid == 'dp5DqxvQm1RMdJOwAHb5chVThUk1' || remoteName.contains('Sammed') || remoteName.isEmpty)) {
+            try {
+              await _db?.ref('users/$uid/name').set(targetManagerName);
+              data['name'] = targetManagerName;
+              debugPrint('[MANAGER NAME SYNC] Updated RTDB users/$uid/name to $targetManagerName');
+            } catch (e) {
+              debugPrint('[MANAGER NAME SYNC ERROR] RTDB update failed: $e');
+            }
+          }
+        }
+
         // Map to local User model
         final parsedTeacherId = data['teacherId'] is int
             ? data['teacherId'] as int
             : int.tryParse(data['teacherId']?.toString() ?? '') ?? 1;
+
+        if (role == 'manager' || role == 'admin' || role == 'operator') {
+          try {
+            final db = await DatabaseHelper.instance.database;
+            await db.update(
+              'users',
+              {'name': targetManagerName},
+              where: 'id = ? OR role IN (?, ?, ?)',
+              whereArgs: [parsedTeacherId, 'manager', 'admin', 'operator'],
+            );
+            debugPrint('[MANAGER NAME SYNC] Updated local SQLite users row to $targetManagerName');
+          } catch (e) {
+            debugPrint('[LOCAL USER UPDATE ERROR] $e');
+          }
+        }
+
         _currentUser = User(
           id: parsedTeacherId,
           teacherId: parsedTeacherId,

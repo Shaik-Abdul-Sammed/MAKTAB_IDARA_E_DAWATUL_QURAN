@@ -176,4 +176,40 @@ class AttendanceRepository {
 
     return {'total': total, 'present': present, 'absent': absent, 'marked': marked};
   }
+
+  /// Returns a map of batchId -> {total, present, absent, marked} in a single batched query.
+  Future<Map<int, Map<String, int>>> getAllAttendanceCountsForDate(String date) async {
+    final db = await _dbHelper.database;
+    final rows = await db.rawQuery('''
+      SELECT
+        s.batch_id,
+        COUNT(DISTINCT s.id) as total,
+        COUNT(DISTINCT CASE WHEN a.status = 'Present' THEN s.id END) as present,
+        COUNT(DISTINCT CASE WHEN a.status IS NOT NULL AND a.status != 'Present' THEN s.id END) as absent,
+        COUNT(DISTINCT CASE WHEN a.status IS NOT NULL THEN s.id END) as marked
+      FROM students s
+      LEFT JOIN attendance a ON a.student_id = s.id AND substr(a.date, 1, 10) = substr(?, 1, 10)
+      WHERE (s.is_deleted IS NULL OR s.is_deleted = 0)
+        AND s.batch_id IS NOT NULL
+      GROUP BY s.batch_id
+    ''', [date]);
+
+    final Map<int, Map<String, int>> result = {};
+    for (final row in rows) {
+      final batchId = row['batch_id'] as int?;
+      if (batchId != null) {
+        final total = (row['total'] as int?) ?? 0;
+        final present = (row['present'] as int?) ?? 0;
+        final absent = (row['absent'] as int?) ?? 0;
+        final marked = (row['marked'] as int?) ?? (present + absent);
+        result[batchId] = {
+          'total': total,
+          'present': present,
+          'absent': absent,
+          'marked': marked,
+        };
+      }
+    }
+    return result;
+  }
 }
