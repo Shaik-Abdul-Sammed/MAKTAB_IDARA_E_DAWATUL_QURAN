@@ -43,3 +43,10 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+*.apk
+*.aab
+*.jks
+*.keystore
+firebase_options.dart.bak
+sync_diagnostics_runbook.md

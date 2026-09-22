@@ -37,6 +37,7 @@ class QuranProgressProvider extends ChangeNotifier {
 
   Future<void> addProgress({
     required int studentId,
+    int? teacherId,
     required String surah,
     required int ayahFrom,
     required int ayahTo,
@@ -48,6 +49,7 @@ class QuranProgressProvider extends ChangeNotifier {
     try {
       final entry = QuranProgress(
         studentId: studentId,
+        teacherId: teacherId,
         date: DateFormat('yyyy-MM-dd').format(DateTime.now()),
         surah: surah.trim(),
         ayahFrom: ayahFrom,

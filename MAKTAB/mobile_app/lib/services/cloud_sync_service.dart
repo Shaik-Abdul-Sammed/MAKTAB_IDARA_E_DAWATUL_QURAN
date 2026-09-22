@@ -290,13 +290,16 @@ class CloudSyncService {
                 }
               }
             }
-          } catch (_) {}
+          } catch (e, st) {
+            debugPrint('[CloudSync] getMaktabId discovery error: $e\n$st');
+          }
         }
         maktabId ??= 'MAKTAB-001';
         await prefs.setString('maktab_id', maktabId);
       }
       return maktabId;
-    } catch (_) {
+    } catch (e, st) {
+      debugPrint('[CloudSync] getMaktabId error: $e\n$st');
       return 'MAKTAB-001';
     }
   }
@@ -305,7 +308,9 @@ class CloudSyncService {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('maktab_id', maktabId);
-    } catch (_) {}
+    } catch (e, st) {
+      debugPrint('[CloudSync] setMaktabId error: $e\n$st');
+    }
   }
 
   // ── Firebase Granular Realtime Listeners ─────────────────────────────────
@@ -336,7 +341,9 @@ class CloudSyncService {
           debugPrint('[RTDB ERROR] path=$path uid=${fb_auth.FirebaseAuth.instance.currentUser?.uid} email=${fb_auth.FirebaseAuth.instance.currentUser?.email} error=$error');
         }, cancelOnError: false);
         _childSubscriptions.add(sub);
-      } catch (_) {}
+      } catch (e, st) {
+        debugPrint('[CloudSync] startRealtimeSync subscription error on $col: $e\n$st');
+      }
     }
     // Trigger background sync for any unpushed offline SQLite records
     syncAll().catchError((e) {
@@ -404,7 +411,9 @@ class CloudSyncService {
               where: 'id >= 101 AND id <= 110 AND admission_number LIKE ?',
               whereArgs: ['ADM-2026-%'],
             );
-          } catch (_) {}
+          } catch (e, st) {
+            debugPrint('[CloudSync] _mergeCollectionToSQLite delete seeded students error: $e\n$st');
+          }
         }
         final localBatches = await db.query('batches');
         final batchMap = <int, int>{};
@@ -472,7 +481,9 @@ class CloudSyncService {
               ''', [firstBatchId]);
             }
           }
-        } catch (_) {}
+        } catch (e, st) {
+          debugPrint('[CloudSync] _mergeCollectionToSQLite fail-safe auto-relink error: $e\n$st');
+        }
         break;
 
       case 'teachers':
@@ -535,7 +546,7 @@ class CloudSyncService {
         for (var entry in colData.entries) {
           try {
             final item = _toMap(entry.value);
-            item['id'] ??= int.tryParse(entry.key.toString());
+            item['id'] ??= int.tryParse(entry.key.toString().split('_').last);
             final qp = QuranProgress.fromMap(item);
             await db.insert('quran_progress', qp.toMap(), conflictAlgorithm: ConflictAlgorithm.replace);
           } catch (e) {
@@ -639,7 +650,9 @@ class CloudSyncService {
         if (batchRows.isNotEmpty) {
           map['batch_name'] = batchRows.first['name'];
         }
-      } catch (_) {}
+      } catch (e, st) {
+        debugPrint('[CloudSync] pushStudent batch lookup error: $e\n$st');
+      }
 
       final db = _db;
       if (db == null) return false;
@@ -765,7 +778,8 @@ class CloudSyncService {
         return;
       }
 
-      final path = 'maktabs/$maktabId/quran_progress/$id';
+      final rtdbKey = '${qp.studentId}_${qp.date}_$id';
+      final path = 'maktabs/$maktabId/quran_progress/$rtdbKey';
       await db.ref(path).set(map).timeout(
         const Duration(seconds: 6),
         onTimeout: () => throw TimeoutException('pushQuranProgress timed out'),
@@ -773,7 +787,8 @@ class CloudSyncService {
       recordWrite(path, true);
     } catch (e) {
       if (maktabId != null && id != null) {
-        recordWrite('maktabs/$maktabId/quran_progress/$id', false, e);
+        final rtdbKey = '${qp.studentId}_${qp.date}_$id';
+        recordWrite('maktabs/$maktabId/quran_progress/$rtdbKey', false, e);
       }
       if (kDebugMode) debugPrint('[CloudSyncService] pushQuranProgress error: $e');
     }
@@ -1015,7 +1030,9 @@ class CloudSyncService {
               }
             }
           }
-        } catch (_) {}
+        } catch (e, st) {
+          debugPrint('[CloudSync] pullAllDataForMaktab fallback error: $e\n$st');
+        }
       }
 
       return anyPulled;

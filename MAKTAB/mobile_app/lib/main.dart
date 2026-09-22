@@ -75,6 +75,13 @@ void main() async {
   // Global error boundary for UI errors
   FlutterError.onError = (FlutterErrorDetails details) {
     FlutterError.presentError(details);
+    debugPrint('[OVERFLOW] ${details.exceptionAsString()}');
+    if (details.context != null) {
+      debugPrint('[OVERFLOW CONTEXT] ${details.context}');
+    }
+    if (details.library != null) {
+      debugPrint('[OVERFLOW LIBRARY] ${details.library}');
+    }
     appLogger.e('UI Error Caught', error: details.exception, stackTrace: details.stack);
   };
 

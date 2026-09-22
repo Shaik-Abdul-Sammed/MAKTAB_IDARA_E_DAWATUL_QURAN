@@ -1,5 +1,6 @@
 class User {
   final int? id;
+  final int? teacherId;
   final String name;
   final String pinHash; // We will store hashed PIN
   final String role; // 'admin' or 'teacher'
@@ -14,6 +15,7 @@ class User {
 
   User({
     this.id,
+    this.teacherId,
     required this.name,
     required this.pinHash,
     required this.role,
@@ -30,6 +32,7 @@ class User {
   Map<String, dynamic> toMap() {
     return {
       'id': id,
+      'teacher_id': teacherId ?? id,
       'name': name,
       'pin_hash': pinHash,
       'role': role,
@@ -51,6 +54,13 @@ class User {
       rawId = int.tryParse(rawIdVal.toString());
     }
 
+    int? rawTeacherId;
+    final tVal = map['teacher_id'] ?? map['teacherId'];
+    if (tVal != null) {
+      rawTeacherId = int.tryParse(tVal.toString());
+    }
+    rawTeacherId ??= rawId;
+
     final activeVal = map['is_active'] ?? map['isActive'] ?? map['active'];
     final bool active = activeVal == null
         ? true
@@ -61,6 +71,7 @@ class User {
 
     return User(
       id: rawId,
+      teacherId: rawTeacherId,
       name: (map['name'] ?? 'User').toString(),
       pinHash: (map['pin_hash'] ?? map['pinHash'] ?? '').toString(),
       role: (map['role'] ?? 'teacher').toString(),
@@ -77,6 +88,7 @@ class User {
 
   User copyWith({
     int? id,
+    int? teacherId,
     String? name,
     String? pinHash,
     String? role,
@@ -91,6 +103,7 @@ class User {
   }) {
     return User(
       id: id ?? this.id,
+      teacherId: teacherId ?? this.teacherId,
       name: name ?? this.name,
       pinHash: pinHash ?? this.pinHash,
       role: role ?? this.role,

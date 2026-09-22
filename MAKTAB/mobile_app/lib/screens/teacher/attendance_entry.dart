@@ -75,7 +75,9 @@ class _AttendanceEntryScreenState extends State<AttendanceEntryScreen>
         }
       }
       if (mounted) setState(() {});
-    } catch (_) {}
+    } catch (e, st) {
+      debugPrint('[AttendanceEntry] _initData error: $e\n$st');
+    }
   }
 
   @override
@@ -103,7 +105,9 @@ class _AttendanceEntryScreenState extends State<AttendanceEntryScreen>
       final key = 'draft_attendance_${widget.batchId}_${widget.date}';
       final map = _provider.studentStatuses.entries.map((e) => '${e.key}:${e.value}').join(',');
       await prefs.setString(key, map);
-    } catch (_) {}
+    } catch (e, st) {
+      debugPrint('[AttendanceEntry] _persistDraft error: $e\n$st');
+    }
   }
 
   Future<void> _save() async {
@@ -115,11 +119,12 @@ class _AttendanceEntryScreenState extends State<AttendanceEntryScreen>
       await prefs.remove('draft_attendance_${widget.batchId}_${widget.date}');
       if (!mounted) return;
       _showPostAttendanceSummary();
-    } catch (_) {
+    } catch (e, st) {
+      debugPrint('[AttendanceEntry] _save error: $e\n$st');
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Failed to save attendance. Please retry.'),
+        SnackBar(
+          content: Text('Failed to save attendance: $e'),
           backgroundColor: Colors.red,
         ),
       );

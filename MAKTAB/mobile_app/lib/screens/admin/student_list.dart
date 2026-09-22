@@ -30,6 +30,10 @@ class _StudentListScreenState extends State<StudentListScreen> {
   bool _isTeacher = false;
   int? _teacherId;
 
+  bool _showUnassigned = false;
+  List<Student> _unassignedStudents = [];
+  bool _loadingUnassigned = false;
+
   @override
   void initState() {
     super.initState();
@@ -67,6 +71,130 @@ class _StudentListScreenState extends State<StudentListScreen> {
     } catch (_) {}
   }
 
+  Future<void> _loadUnassignedStudents() async {
+    setState(() {
+      _showUnassigned = true;
+      _loadingUnassigned = true;
+    });
+    try {
+      final list = await StudentRepository().getUnassignedStudents();
+      if (mounted) {
+        setState(() {
+          _unassignedStudents = list;
+          _loadingUnassigned = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _loadingUnassigned = false);
+    }
+  }
+
+  List<Student> get _filteredUnassignedStudents {
+    final q = _searchController.text.trim().toLowerCase();
+    if (q.isEmpty) return _unassignedStudents;
+    return _unassignedStudents.where((s) {
+      return s.name.toLowerCase().contains(q) ||
+          s.admissionNumber.toLowerCase().contains(q) ||
+          (s.fatherName ?? '').toLowerCase().contains(q) ||
+          (s.phone ?? '').contains(q);
+    }).toList();
+  }
+
+  Future<void> _showReassignSheet(Student student) async {
+    int? selectedBatchId = _batches.isNotEmpty ? _batches.first.id : null;
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (sheetContext) {
+        return StatefulBuilder(
+          builder: (ctx, setSheetState) {
+            return Padding(
+              padding: EdgeInsets.only(
+                left: 24,
+                right: 24,
+                top: 24,
+                bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Assign Batch for ${student.name}',
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF004D40),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'ADM: ${student.admissionNumber}',
+                    style: const TextStyle(fontSize: 13, color: Colors.black54),
+                  ),
+                  const SizedBox(height: 20),
+                  DropdownButtonFormField<int>(
+                    initialValue: selectedBatchId,
+                    decoration: InputDecoration(
+                      labelText: 'Select Batch',
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      prefixIcon: const Icon(Icons.class_outlined, color: Color(0xFF004D40)),
+                    ),
+                    items: _batches.map((b) {
+                      return DropdownMenuItem<int>(
+                        value: b.id,
+                        child: Text(b.name),
+                      );
+                    }).toList(),
+                    onChanged: (val) {
+                      if (val != null) {
+                        setSheetState(() => selectedBatchId = val);
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF004D40),
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      onPressed: selectedBatchId == null
+                          ? null
+                          : () async {
+                              Navigator.pop(sheetContext);
+                              await StudentRepository().updateStudent(
+                                student.copyWith(batchId: selectedBatchId),
+                              );
+                              if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text('Assigned "${student.name}" to batch.'),
+                                    backgroundColor: const Color(0xFF004D40),
+                                  ),
+                                );
+                                _loadUnassignedStudents();
+                                _provider.fetchStudents();
+                              }
+                            },
+                      child: const Text('Assign to Batch', style: TextStyle(fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
   List<Student> _getScopedStudents(List<Student> students) {
     if (!_isTeacher) return students;
     if (_batches.isEmpty) return const [];
@@ -84,6 +212,9 @@ class _StudentListScreenState extends State<StudentListScreen> {
   }
 
   void _onSearchChanged(String val) {
+    if (_showUnassigned) {
+      setState(() {});
+    }
     if (_debounce?.isActive ?? false) _debounce!.cancel();
     _debounce = Timer(const Duration(milliseconds: 300), () {
       _provider.updateSearchQuery(val);
@@ -229,28 +360,48 @@ class _StudentListScreenState extends State<StudentListScreen> {
             children: [
               ChoiceChip(
                 label: const Text('All Batches'),
-                selected: p.selectedBatchFilter == null,
+                selected: !_showUnassigned && p.selectedBatchFilter == null,
                 selectedColor: const Color(0xFF004D40),
                 labelStyle: TextStyle(
-                  color: p.selectedBatchFilter == null ? Colors.white : const Color(0xFF004D40),
+                  color: (!_showUnassigned && p.selectedBatchFilter == null) ? Colors.white : const Color(0xFF004D40),
                   fontWeight: FontWeight.bold,
                   fontSize: 12,
                 ),
-                onSelected: (_) => p.setBatchFilter(null),
+                onSelected: (_) {
+                  setState(() => _showUnassigned = false);
+                  p.setBatchFilter(null);
+                },
               ),
+              if (!_isTeacher) ...[
+                const SizedBox(width: 8),
+                ChoiceChip(
+                  label: const Text('Unassigned'),
+                  selected: _showUnassigned,
+                  selectedColor: const Color(0xFF004D40),
+                  labelStyle: TextStyle(
+                    color: _showUnassigned ? Colors.white : const Color(0xFF004D40),
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
+                  ),
+                  onSelected: (_) => _loadUnassignedStudents(),
+                ),
+              ],
               const SizedBox(width: 8),
               ..._batches.map((b) => Padding(
                     padding: const EdgeInsets.only(right: 8.0),
                     child: ChoiceChip(
                       label: Text(b.name),
-                      selected: p.selectedBatchFilter == b.id,
+                      selected: !_showUnassigned && p.selectedBatchFilter == b.id,
                       selectedColor: const Color(0xFF004D40),
                       labelStyle: TextStyle(
-                        color: p.selectedBatchFilter == b.id ? Colors.white : const Color(0xFF004D40),
+                        color: (!_showUnassigned && p.selectedBatchFilter == b.id) ? Colors.white : const Color(0xFF004D40),
                         fontWeight: FontWeight.bold,
                         fontSize: 12,
                       ),
-                      onSelected: (_) => p.setBatchFilter(b.id),
+                      onSelected: (_) {
+                        setState(() => _showUnassigned = false);
+                        p.setBatchFilter(b.id);
+                      },
                     ),
                   )),
             ],
@@ -262,6 +413,23 @@ class _StudentListScreenState extends State<StudentListScreen> {
 
   Widget _buildSummaryRow() {
     if (_isTeacher && _batches.isEmpty) return const SizedBox.shrink();
+    if (_showUnassigned) {
+      final scoped = _filteredUnassignedStudents;
+      final maleCount = scoped.where((s) => (s.gender ?? '').toLowerCase() == 'male').length;
+      final femaleCount = scoped.where((s) => (s.gender ?? '').toLowerCase() == 'female').length;
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        child: Row(
+          children: [
+            _Chip(label: '${scoped.length} Unassigned', color: const Color(0xFF004D40)),
+            const SizedBox(width: 8),
+            _Chip(label: '$maleCount Male', color: Colors.blue.shade700),
+            const SizedBox(width: 8),
+            _Chip(label: '$femaleCount Female', color: Colors.pink.shade700),
+          ],
+        ),
+      );
+    }
     return Consumer<StudentListProvider>(
       builder: (_, p, _) {
         final scoped = _getScopedStudents(p.filteredStudents);
@@ -284,6 +452,41 @@ class _StudentListScreenState extends State<StudentListScreen> {
   }
 
   Widget _buildBody() {
+    if (_showUnassigned) {
+      if (_loadingUnassigned) {
+        return const _ShimmerContent(key: ValueKey('shimmer_unassigned'));
+      }
+      final scoped = _filteredUnassignedStudents;
+      if (scoped.isEmpty) {
+        return Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.assignment_turned_in_outlined, size: 72, color: Color(0xFFB0BEC5)),
+              const SizedBox(height: 16),
+              Text(
+                _searchController.text.isNotEmpty
+                    ? 'No unassigned students match your filter.'
+                    : 'All students are assigned to batches.',
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF004D40)),
+              ),
+            ],
+          ),
+        );
+      }
+      return _StudentListView(
+        key: const ValueKey('unassigned_list'),
+        students: scoped,
+        batches: _batches,
+        scrollController: _scrollController,
+        onDelete: (s) async {
+          await _confirmDelete(s);
+          await _loadUnassignedStudents();
+        },
+        onRefresh: _loadUnassignedStudents,
+        onReassign: _showReassignSheet,
+      );
+    }
     return Consumer<StudentListProvider>(
       builder: (context, p, _) {
         return AnimatedSwitcher(
@@ -467,6 +670,7 @@ class _StudentListView extends StatelessWidget {
   final ScrollController scrollController;
   final Future<void> Function(Student) onDelete;
   final Future<void> Function() onRefresh;
+  final void Function(Student)? onReassign;
 
   const _StudentListView({
     super.key,
@@ -475,6 +679,7 @@ class _StudentListView extends StatelessWidget {
     required this.scrollController,
     required this.onDelete,
     required this.onRefresh,
+    this.onReassign,
   });
 
   @override
@@ -495,16 +700,16 @@ class _StudentListView extends StatelessWidget {
             background: Container(
               margin: const EdgeInsets.only(bottom: 10),
               decoration: BoxDecoration(
-                color: AppColors.primaryTeal,
+                color: onReassign != null ? const Color(0xFF004D40) : AppColors.primaryTeal,
                 borderRadius: BorderRadius.circular(14),
               ),
               alignment: Alignment.centerLeft,
               padding: const EdgeInsets.only(left: 24),
-              child: const Row(
+              child: Row(
                 children: [
-                  Icon(Icons.edit_rounded, color: Colors.white, size: 24),
-                  SizedBox(width: 8),
-                  Text('Edit', style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold)),
+                  Icon(onReassign != null ? Icons.assignment_ind_rounded : Icons.edit_rounded, color: Colors.white, size: 24),
+                  const SizedBox(width: 8),
+                  Text(onReassign != null ? 'Assign' : 'Edit', style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold)),
                 ],
               ),
             ),
@@ -527,7 +732,11 @@ class _StudentListView extends StatelessWidget {
             ),
             confirmDismiss: (direction) async {
               if (direction == DismissDirection.startToEnd) {
-                context.push('/admin/students/${student.id}/edit', extra: student);
+                if (onReassign != null) {
+                  onReassign!(student);
+                } else {
+                  context.push('/admin/students/${student.id}/edit', extra: student);
+                }
                 return false;
               } else {
                 await onDelete(student);
@@ -537,6 +746,7 @@ class _StudentListView extends StatelessWidget {
             child: _StudentTile(
               student: student,
               batchName: batchMap[student.batchId],
+              onLongPress: onReassign != null ? () => onReassign!(student) : null,
             ),
           );
         },
@@ -548,7 +758,8 @@ class _StudentListView extends StatelessWidget {
 class _StudentTile extends StatelessWidget {
   final Student student;
   final String? batchName;
-  const _StudentTile({required this.student, this.batchName});
+  final VoidCallback? onLongPress;
+  const _StudentTile({required this.student, this.batchName, this.onLongPress});
 
   @override
   Widget build(BuildContext context) {
@@ -663,6 +874,7 @@ class _StudentTile extends StatelessWidget {
               ],
             ),
             onTap: () => context.push('/admin/students/${student.id}'),
+            onLongPress: onLongPress,
           ),
         ),
       ),

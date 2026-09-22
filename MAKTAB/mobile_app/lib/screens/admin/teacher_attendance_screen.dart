@@ -179,7 +179,7 @@ class _TeacherAttendanceScreenState extends State<TeacherAttendanceScreen> {
         final status = _attendanceMap[teacher.id!] ?? 'Present';
         final remarks = _remarksControllers[teacher.id!]?.text.trim();
         await _attendanceRepository.upsertAttendance(TeacherAttendance(
-          teacherId: teacher.id!,
+          teacherId: teacher.teacherId ?? teacher.id!,   // canonical, not local
           date: dateStr,
           status: status,
           remarks: remarks?.isEmpty == true ? null : remarks,

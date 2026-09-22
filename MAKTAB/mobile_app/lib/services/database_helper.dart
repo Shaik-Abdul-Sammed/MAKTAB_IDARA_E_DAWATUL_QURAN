@@ -59,7 +59,7 @@ class DatabaseHelper {
     return await openDatabase(
       path,
       password: key,
-      version: 14,
+      version: 15,
       onConfigure: (db) async {
         await db.execute('PRAGMA foreign_keys = ON');
       },
@@ -112,6 +112,7 @@ class DatabaseHelper {
     await db.execute('''
       CREATE TABLE users (
         id $idType,
+        teacher_id $integerNullable,
         name $textType,
         pin_hash $textType,
         role $textType,
@@ -216,6 +217,7 @@ class DatabaseHelper {
       CREATE TABLE quran_progress (
         id $idType,
         student_id $integerType,
+        teacher_id $integerNullable,
         date $textType,
         surah $textType,
         ayah_from $integerType,
@@ -736,6 +738,39 @@ class DatabaseHelper {
       try {
         await db.execute('ALTER TABLE users ADD COLUMN dob TEXT');
       } catch (_) {}
+    }
+
+    if (oldVersion < 15) {
+      // Remap teacher_attendance.teacher_id from local user id to canonical teacherId
+      try {
+        await db.execute('ALTER TABLE users ADD COLUMN teacher_id INTEGER');
+      } catch (_) {}
+      try {
+        await db.execute('UPDATE users SET teacher_id = id WHERE teacher_id IS NULL');
+      } catch (_) {}
+      try {
+        await db.execute('''
+          UPDATE teacher_attendance
+          SET teacher_id = (
+            SELECT teacher_id FROM users
+            WHERE users.id = teacher_attendance.teacher_id
+          )
+          WHERE EXISTS (
+            SELECT 1 FROM users WHERE users.id = teacher_attendance.teacher_id
+          )
+        ''');
+        debugPrint('[MIGRATION v15] Remapped teacher_attendance.teacher_id to canonical');
+      } catch (e) {
+        debugPrint('[MIGRATION v15 ERROR] $e');
+      }
+
+      // Fix P3a: Add teacher_id to quran_progress
+      try {
+        await db.execute('ALTER TABLE quran_progress ADD COLUMN teacher_id INTEGER');
+        debugPrint('[MIGRATION v15] Added teacher_id column to quran_progress');
+      } catch (e) {
+        debugPrint('[MIGRATION v15 ERROR] $e');
+      }
     }
   }
 

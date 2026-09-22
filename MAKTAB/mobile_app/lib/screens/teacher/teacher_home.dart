@@ -68,6 +68,7 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
   Future<void> _load() async {
     final auth = Provider.of<AuthProvider>(context, listen: false);
     _teacherId = auth.currentUser?.id ?? 0;
+    final canonicalId = auth.currentUser?.teacherId ?? auth.currentUser?.id ?? 0;
     setState(() => _isLoading = true);
 
     final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
@@ -76,8 +77,8 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
     final results = await Future.wait([
       _batchRepo.fetchTeacherBatches(_teacherId),
       _studentRepo.getStudentsByTeacher(_teacherId),
-      _teacherAttRepo.getAttendanceByTeacher(_teacherId, from: _monthStart(), to: today),
-      _teacherAttRepo.getMonthSummary(_teacherId, yearMonth),
+      _teacherAttRepo.getAttendanceByTeacher(canonicalId, from: _monthStart(), to: today),
+      _teacherAttRepo.getMonthSummary(canonicalId, yearMonth),
     ]);
 
     final batches = results[0] as List<Batch>;

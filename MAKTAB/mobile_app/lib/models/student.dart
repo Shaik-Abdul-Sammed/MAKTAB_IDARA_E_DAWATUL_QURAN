@@ -114,7 +114,6 @@ class Student {
         bId = int.tryParse(rawBatchId.toString());
       }
     }
-    bId ??= 1;
 
     bool isDel = false;
     final rawDel = map['is_deleted'] ?? map['isDeleted'];

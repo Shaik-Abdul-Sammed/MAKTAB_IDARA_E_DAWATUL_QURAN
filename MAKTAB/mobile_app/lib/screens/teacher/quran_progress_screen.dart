@@ -48,8 +48,14 @@ class _QuranProgressScreenState extends State<QuranProgressScreen> {
         _students = [];
       }
       if (mounted) setState(() => _isLoading = false);
-    } catch (_) {
-      if (mounted) setState(() => _isLoading = false);
+    } catch (e, st) {
+      debugPrint('[QURAN_PROGRESS] load error: $e\n$st');
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not load progress: $e'), backgroundColor: Colors.redAccent),
+        );
+      }
     }
   }
 
@@ -67,8 +73,14 @@ class _QuranProgressScreenState extends State<QuranProgressScreen> {
           _isLoading = false;
         });
       }
-    } catch (_) {
-      if (mounted) setState(() => _isLoading = false);
+    } catch (e, st) {
+      debugPrint('[QURAN_PROGRESS] load error: $e\n$st');
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not load progress: $e'), backgroundColor: Colors.redAccent),
+        );
+      }
     }
   }
 

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:maktab_app/models/salary_payment.dart';
 import 'package:maktab_app/services/database_helper.dart';
 import 'package:maktab_app/services/cloud_sync_service.dart';
@@ -20,7 +21,9 @@ class SalaryRepository {
         ...created.toMap(),
         'id': id,
       });
-    } catch (_) {}
+    } catch (e, st) {
+      debugPrint('[SalaryRepo] insertPayment sync error: $e\n$st');
+    }
     CloudSyncService.instance.notifyDataChanged('salary_payments');
 
     return id;
@@ -40,7 +43,9 @@ class SalaryRepository {
     try {
       await CloudSyncService.instance.pushSalaryPayment(payment);
       await QueueManager.enqueue('UPDATE_SALARY_PAYMENT', payment.toMap());
-    } catch (_) {}
+    } catch (e, st) {
+      debugPrint('[SalaryRepo] updatePayment sync error: $e\n$st');
+    }
     CloudSyncService.instance.notifyDataChanged('salary_payments');
 
     return count;
@@ -58,7 +63,9 @@ class SalaryRepository {
     try {
       await CloudSyncService.instance.deleteSalaryPaymentCloud(id);
       await QueueManager.enqueue('DELETE_SALARY_PAYMENT', {'id': id});
-    } catch (_) {}
+    } catch (e, st) {
+      debugPrint('[SalaryRepo] deletePayment sync error: $e\n$st');
+    }
     CloudSyncService.instance.notifyDataChanged('salary_payments');
 
     return count;

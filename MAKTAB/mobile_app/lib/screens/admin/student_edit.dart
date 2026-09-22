@@ -34,6 +34,8 @@ class _StudentEditScreenState extends State<StudentEditScreen> {
   late final TextEditingController _fatherNameCtrl;
   late final TextEditingController _phoneCtrl;
   late final TextEditingController _feesCtrl;
+  late final TextEditingController _guardianNameCtrl;
+  late final TextEditingController _guardianPhoneCtrl;
   String? _selectedPhotoPath;
 
 
@@ -53,6 +55,12 @@ class _StudentEditScreenState extends State<StudentEditScreen> {
     _dobCtrl = TextEditingController(text: s.dob ?? '');
     _fatherNameCtrl = TextEditingController(text: s.fatherName ?? '');
     _phoneCtrl = TextEditingController(text: s.phone ?? '');
+    _feesCtrl = TextEditingController(
+      text: s.feesAmount?.toString() ?? '',
+    );
+    _guardianNameCtrl = TextEditingController(text: s.guardianName ?? '');
+    _guardianPhoneCtrl = TextEditingController(text: s.guardianPhone ?? '');
+    _selectedPhotoPath = s.photoPath;
     _gender = s.gender ?? 'Male';
     _selectedBatchId = s.batchId;
     _loadBatches();
@@ -81,6 +89,8 @@ class _StudentEditScreenState extends State<StudentEditScreen> {
     _fatherNameCtrl.dispose();
     _phoneCtrl.dispose();
     _feesCtrl.dispose();
+    _guardianNameCtrl.dispose();
+    _guardianPhoneCtrl.dispose();
     _provider.dispose();
     super.dispose();
   }
@@ -119,15 +129,19 @@ class _StudentEditScreenState extends State<StudentEditScreen> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
+    final fees = int.tryParse(_feesCtrl.text.trim());
     await _provider.updateStudent(
-      existing: widget.student,
-      admissionNumber: _admCtrl.text,
-      name: _nameCtrl.text,
-      arabicName: _arabicNameCtrl.text,
+      existing: widget.student.copyWith(feesAmount: fees),
+      admissionNumber: _admCtrl.text.trim(),
+      name: _nameCtrl.text.trim(),
+      arabicName: _arabicNameCtrl.text.trim().isEmpty ? null : _arabicNameCtrl.text.trim(),
       dob: _dobCtrl.text.isEmpty ? null : _dobCtrl.text,
       gender: _gender,
-      fatherName: _fatherNameCtrl.text,
-      phone: _phoneCtrl.text,
+      fatherName: _fatherNameCtrl.text.trim().isEmpty ? null : _fatherNameCtrl.text.trim(),
+      phone: _phoneCtrl.text.trim().isEmpty ? null : _phoneCtrl.text.trim(),
+      guardianName: _guardianNameCtrl.text.trim().isEmpty ? null : _guardianNameCtrl.text.trim(),
+      guardianPhone: _guardianPhoneCtrl.text.trim().isEmpty ? null : _guardianPhoneCtrl.text.trim(),
+      photoPath: _selectedPhotoPath ?? widget.student.photoPath,
       batchId: _selectedBatchId,
     );
     if (!mounted) return;
@@ -237,7 +251,13 @@ class _StudentEditScreenState extends State<StudentEditScreen> {
                   const SizedBox(height: 12),
                   _buildField(
                     controller: _fatherNameCtrl,
-                    label: "Father's / Guardian Name",
+                    label: "Father's Name",
+                    icon: Icons.person_outline,
+                  ),
+                  const SizedBox(height: 16),
+                  _buildField(
+                    controller: _guardianNameCtrl,
+                    label: "Guardian Name (Optional)",
                     icon: Icons.person_outline,
                   ),
                   const SizedBox(height: 16),
@@ -250,6 +270,29 @@ class _StudentEditScreenState extends State<StudentEditScreen> {
                       FilteringTextInputFormatter.digitsOnly,
                       LengthLimitingTextInputFormatter(10),
                     ],
+                    validator: (v) {
+                      if (v != null && v.isNotEmpty && v.length != 10) {
+                        return 'Phone number must be exactly 10 digits';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  _buildField(
+                    controller: _guardianPhoneCtrl,
+                    label: 'Guardian Phone Number (Optional)',
+                    icon: Icons.phone_outlined,
+                    keyboardType: TextInputType.phone,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                      LengthLimitingTextInputFormatter(10),
+                    ],
+                    validator: (v) {
+                      if (v != null && v.isNotEmpty && v.length != 10) {
+                        return 'Guardian phone must be exactly 10 digits';
+                      }
+                      return null;
+                    },
                   ),
                   const SizedBox(height: 36),
 
@@ -349,19 +392,24 @@ class _StudentEditScreenState extends State<StudentEditScreen> {
         child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
       );
     }
-    return DropdownButtonFormField<int>(
-      initialValue: _selectedBatchId,
+    return DropdownButtonFormField<int?>(
+      initialValue: _batches.any((b) => b.id == _selectedBatchId)
+          ? _selectedBatchId
+          : null,
       decoration: _inputDecoration(
         label: 'Assigned Batch',
         hint: 'Select Batch',
         icon: Icons.class_outlined,
       ),
-      items: _batches.map((b) {
-        return DropdownMenuItem<int>(
-          value: b.id,
-          child: Text(b.name, style: const TextStyle(fontSize: 14)),
-        );
-      }).toList(),
+      items: [
+        const DropdownMenuItem<int?>(value: null, child: Text('Unassigned')),
+        ..._batches.map((b) {
+          return DropdownMenuItem<int?>(
+            value: b.id,
+            child: Text(b.name, style: const TextStyle(fontSize: 14)),
+          );
+        }),
+      ],
       onChanged: (val) => setState(() => _selectedBatchId = val),
     );
   }

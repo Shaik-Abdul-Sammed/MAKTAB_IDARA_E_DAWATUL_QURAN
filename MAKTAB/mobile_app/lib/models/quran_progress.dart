@@ -1,6 +1,7 @@
 class QuranProgress {
   final int? id;
   final int studentId;
+  final int? teacherId;
   final String date;
   final String surah;
   final int ayahFrom;
@@ -11,6 +12,7 @@ class QuranProgress {
   QuranProgress({
     this.id,
     required this.studentId,
+    this.teacherId,
     required this.date,
     required this.surah,
     required this.ayahFrom,
@@ -22,6 +24,7 @@ class QuranProgress {
   QuranProgress copyWith({
     int? id,
     int? studentId,
+    int? teacherId,
     String? date,
     String? surah,
     int? ayahFrom,
@@ -32,6 +35,7 @@ class QuranProgress {
     return QuranProgress(
       id: id ?? this.id,
       studentId: studentId ?? this.studentId,
+      teacherId: teacherId ?? this.teacherId,
       date: date ?? this.date,
       surah: surah ?? this.surah,
       ayahFrom: ayahFrom ?? this.ayahFrom,
@@ -45,6 +49,7 @@ class QuranProgress {
     return {
       'id': id,
       'student_id': studentId,
+      'teacher_id': teacherId,
       'date': date,
       'surah': surah,
       'ayah_from': ayahFrom,
@@ -55,15 +60,22 @@ class QuranProgress {
   }
 
   factory QuranProgress.fromMap(Map<String, dynamic> map) {
+    int? parseInt(dynamic v) {
+      if (v == null) return null;
+      if (v is int) return v;
+      return int.tryParse(v.toString());
+    }
+
     return QuranProgress(
-      id: map['id'],
-      studentId: map['student_id'],
-      date: map['date'],
-      surah: map['surah'],
-      ayahFrom: map['ayah_from'],
-      ayahTo: map['ayah_to'],
-      grade: map['grade'],
-      remarks: map['remarks'],
+      id: parseInt(map['id']),
+      studentId: parseInt(map['student_id'] ?? map['studentId']) ?? 0,
+      teacherId: parseInt(map['teacher_id'] ?? map['teacherId']),
+      date: (map['date'] ?? '').toString(),
+      surah: (map['surah'] ?? '').toString(),
+      ayahFrom: parseInt(map['ayah_from'] ?? map['ayahFrom']) ?? 1,
+      ayahTo: parseInt(map['ayah_to'] ?? map['ayahTo']) ?? 1,
+      grade: (map['grade'] ?? 'A').toString(),
+      remarks: map['remarks']?.toString(),
     );
   }
 }

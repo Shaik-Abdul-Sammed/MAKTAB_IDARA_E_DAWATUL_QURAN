@@ -541,8 +541,12 @@ class AuthProvider with ChangeNotifier {
         logMaktabFingerprint('manager_login', maktabId);
 
         // Map to local User model
+        final parsedTeacherId = data['teacherId'] is int
+            ? data['teacherId'] as int
+            : int.tryParse(data['teacherId']?.toString() ?? '') ?? 1;
         _currentUser = User(
-          id: data['teacherId'] as int? ?? 1,
+          id: parsedTeacherId,
+          teacherId: parsedTeacherId,
           name: data['name'] as String? ?? 'User',
           mobile: data['mobile'] as String? ?? '',
           pinHash: '',
@@ -733,13 +737,16 @@ class AuthProvider with ChangeNotifier {
           final snapshot = await _db!.ref('users/${cred.user!.uid}').get().timeout(const Duration(seconds: 3));
           if (snapshot.exists && snapshot.value is Map) {
             final val = Map<String, dynamic>.from(snapshot.value as Map);
-            final uTeacherId = val['teacherId'] as int? ?? teacherIdGuess;
+            final uTeacherId = val['teacherId'] is int
+                ? val['teacherId'] as int
+                : int.tryParse(val['teacherId']?.toString() ?? '') ?? teacherIdGuess;
             final uName = val['name']?.toString() ?? 'Teacher';
             final uMobile = val['mobile']?.toString() ?? '';
             final isActive = val['active'] != false;
 
             matchedUser = User(
               id: uTeacherId,
+              teacherId: uTeacherId,
               name: uName,
               mobile: uMobile,
               pinHash: saltedHash,

@@ -10,10 +10,9 @@ class StudentRepository {
   Future<int> insertStudent(Student student) async {
     final db = await _dbHelper.database;
     final map = student.toMap();
-    map['batch_id'] ??= 1;
     map['is_synced'] = 0;
     final id = await db.insert('students', map);
-    final createdStudent = student.copyWith(id: id, batchId: map['batch_id'] as int);
+    final createdStudent = student.copyWith(id: id, batchId: map['batch_id'] as int?);
     final pushOk = await CloudSyncService.instance.pushStudent(createdStudent);
     if (pushOk) {
       await db.update('students', {'is_synced': 1}, where: 'id = ?', whereArgs: [id]);
@@ -23,6 +22,17 @@ class StudentRepository {
   }
 
   // ── Read ─────────────────────────────────────────────────────────────────────
+
+  /// Fetches all active students without an assigned batch (batch_id is NULL).
+  Future<List<Student>> getUnassignedStudents() async {
+    final db = await _dbHelper.database;
+    final maps = await db.query(
+      'students',
+      where: 'batch_id IS NULL AND (is_deleted IS NULL OR is_deleted = 0)',
+      orderBy: 'name ASC',
+    );
+    return maps.map((m) => Student.fromMap(m)).toList();
+  }
 
   Future<List<Student>> getAllStudents() async {
     final db = await _dbHelper.database;
@@ -47,6 +57,19 @@ class StudentRepository {
     );
     if (maps.isNotEmpty) return Student.fromMap(maps.first);
     return null;
+  }
+
+  Future<Student?> findByPhone(String phone) async {
+    if (phone.trim().isEmpty) return null;
+    final db = await _dbHelper.database;
+    final maps = await db.query(
+      'students',
+      where: 'phone = ? AND (is_deleted IS NULL OR is_deleted = 0)',
+      whereArgs: [phone.trim()],
+      limit: 1,
+    );
+    if (maps.isEmpty) return null;
+    return Student.fromMap(maps.first);
   }
 
   Future<List<Student>> getStudentsByBatch(int batchId) async {
@@ -144,14 +167,14 @@ class StudentRepository {
   Future<int> updateStudent(Student student) async {
     final db = await _dbHelper.database;
     final map = student.toMap();
-    map['batch_id'] ??= 1;
+    map['is_synced'] = 0;
     final res = await db.update(
       'students',
       map,
       where: 'id = ?',
       whereArgs: [student.id],
     );
-    await CloudSyncService.instance.pushStudent(student.copyWith(batchId: map['batch_id'] as int));
+    await CloudSyncService.instance.pushStudent(student);
     CloudSyncService.instance.notifyDataChanged('students');
     return res;
   }

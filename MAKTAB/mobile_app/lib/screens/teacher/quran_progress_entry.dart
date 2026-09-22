@@ -93,8 +93,11 @@ class _QuranProgressEntryScreenState extends State<QuranProgressEntryScreen> {
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     try {
+      final auth = Provider.of<AuthProvider>(context, listen: false);
+      final currentTeacherId = auth.currentUser?.teacherId ?? auth.currentUser?.id;
       await _provider.addProgress(
         studentId: widget.studentId,
+        teacherId: currentTeacherId,
         surah: _surahCtrl.text,
         ayahFrom: int.parse(_ayahFromCtrl.text),
         ayahTo: int.parse(_ayahToCtrl.text),
@@ -109,12 +112,13 @@ class _QuranProgressEntryScreenState extends State<QuranProgressEntryScreen> {
         ),
       );
       context.pop(true);
-    } catch (_) {
+    } catch (e, st) {
+      debugPrint('[QURAN_PROGRESS] save error: $e\n$st');
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Failed to save recitation progress.'),
-          backgroundColor: Colors.red,
+        SnackBar(
+          content: Text('Failed to save recitation progress: $e'),
+          backgroundColor: Colors.redAccent,
         ),
       );
     }

@@ -8,10 +8,12 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../models/batch.dart';
 import '../../providers/student_form_provider.dart';
 import '../../repositories/student_repository.dart';
 import '../../repositories/batch_repository.dart';
+import '../../services/database_helper.dart';
 import '../../widgets/molecules/custom_app_bar.dart';
 import 'package:flutter_contacts/flutter_contacts.dart' as flutter_contacts;
 import 'package:permission_handler/permission_handler.dart';
@@ -33,9 +35,11 @@ class _StudentAddScreenState extends State<StudentAddScreen> {
   late final TextEditingController _dobCtrl;
   late final TextEditingController _fatherNameCtrl;
   late final TextEditingController _phoneCtrl;
+  late final TextEditingController _guardianPhoneCtrl;
   late final TextEditingController _feesCtrl;
+  final FocusNode _phoneFocusNode = FocusNode();
   String? _selectedPhotoPath;
-
+  String? _defaultAdmNumber;
 
   String _gender = 'Male';
   int? _selectedBatchId;
@@ -46,24 +50,51 @@ class _StudentAddScreenState extends State<StudentAddScreen> {
   void initState() {
     super.initState();
     _provider = StudentFormProvider(StudentRepository());
-    _admCtrl = TextEditingController(text: 'ADM-${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}');
+    _admCtrl = TextEditingController();
     _nameCtrl = TextEditingController();
     _arabicNameCtrl = TextEditingController();
     _dobCtrl = TextEditingController();
     _fatherNameCtrl = TextEditingController();
     _phoneCtrl = TextEditingController();
+    _guardianPhoneCtrl = TextEditingController();
     _feesCtrl = TextEditingController();
     _loadBatches();
+    _loadDefaultAdmissionNumber();
+  }
+
+  Future<void> _loadDefaultAdmissionNumber() async {
+    try {
+      final db = await DatabaseHelper.instance.database;
+      final res = await db.rawQuery('SELECT MAX(id) as max_id FROM students');
+      final maxId = (res.isNotEmpty ? res.first['max_id'] as int? : null) ?? 0;
+      final nextSeq = (maxId + 1).toString().padLeft(3, '0');
+      final year = DateTime.now().year;
+      if (mounted) {
+        setState(() {
+          _defaultAdmNumber = 'ADM-$year-$nextSeq';
+        });
+      }
+    } catch (_) {}
   }
 
   Future<void> _loadBatches() async {
     try {
       final list = await BatchRepository().getAllBatches();
+      int? lastUsedBatchId;
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        lastUsedBatchId = prefs.getInt('last_used_batch_id');
+      } catch (_) {}
+
       if (mounted) {
         setState(() {
           _batches = list;
           _loadingBatches = false;
-          if (list.isNotEmpty) _selectedBatchId = list.first.id;
+          if (lastUsedBatchId != null && list.any((b) => b.id == lastUsedBatchId)) {
+            _selectedBatchId = lastUsedBatchId;
+          } else if (list.isNotEmpty) {
+            _selectedBatchId = list.first.id;
+          }
         });
       }
     } catch (_) {
@@ -79,7 +110,9 @@ class _StudentAddScreenState extends State<StudentAddScreen> {
     _dobCtrl.dispose();
     _fatherNameCtrl.dispose();
     _phoneCtrl.dispose();
+    _guardianPhoneCtrl.dispose();
     _feesCtrl.dispose();
+    _phoneFocusNode.dispose();
     _provider.dispose();
     super.dispose();
   }
@@ -124,18 +157,83 @@ class _StudentAddScreenState extends State<StudentAddScreen> {
 
   Future<void> _submit() async {
     if (_formKey.currentState?.validate() != true) return;
+
+    final phone = _phoneCtrl.text.trim();
+    if (phone.isNotEmpty) {
+      final existing = await StudentRepository().findByPhone(phone);
+      if (existing != null && mounted) {
+        final proceed = await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Text('Duplicate Mobile Number'),
+            content: Text(
+              'A student with this mobile number already exists:\n${existing.name} (ID: ${existing.id ?? existing.admissionNumber})\n\nDo you want to continue anyway?',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(false),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.of(ctx).pop(true),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF004D40),
+                  foregroundColor: Colors.white,
+                ),
+                child: const Text('Save anyway'),
+              ),
+            ],
+          ),
+        );
+        if (proceed != true) {
+          _phoneFocusNode.requestFocus();
+          return;
+        }
+      }
+    }
+
+    String adm = _admCtrl.text.trim();
+    if (adm.isEmpty) {
+      if (_defaultAdmNumber != null) {
+        adm = _defaultAdmNumber!;
+      } else {
+        try {
+          final db = await DatabaseHelper.instance.database;
+          final res = await db.rawQuery('SELECT MAX(id) as max_id FROM students');
+          final maxId = (res.isNotEmpty ? res.first['max_id'] as int? : null) ?? 0;
+          final nextSeq = (maxId + 1).toString().padLeft(3, '0');
+          adm = 'ADM-${DateTime.now().year}-$nextSeq';
+        } catch (_) {
+          adm = 'ADM-${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}';
+        }
+      }
+    }
+
+    String? guardianPhone = _guardianPhoneCtrl.text.trim();
+    if (guardianPhone.isEmpty && phone.isNotEmpty) {
+      guardianPhone = phone;
+    }
+
     await _provider.addStudent(
-      admissionNumber: _admCtrl.text,
+      admissionNumber: adm,
       name: _nameCtrl.text,
       arabicName: _arabicNameCtrl.text,
       dob: _dobCtrl.text.isEmpty ? null : _dobCtrl.text,
       gender: _gender,
       fatherName: _fatherNameCtrl.text,
-      phone: _phoneCtrl.text,
+      phone: phone.isEmpty ? null : phone,
+      guardianPhone: guardianPhone.isEmpty ? null : guardianPhone,
+      photoPath: _selectedPhotoPath,
       batchId: _selectedBatchId,
     );
     if (!mounted) return;
     if (_provider.status == StudentFormStatus.success) {
+      if (_selectedBatchId != null) {
+        try {
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setInt('last_used_batch_id', _selectedBatchId!);
+        } catch (_) {}
+      }
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Student registered successfully!'),
@@ -241,9 +339,8 @@ class _StudentAddScreenState extends State<StudentAddScreen> {
                   _buildField(
                     controller: _admCtrl,
                     label: 'Admission Number',
-                    hint: 'e.g. ADM-1002',
+                    hint: _defaultAdmNumber ?? 'e.g. ADM-${DateTime.now().year}-001',
                     icon: Icons.confirmation_number_outlined,
-                    validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null,
                   ),
                   const SizedBox(height: 16),
 
@@ -264,6 +361,7 @@ class _StudentAddScreenState extends State<StudentAddScreen> {
                     label: 'Student Full Name',
                     hint: 'e.g. Muhammad Zaid',
                     icon: Icons.badge_outlined,
+                    textCapitalization: TextCapitalization.words,
                     validator: (v) => v == null || v.trim().isEmpty ? 'Name is required' : null,
                   ),
                   const SizedBox(height: 16),
@@ -272,7 +370,7 @@ class _StudentAddScreenState extends State<StudentAddScreen> {
                     label: 'Arabic Name (Optional)',
                     hint: 'محمد زيد',
                     icon: Icons.translate_rounded,
-                    ),
+                  ),
                   const SizedBox(height: 16),
                   Row(
                     children: [
@@ -309,10 +407,12 @@ class _StudentAddScreenState extends State<StudentAddScreen> {
                     label: "Father's / Guardian Name",
                     hint: 'e.g. Abdullah Khan',
                     icon: Icons.person_outline,
+                    textCapitalization: TextCapitalization.words,
                   ),
                   const SizedBox(height: 16),
                   _buildField(
                     controller: _phoneCtrl,
+                    focusNode: _phoneFocusNode,
                     label: 'Parent Phone Number',
                     hint: '10-digit number',
                     icon: Icons.phone_outlined,
@@ -323,7 +423,26 @@ class _StudentAddScreenState extends State<StudentAddScreen> {
                     ],
                     validator: (v) {
                       if (v != null && v.isNotEmpty && v.length != 10) {
-                        return 'Must be 10 digits';
+                        return 'Phone number must be exactly 10 digits';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  _buildField(
+                    controller: _guardianPhoneCtrl,
+                    label: 'Guardian Phone Number (Optional)',
+                    hint: '10-digit number',
+                    helperText: 'Leave blank to use phone number above.',
+                    icon: Icons.phone_outlined,
+                    keyboardType: TextInputType.phone,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                      LengthLimitingTextInputFormatter(10),
+                    ],
+                    validator: (v) {
+                      if (v != null && v.isNotEmpty && v.length != 10) {
+                        return 'Guardian phone must be exactly 10 digits';
                       }
                       return null;
                     },
@@ -417,24 +536,36 @@ class _StudentAddScreenState extends State<StudentAddScreen> {
     required TextEditingController controller,
     required String label,
     String? hint,
+    String? helperText,
+    FocusNode? focusNode,
     required IconData icon,
+    TextCapitalization textCapitalization = TextCapitalization.none,
     TextInputType keyboardType = TextInputType.text,
     List<TextInputFormatter>? inputFormatters,
     String? Function(String?)? validator,
   }) {
     return TextFormField(
       controller: controller,
+      focusNode: focusNode,
+      textCapitalization: textCapitalization,
       keyboardType: keyboardType,
       inputFormatters: inputFormatters,
       validator: validator,
-      decoration: _inputDecoration(label: label, hint: hint, icon: icon),
+      decoration: _inputDecoration(label: label, hint: hint, helperText: helperText, icon: icon),
     );
   }
 
-  InputDecoration _inputDecoration({required String label, String? hint, required IconData icon}) {
+  InputDecoration _inputDecoration({
+    required String label,
+    String? hint,
+    String? helperText,
+    required IconData icon,
+  }) {
     return InputDecoration(
       labelText: label,
       hintText: hint,
+      helperText: helperText,
+      helperStyle: const TextStyle(fontSize: 11, color: Colors.black54),
       prefixIcon: Icon(icon, color: const Color(0xFF004D40), size: 20),
       filled: true,
       fillColor: Colors.white,

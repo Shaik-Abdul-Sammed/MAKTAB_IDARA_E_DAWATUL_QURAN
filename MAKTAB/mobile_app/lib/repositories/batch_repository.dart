@@ -37,7 +37,7 @@ class BatchRepository {
   }
 
   /// Returns batches where batches.teacher_id = [teacherId].
-  /// Fallbacks to all batches if no specific teacher batches found.
+  /// Returns only batches assigned to [teacherId].
   Future<List<Batch>> fetchTeacherBatches(int teacherId) async {
     final db = await _dbHelper.database;
     final List<Map<String, dynamic>> maps = await db.query(
@@ -45,10 +45,7 @@ class BatchRepository {
       where: 'teacher_id = ?',
       whereArgs: [teacherId],
     );
-    if (maps.isNotEmpty) {
-      return List.generate(maps.length, (i) => Batch.fromMap(maps[i]));
-    }
-    return getAllBatches();
+    return List.generate(maps.length, (i) => Batch.fromMap(maps[i]));
   }
 
   /// Alias kept for backwards compatibility.
@@ -70,16 +67,7 @@ class BatchRepository {
       ORDER BY s.name ASC
     ''', [batchId, batchId]);
 
-    if (maps.isNotEmpty) {
-      return List.generate(maps.length, (i) => Student.fromMap(maps[i]));
-    }
-
-    final List<Map<String, dynamic>> fallbackMaps = await db.query(
-      'students',
-      where: 'is_deleted IS NULL OR is_deleted = 0',
-      orderBy: 'name ASC',
-    );
-    return List.generate(fallbackMaps.length, (i) => Student.fromMap(fallbackMaps[i]));
+    return List.generate(maps.length, (i) => Student.fromMap(maps[i]));
   }
 
   // ── Assign / Revoke ──────────────────────────────────────────────────────────
