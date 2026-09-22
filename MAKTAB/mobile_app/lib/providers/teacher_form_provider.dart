@@ -3,9 +3,11 @@ import 'package:crypto/crypto.dart';
 import 'dart:convert';
 import '../domain/dtos/user_dto.dart';
 import '../repositories/teacher_repository.dart';
+import '../repositories/user_repository.dart';
 import '../providers/auth_provider.dart';
 
 enum TeacherFormStatus { idle, loading, success, error }
+enum TeacherUpdateResult { success, authFailed, error }
 
 class TeacherFormProvider extends ChangeNotifier {
   final TeacherRepository _repo;
@@ -13,6 +15,10 @@ class TeacherFormProvider extends ChangeNotifier {
 
   TeacherFormStatus _status = TeacherFormStatus.idle;
   TeacherFormStatus get status => _status;
+
+  TeacherUpdateResult _lastUpdateResult = TeacherUpdateResult.success;
+  TeacherUpdateResult get lastUpdateResult => _lastUpdateResult;
+  bool get authUpdateFailed => _lastUpdateResult == TeacherUpdateResult.authFailed;
 
   String _errorMessage = '';
   String get errorMessage => _errorMessage;
@@ -71,7 +77,7 @@ class TeacherFormProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> updateTeacher({
+  Future<TeacherUpdateResult> updateTeacher({
     required UserDTO existing,
     required String name,
     required String mobile,
@@ -79,9 +85,11 @@ class TeacherFormProvider extends ChangeNotifier {
     String? photoPath,
     int? monthlySalary,
     String? upiId,
+    AuthProvider? authProvider,
   }) async {
     _status = TeacherFormStatus.loading;
     _errorMessage = '';
+    _lastUpdateResult = TeacherUpdateResult.success;
     notifyListeners();
     try {
       final updated = UserDTO(
@@ -98,31 +106,47 @@ class TeacherFormProvider extends ChangeNotifier {
         monthlySalary: monthlySalary ?? existing.monthlySalary,
         upiId: upiId ?? existing.upiId,
       );
-      await _repo.updateUser(updated);
-      if (existing.id != null && newPin != null && newPin.trim().isNotEmpty) {
-        try {
-          final authProvider = AuthProvider();
-          await authProvider.provisionTeacherAuthAccount(
+
+      bool authOk = true;
+      if (existing.id != null) {
+        final existingRow = await UserRepository().getUserById(existing.id!);
+        final oldPinHash = existingRow?.pinHash;
+        final pinChanged = oldPinHash != null
+            && oldPinHash.isNotEmpty
+            && oldPinHash != updated.pinHash;
+
+        if (pinChanged) {
+          final auth = authProvider ?? AuthProvider();
+          final ok = await auth.updateTeacherAuthPassword(
             teacherId: existing.id!,
-            name: name.trim(),
-            pinHash: updated.pinHash,
-            mobile: mobile.trim(),
+            oldPinHash: oldPinHash,
+            newPinHash: updated.pinHash,
           );
-        } catch (e) {
-          debugPrint('Teacher provisioning note on updateTeacher: $e');
+          if (!ok) {
+            authOk = false;
+          }
         }
       }
+
+      await _repo.updateUser(updated);
+
       _status = TeacherFormStatus.success;
+      _lastUpdateResult = authOk ? TeacherUpdateResult.success : TeacherUpdateResult.authFailed;
+      notifyListeners();
+      return _lastUpdateResult;
     } catch (e) {
       _status = TeacherFormStatus.error;
       _errorMessage = 'Failed to update teacher. Please try again.';
+      _lastUpdateResult = TeacherUpdateResult.error;
+      notifyListeners();
+      return TeacherUpdateResult.error;
     }
-    notifyListeners();
   }
 
   void reset() {
     _status = TeacherFormStatus.idle;
     _errorMessage = '';
+    _lastUpdateResult = TeacherUpdateResult.success;
     notifyListeners();
   }
 }

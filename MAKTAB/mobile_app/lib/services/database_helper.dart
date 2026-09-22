@@ -42,7 +42,7 @@ class DatabaseHelper {
       return await ffi.databaseFactoryFfi.openDatabase(
         path,
         options: ffi.OpenDatabaseOptions(
-          version: 14,
+          version: 16,
           onConfigure: (db) async {
             await db.execute('PRAGMA foreign_keys = ON');
           },
@@ -59,7 +59,7 @@ class DatabaseHelper {
     return await openDatabase(
       path,
       password: key,
-      version: 15,
+      version: 16,
       onConfigure: (db) async {
         await db.execute('PRAGMA foreign_keys = ON');
       },
@@ -299,9 +299,7 @@ class DatabaseHelper {
         receiver_id $integerNullable,
         content $textType,
         timestamp $textType,
-        is_read $boolType DEFAULT 0,
-        FOREIGN KEY (sender_id) REFERENCES users (id) ON DELETE CASCADE,
-        FOREIGN KEY (receiver_id) REFERENCES users (id) ON DELETE CASCADE
+        is_read $boolType DEFAULT 0
       )
     ''');
     await db.execute('CREATE INDEX idx_msg_sender ON messages(sender_id)');
@@ -770,6 +768,29 @@ class DatabaseHelper {
         debugPrint('[MIGRATION v15] Added teacher_id column to quran_progress');
       } catch (e) {
         debugPrint('[MIGRATION v15 ERROR] $e');
+      }
+    }
+
+    if (oldVersion < 16) {
+      try {
+        await db.execute('ALTER TABLE messages RENAME TO messages_old');
+        await db.execute('''
+          CREATE TABLE messages (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            sender_id INTEGER NOT NULL,
+            receiver_id INTEGER,
+            content TEXT NOT NULL,
+            timestamp TEXT NOT NULL,
+            is_read INTEGER DEFAULT 0
+          )
+        ''');
+        await db.execute('INSERT INTO messages (id, sender_id, receiver_id, content, timestamp, is_read) SELECT id, sender_id, receiver_id, content, timestamp, is_read FROM messages_old');
+        await db.execute('DROP TABLE messages_old');
+        await db.execute('CREATE INDEX IF NOT EXISTS idx_msg_sender ON messages(sender_id)');
+        await db.execute('CREATE INDEX IF NOT EXISTS idx_msg_receiver ON messages(receiver_id)');
+        debugPrint('[MIGRATION v16] Rebuilt messages table without FK');
+      } catch (e) {
+        debugPrint('[MIGRATION v16 ERROR] $e');
       }
     }
   }

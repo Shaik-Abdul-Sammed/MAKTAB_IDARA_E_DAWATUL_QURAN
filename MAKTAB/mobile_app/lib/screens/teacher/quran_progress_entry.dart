@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
+import '../../providers/auth_provider.dart';
 import '../../providers/quran_progress_provider.dart';
 import '../../repositories/quran_progress_repository.dart';
 import '../../widgets/molecules/custom_app_bar.dart';

@@ -630,12 +630,18 @@ class _AdminDashboardState extends State<AdminDashboard>
                               child: Column(
                                 mainAxisSize: MainAxisSize.min,
                                 crossAxisAlignment: CrossAxisAlignment.start,
-                                children: auth.provisionPwMismatches
-                                    .map((f) => Padding(
-                                          padding: const EdgeInsets.only(bottom: 6),
-                                          child: Text('• $f', style: const TextStyle(fontSize: 13)),
-                                        ))
-                                    .toList(),
+                                children: [
+                                  ...auth.provisionPwMismatches
+                                      .map((f) => Padding(
+                                            padding: const EdgeInsets.only(bottom: 6),
+                                            child: Text('• $f', style: const TextStyle(fontSize: 13)),
+                                          )),
+                                  const SizedBox(height: 12),
+                                  const Text(
+                                    'To fix: Open Firebase Console → Authentication → Users → find <email> → Delete account → Log in again as Manager to recreate.',
+                                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF721C24)),
+                                  ),
+                                ],
                               ),
                             ),
                             actions: [

@@ -263,6 +263,59 @@ class AuthProvider with ChangeNotifier {
     });
   }
 
+  Future<FirebaseApp> _ensureTeacherProvisionerApp() async {
+    if (Firebase.apps.any((a) => a.name == 'TeacherProvisioner')) {
+      return Firebase.app('TeacherProvisioner');
+    }
+    return await Firebase.initializeApp(
+      name: 'TeacherProvisioner',
+      options: Firebase.app().options,
+    );
+  }
+
+  Future<bool> updateTeacherAuthPassword({
+    required int teacherId,
+    required String oldPinHash,
+    required String newPinHash,
+  }) async {
+    return _withProvisionerLock(() async {
+      final maktabId = await CloudSyncService.instance.getMaktabId();
+      final derivedEmail = 'teacher_${maktabId}_$teacherId@maktab.app';
+      final oldPassword = oldPinHash.padRight(32, '0').substring(0, 32);
+      final newPassword = newPinHash.padRight(32, '0').substring(0, 32);
+
+      final secondaryApp = await _ensureTeacherProvisionerApp();
+      final secondaryAuth = fb_auth.FirebaseAuth.instanceFor(app: secondaryApp);
+
+      try {
+        final cred = await secondaryAuth.signInWithEmailAndPassword(
+          email: derivedEmail,
+          password: oldPassword,
+        );
+        await cred.user?.updatePassword(newPassword);
+        await secondaryAuth.signOut();
+        debugPrint('[AUTH UPDATE] Password updated for teacherId=$teacherId');
+        return true;
+      } on fb_auth.FirebaseAuthException catch (e) {
+        await secondaryAuth.signOut();
+        debugPrint('[AUTH UPDATE FAIL] teacherId=$teacherId code=${e.code}');
+        if (e.code == 'wrong-password' || e.code == 'invalid-credential' || e.code == 'user-not-found') {
+          // Account is already stale. Add to the manager's mismatch banner.
+          final email = derivedEmail;
+          if (!_provisionPwMismatches.any((m) => m.contains(email))) {
+            _provisionPwMismatches.add('$email (Teacher $teacherId)');
+            notifyListeners();
+          }
+        }
+        return false;
+      } catch (e) {
+        await secondaryAuth.signOut();
+        debugPrint('[AUTH UPDATE ERROR] teacherId=$teacherId error=$e');
+        return false;
+      }
+    });
+  }
+
   Future<void> _repairTeacherPinHashes() async {
     try {
       final teachers = await _userRepository.getAllTeachers();
@@ -290,6 +343,7 @@ class AuthProvider with ChangeNotifier {
       await _repairTeacherPinHashes();
       _provisionFailures.clear();
       _provisionPwMismatches.clear();
+      final maktabId = await CloudSyncService.instance.getMaktabId();
       final teachers = await _userRepository.getAllTeachers();
       for (var t in teachers) {
         if (t.id != null) {
@@ -298,6 +352,7 @@ class AuthProvider with ChangeNotifier {
             name: t.name,
             pinHash: t.pinHash,
             mobile: t.mobile,
+            maktabId: maktabId,
           );
           switch (result) {
             case ProvisionResult.success:
@@ -307,8 +362,9 @@ class AuthProvider with ChangeNotifier {
               debugPrint('[PROVISION FAIL] teacherId=${t.id} name=${t.name}');
               break;
             case ProvisionResult.pwMismatch:
-              _provisionPwMismatches.add('Teacher ${t.id} (${t.name}) — password mismatch, manual reset required');
-              debugPrint('[PROVISION PW-MISMATCH] teacherId=${t.id} name=${t.name}');
+              final email = 'teacher_${maktabId}_${t.id}@maktab.app';
+              _provisionPwMismatches.add('$email (Teacher ${t.id} — ${t.name})');
+              debugPrint('[PROVISION PW-MISMATCH] teacherId=${t.id} name=${t.name} email=$email');
               break;
           }
         }

@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../domain/dtos/user_dto.dart';
+import '../../providers/auth_provider.dart';
 import '../../providers/teacher_form_provider.dart';
 import '../../repositories/teacher_repository.dart';
 import '../../widgets/molecules/custom_app_bar.dart';
@@ -44,20 +45,31 @@ class _TeacherEditScreenState extends State<TeacherEditScreen> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
-    await _provider.updateTeacher(
+    final result = await _provider.updateTeacher(
       existing: widget.teacher,
       name: _nameCtrl.text,
       mobile: _mobileCtrl.text,
       newPin: _changePin ? _pinCtrl.text : null,
+      authProvider: context.read<AuthProvider>(),
     );
     if (!mounted) return;
     if (_provider.status == TeacherFormStatus.success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Teacher updated successfully!'),
-          backgroundColor: Color(0xFF004D40),
-        ),
-      );
+      if (result == TeacherUpdateResult.authFailed) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('PIN saved, but Firebase Auth password could not be updated. Teacher may need re-provisioning. Check the manager banner.'),
+            backgroundColor: Colors.orange,
+            duration: Duration(seconds: 6),
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Teacher updated successfully!'),
+            backgroundColor: Color(0xFF004D40),
+          ),
+        );
+      }
       context.pop(true);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
