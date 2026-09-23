@@ -5,6 +5,7 @@ import 'package:maktab_app/repositories/student_repository.dart';
 import 'package:maktab_app/repositories/user_repository.dart';
 import 'package:maktab_app/repositories/batch_repository.dart';
 import 'dart:async';
+import 'package:maktab_app/models/announcement.dart';
 import 'package:maktab_app/repositories/teacher_attendance_repository.dart';
 import 'package:maktab_app/repositories/announcement_repository.dart';
 import 'package:maktab_app/repositories/attendance_repository.dart';
@@ -46,7 +47,9 @@ class _AdminDashboardState extends State<AdminDashboard>
   int _totalBatches = 0;
   int _unreadMessagesCount = 0;
   int _unreadTeacherAttendanceCount = 0;
-  int _recentAnnouncementsCount = 0;
+  List<Announcement> _recentAnnouncements = [];
+  bool _notificationsLoaded = false;
+  Timer? _notificationsTimer;
   StreamSubscription<String>? _syncSub;
   List<Map<String, dynamic>> _recentAttendance = [];
   List<AnomalyAlert> _aiAlerts = [];
@@ -57,9 +60,19 @@ class _AdminDashboardState extends State<AdminDashboard>
     super.initState();
     _loadAiInsightsExpandedState();
     _fetchDashboardStats();
+    _loadNotifications();
 
-    _syncSub = CloudSyncService.instance.onDataSynced.listen((_) {
-      if (mounted) _fetchDashboardStats();
+    _notificationsTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+      if (mounted) _loadNotifications();
+    });
+
+    _syncSub = CloudSyncService.instance.dataChangeStream.listen((col) {
+      if (!mounted) return;
+      if (col == 'messages' || col == 'teacher_attendance' || col == 'announcements') {
+        _loadNotifications();
+      } else if (col == 'students' || col == 'teachers' || col == 'batches' || col == 'attendance') {
+        _fetchDashboardStats();
+      }
     });
 
     // Main body fade+slide
@@ -78,38 +91,38 @@ class _AdminDashboardState extends State<AdminDashboard>
     )..forward();
   }
 
-  Future<void> _fetchDashboardStats() async {
-    final auth = Provider.of<AuthProvider>(context, listen: false);
-    final currentUserId = auth.currentUser?.teacherId ?? auth.currentUser?.id ?? 1;
+  Future<void> _loadNotifications() async {
+    try {
+      final auth = Provider.of<AuthProvider>(context, listen: false);
+      final currentUserId = auth.currentUser?.teacherId ?? auth.currentUser?.id ?? 1;
+      final msgCount = await MessageRepository().getUnreadCountForReceiver(currentUserId, isAdmin: true);
+      final today = DateTime.now().toIso8601String().substring(0, 10);
+      final attCount = await TeacherAttendanceRepository().getUnreadCountForDate(today);
+      final announcements = await AnnouncementRepository().getRecent(limit: 5);
 
+      if (!mounted) return;
+      if (!_notificationsLoaded ||
+          _unreadMessagesCount != msgCount ||
+          _unreadTeacherAttendanceCount != attCount ||
+          _recentAnnouncements.length != announcements.length) {
+        setState(() {
+          _unreadMessagesCount = msgCount;
+          _unreadTeacherAttendanceCount = attCount;
+          _recentAnnouncements = announcements;
+          _notificationsLoaded = true;
+        });
+      }
+    } catch (e) {
+      debugPrint('[AdminDashboard] Error in _loadNotifications: $e');
+    }
+  }
+
+  Future<void> _fetchDashboardStats() async {
     final students = await StudentRepository().getAllStudents();
     final teachers = await UserRepository().getAllTeachers();
     final batches = await BatchRepository().getAllBatches();
     final recentAtt = await AttendanceRepository().getRecentStudentAttendance(limit: 5);
     final alerts = await AnalyticsService.instance.getDashboardAnomalyAlerts();
-
-    int unreadMsgCount = 0;
-    try {
-      unreadMsgCount = await MessageRepository().getUnreadCountForReceiver(currentUserId, isAdmin: true);
-    } catch (e) {
-      debugPrint('[AdminDashboard] Error fetching unread messages: $e');
-    }
-
-    final today = DateTime.now().toIso8601String().substring(0, 10);
-    int unreadTeacherAtt = 0;
-    try {
-      unreadTeacherAtt = await TeacherAttendanceRepository().getUnreadCountForDate(today);
-    } catch (e) {
-      debugPrint('[AdminDashboard] Error fetching unread teacher attendance: $e');
-    }
-
-    int annCount = 0;
-    try {
-      final anns = await AnnouncementRepository().getRecent(limit: 5);
-      annCount = anns.length;
-    } catch (e) {
-      debugPrint('[AdminDashboard] Error fetching announcements: $e');
-    }
 
     if (mounted) {
       setState(() {
@@ -118,9 +131,6 @@ class _AdminDashboardState extends State<AdminDashboard>
         _totalBatches = batches.length;
         _recentAttendance = recentAtt;
         _aiAlerts = alerts;
-        _unreadMessagesCount = unreadMsgCount;
-        _unreadTeacherAttendanceCount = unreadTeacherAtt;
-        _recentAnnouncementsCount = annCount;
       });
     }
   }
@@ -147,6 +157,7 @@ class _AdminDashboardState extends State<AdminDashboard>
 
   @override
   void dispose() {
+    _notificationsTimer?.cancel();
     _syncSub?.cancel();
     _animController.dispose();
     _nameController.dispose();
@@ -951,6 +962,13 @@ class _AdminDashboardState extends State<AdminDashboard>
                           iconColor: const Color(0xFF2E7D32),
                           bgColor: Colors.white,
                         ),
+                        _buildFeatureCard(context,
+                          title: 'Payments',
+                          icon: Icons.account_balance_wallet_rounded,
+                          route: '/admin/payments',
+                          iconColor: const Color(0xFF00796B),
+                          bgColor: Colors.white,
+                        ),
                        ]),
                       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                         crossAxisCount: isTablet ? 6 : 3,
@@ -1153,7 +1171,7 @@ class _AdminDashboardState extends State<AdminDashboard>
 
   Widget _buildNotificationsBannerSliver() {
     final totalUnread = _unreadMessagesCount + _unreadTeacherAttendanceCount;
-    if (totalUnread == 0 && _recentAnnouncementsCount == 0) {
+    if (totalUnread == 0 && _recentAnnouncements.isEmpty) {
       return const SliverToBoxAdapter(child: SizedBox.shrink());
     }
 
@@ -1164,8 +1182,9 @@ class _AdminDashboardState extends State<AdminDashboard>
     if (_unreadTeacherAttendanceCount > 0) {
       parts.add('$_unreadTeacherAttendanceCount teacher attendance update${_unreadTeacherAttendanceCount > 1 ? 's' : ''}');
     }
-    if (parts.isEmpty && _recentAnnouncementsCount > 0) {
-      parts.add('$_recentAnnouncementsCount announcement${_recentAnnouncementsCount > 1 ? 's' : ''}');
+    if (parts.isEmpty && _recentAnnouncements.isNotEmpty) {
+      final annCount = _recentAnnouncements.length;
+      parts.add('$annCount announcement${annCount > 1 ? 's' : ''}');
     }
 
     if (parts.isEmpty) {
@@ -1193,14 +1212,15 @@ class _AdminDashboardState extends State<AdminDashboard>
           color: Colors.transparent,
           child: InkWell(
             borderRadius: BorderRadius.circular(12),
-            onTap: () {
+            onTap: () async {
               if (_unreadMessagesCount > 0) {
-                context.push('/admin/messages');
+                await context.push('/admin/messages');
               } else if (_unreadTeacherAttendanceCount > 0) {
-                context.push('/admin/teacher-attendance');
+                await context.push('/admin/teacher-attendance');
               } else {
-                context.push('/admin/announcements');
+                await context.push('/admin/announcements');
               }
+              if (mounted) _loadNotifications();
             },
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
@@ -1292,6 +1312,7 @@ class _AdminDashboardState extends State<AdminDashboard>
                 _drawerItem(context, icon: AppIcons.reports, label: loc?.translate('reports') ?? 'Reports', route: AppRoutes.adminReports),
                 _drawerItem(context, icon: AppIcons.checklist, label: loc?.translate('checklist') ?? 'Checklist', route: AppRoutes.adminChecklist),
                 _drawerItem(context, icon: Icons.chat_rounded, label: 'Messages', route: AppRoutes.adminMessages),
+                _drawerItem(context, icon: Icons.account_balance_wallet_rounded, label: 'Payments', route: '/admin/payments'),
                 _drawerItem(context, icon: AppIcons.settings, label: loc?.translate('settings') ?? 'Settings', route: AppRoutes.adminSettings),
                 const Divider(height: 1, indent: 16, endIndent: 16),
                 _drawerItem(

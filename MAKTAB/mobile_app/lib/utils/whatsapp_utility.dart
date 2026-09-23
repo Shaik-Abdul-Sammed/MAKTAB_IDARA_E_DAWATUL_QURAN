@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'receipt_templates.dart';
 
 enum Language { english, urdu, hindi, telugu }
 
@@ -80,65 +81,74 @@ class WhatsAppUtility {
     String? paymentMode,
     String? dateTime,
     String? collectorName,
+    String? notes,
+    String languageCode = 'en',
   }) async {
-    final lang = await _promptLanguageSelection(context);
-    if (lang == null) return;
-
+    final t = ReceiptTemplates.get(languageCode);
     final modeText = (paymentMode != null && paymentMode.isNotEmpty) ? paymentMode : 'Cash';
     final timeText = (dateTime != null && dateTime.isNotEmpty)
         ? dateTime
         : DateFormat('dd MMM yyyy, hh:mm a').format(DateTime.now());
     final collector = (collectorName != null && collectorName.isNotEmpty) ? collectorName : 'Management';
 
-    String msg = '';
-    switch (lang) {
-      case Language.english:
-        msg = "Assalamu Alaikum,\nDear Parent,\n\n"
-            "🧾 *FEE PAYMENT RECEIPT*\n"
-            "👤 *Student*: *$studentName*\n"
-            "💵 *Amount Received*: ₹$amount\n"
-            "💳 *Payment Mode*: $modeText\n"
-            "⏰ *Time*: $timeText\n"
-            "👨‍💼 *Teacher / Manager*: $collector\n"
-            "📅 *Month*: $month\n\n"
-            "Jazakallah Khair.";
-        break;
-      case Language.urdu:
-        msg = "السلام علیکم،\nمحترم والدین،\n\n"
-            "🧾 *فیس کی رسیپٹ*\n"
-            "👤 *طالب علم*: *$studentName*\n"
-            "💵 *وصول شدہ رقم*: ₹$amount\n"
-            "💳 *ادائیگی کا طریقہ*: $modeText\n"
-            "⏰ *وقت*: $timeText\n"
-            "👨‍💼 *ٹیچر / منیجر*: $collector\n"
-            "📅 *مہینہ*: $month\n\n"
-            "جزاک اللہ خیر۔";
-        break;
-      case Language.hindi:
-        msg = "अस्सलामु अलैकुम,\nप्रिय माता-पिता,\n\n"
-            "🧾 *शुल्क भुगतान रसीद*\n"
-            "👤 *छात्र*: *$studentName*\n"
-            "💵 *प्राप्त राशि*: ₹$amount\n"
-            "💳 *भुगतान विधि*: $modeText\n"
-            "⏰ *समय*: $timeText\n"
-            "👨‍💼 *शिक्षक / प्रबंधक*: $collector\n"
-            "📅 *महीना*: $month\n\n"
-            "जज़ाकल्लाह खैर।";
-        break;
-      case Language.telugu:
-        msg = "అస్సలాము అలైకుమ్,\nప్రియమైన తల్లిదండ్రులారా,\n\n"
-            "🧾 *ఫీజు చెల్లింపు రసీదు*\n"
-            "👤 *విద్యార్థి*: *$studentName*\n"
-            "💵 *స్వీకరించిన మొత్తం*: ₹$amount\n"
-            "💳 *చెల్లింపు విధానం*: $modeText\n"
-            "⏰ *సమయం*: $timeText\n"
-            "👨‍💼 *ఉపాధ్యాయుడు / మేనేజర్*: $collector\n"
-            "📅 *నెల*: $month\n\n"
-            "జజాకల్లా ఖైర్.";
-        break;
+    final buf = StringBuffer();
+    buf.writeln('*${t['header']}*');
+    buf.writeln('${t['date']}: $timeText');
+    buf.writeln('${t['receivedBy']}: $collector');
+    buf.writeln();
+    buf.writeln('*${t['student']}:* $studentName');
+    buf.writeln('${t['amount']}: ₹${amount.toInt() == amount ? amount.toInt() : amount}');
+    buf.writeln('${t['mode']}: $modeText');
+    if (notes != null && notes.trim().isNotEmpty) {
+      buf.writeln('${t['notes']}: $notes');
+    }
+    buf.writeln();
+    buf.writeln(t['footer']);
+
+    await launchWhatsApp(phone, buf.toString(), context: context);
+  }
+
+  static Future<void> sendCombinedFeeReceipt(
+    BuildContext context, {
+    required String parentPhone,
+    required List<Map<String, dynamic>> children, // each: {name, admissionNumber, amount, mode, notes}
+    String? maktabName,
+    required String collectorName,
+    DateTime? recordedAt,
+    String? dateTime,
+    String languageCode = 'en',
+  }) async {
+    final t = ReceiptTemplates.get(languageCode);
+    final when = recordedAt ?? DateTime.now();
+    final timeStr = dateTime ?? DateFormat('dd MMM yyyy, hh:mm a').format(when);
+    final headerTitle = maktabName ?? t['header']!;
+
+    final buf = StringBuffer();
+    buf.writeln('*$headerTitle*');
+    buf.writeln('${t['date']}: $timeStr');
+    buf.writeln('${t['receivedBy']}: $collectorName');
+    buf.writeln();
+
+    int grandTotal = 0;
+    for (final c in children) {
+      final amt = (c['amount'] as num).toInt();
+      grandTotal += amt;
+      buf.writeln('*${c['name']}* (${c['admissionNumber']}) — ₹$amt ${t['mode']}: ${c['mode']}');
+      final notes = c['notes'] as String?;
+      if (notes != null && notes.trim().isNotEmpty) {
+        buf.writeln('  _${t['notes']}: ${notes}_');
+      }
     }
 
-    await launchWhatsApp(phone, msg + _signature);
+    if (children.length > 1) {
+      buf.writeln();
+      buf.writeln('*${t['total']}: ₹$grandTotal*');
+    }
+
+    buf.writeln();
+    buf.writeln(t['footer']);
+
+    await launchWhatsApp(parentPhone, buf.toString(), context: context);
   }
 
   /// Send official Teacher Salary Slip via WhatsApp in selected language.
@@ -151,94 +161,57 @@ class WhatsAppUtility {
     String month, {
     String? paymentMode,
     String? upiId,
+    String? issuedBy,
+    String? dateTime,
+    String languageCode = 'en',
   }) async {
-    final lang = await _promptLanguageSelection(context);
-    if (lang == null) return;
+    final t = ReceiptTemplates.get(languageCode);
+    final modeText = (paymentMode != null && paymentMode.isNotEmpty) ? paymentMode : 'Cash';
+    final timeText = (dateTime != null && dateTime.isNotEmpty)
+        ? dateTime
+        : DateFormat('dd MMM yyyy, hh:mm a').format(DateTime.now());
+    final issuer = (issuedBy != null && issuedBy.isNotEmpty) ? issuedBy : 'Management';
 
-    final modeText = (paymentMode != null && paymentMode.isNotEmpty) ? paymentMode : 'UPI / Cash';
-    final remaining = monthlySalary - paidAmount;
-    final statusText = remaining <= 0 ? 'Fully Paid ✅' : (paidAmount > 0 ? 'Partially Paid 🟡' : 'Pending 🔴');
-
-    String msg = '';
-    switch (lang) {
-      case Language.english:
-        msg = "Assalamu Alaikum,\nDear Teacher *$teacherName*,\n\n"
-            "💵 *MONTHLY SALARY SLIP — $month*\n"
-            "👤 *Teacher*: *$teacherName*\n"
-            "💰 *Base Monthly Salary*: ₹${monthlySalary.toInt()}\n"
-            "✅ *Paid Amount*: ₹${paidAmount.toInt()}\n"
-            "⏳ *Balance / Remaining*: ₹${remaining > 0 ? remaining.toInt() : 0}\n"
-            "💳 *Payment Mode*: $modeText\n"
-            "📌 *Status*: $statusText\n"
-            "${upiId != null && upiId.isNotEmpty ? '📱 *UPI ID*: $upiId\n' : ''}\n"
-            "Jazakallah Khair for your dedication!";
-        break;
-      case Language.urdu:
-        msg = "السلام علیکم،\nمحترم استاد *$teacherName*،\n\n"
-            "💵 *ماہانہ تنخواہ سلپ — $month*\n"
-            "👤 *استاد*: *$teacherName*\n"
-            "💰 *ماہانہ مقررہ تنخواہ*: ₹${monthlySalary.toInt()}\n"
-            "✅ *اداشدہ رقم*: ₹${paidAmount.toInt()}\n"
-            "⏳ *ببقایا رقم*: ₹${remaining > 0 ? remaining.toInt() : 0}\n"
-            "💳 *ادائیگی کا طریقہ*: $modeText\n"
-            "📌 *حالت*: $statusText\n"
-            "${upiId != null && upiId.isNotEmpty ? '📱 *یو پی آئی*: $upiId\n' : ''}\n"
-            "جزاک اللہ خیر۔";
-        break;
-      case Language.hindi:
-        msg = "अस्सलामु अलैकुम,\nप्रिय शिक्षक *$teacherName*,\n\n"
-            "💵 *मासिक वेतन पर्ची — $month*\n"
-            "👤 *शिक्षक*: *$teacherName*\n"
-            "💰 *मासिक वेतन*: ₹${monthlySalary.toInt()}\n"
-            "✅ *भुगतान की गई राशि*: ₹${paidAmount.toInt()}\n"
-            "⏳ *शेष राशि*: ₹${remaining > 0 ? remaining.toInt() : 0}\n"
-            "💳 *भुगतान विधि*: $modeText\n"
-            "📌 *स्थिति*: $statusText\n"
-            "${upiId != null && upiId.isNotEmpty ? '📱 *UPI ID*: $upiId\n' : ''}\n"
-            "जज़ाकल्लाह खैर!";
-        break;
-      case Language.telugu:
-        msg = "అస్సలాము అలైకుమ్,\nగౌరవనీయ ఉపాధ్యాయులు *$teacherName*,\n\n"
-            "💵 *నెలవారీ జీతం రసీదు — $month*\n"
-            "👤 *ఉపాధ్యాయుడు*: *$teacherName*\n"
-            "💰 *నెలవారీ జీతం*: ₹${monthlySalary.toInt()}\n"
-            "✅ *చెల్లించిన మొత్తం*: ₹${paidAmount.toInt()}\n"
-            "⏳ *మిగిలిన బకాయి*: ₹${remaining > 0 ? remaining.toInt() : 0}\n"
-            "💳 *చెల్లింపు విధానం*: $modeText\n"
-            "📌 *స్థితి*: $statusText\n"
-            "${upiId != null && upiId.isNotEmpty ? '📱 *UPI ID*: $upiId\n' : ''}\n"
-            "జజాకల్లా ఖైర్.";
-        break;
+    final buf = StringBuffer();
+    buf.writeln('*${t['salaryHeader']}*');
+    buf.writeln('${t['date']}: $timeText');
+    buf.writeln('${t['salaryMonth']}: $month');
+    buf.writeln('${t['salaryPaidTo']}: $teacherName');
+    buf.writeln('${t['amount']}: ₹${paidAmount.toInt() == paidAmount ? paidAmount.toInt() : paidAmount}');
+    buf.writeln('${t['mode']}: $modeText');
+    buf.writeln('${t['salaryIssuedBy']}: $issuer');
+    if (upiId != null && upiId.isNotEmpty) {
+      buf.writeln('UPI ID: $upiId');
     }
+    buf.writeln();
+    buf.writeln(t['footer']);
 
-    if (!context.mounted) return;
-    await launchWhatsApp(phone, msg + _signature, context: context);
+    await launchWhatsApp(phone, buf.toString(), context: context);
   }
 
   /// Send attendance absence alert with date.
   static Future<void> sendAttendanceAlert(
-      BuildContext context, String phone, String studentName, {String? date}) async {
-    final lang = await _promptLanguageSelection(context);
-    if (lang == null) return;
+    BuildContext context,
+    String phone,
+    String studentName, {
+    String? date,
+    String languageCode = 'en',
+  }) async {
+    final t = ReceiptTemplates.get(languageCode);
+    final dateStr = date ?? DateFormat('dd MMM yyyy').format(DateTime.now());
 
-    final dateStr = date ?? DateTime.now().toString().substring(0, 10);
-    String msg = '';
-    switch (lang) {
-      case Language.english:
-        msg = "Assalamu Alaikum,\nDear Parent,\nYour child *$studentName* was marked *Absent* from Maktab on *$dateStr*.\nPlease ensure regular attendance for better progress.";
-        break;
-      case Language.urdu:
-        msg = "السلام علیکم،\nمحترم والدین،\nآپ کا بچہ *$studentName* آج *$dateStr* کو مکتب سے *غیر حاضر* ہے۔\nبہتر ترقی کے لیے باقاعدہ حاضری یقینی بنائیں۔";
-        break;
-      case Language.hindi:
-        msg = "अस्सलामु अलैकुम,\nप्रिय माता-पिता,\nआपका बच्चा *$studentName* आज *$dateStr* को मकतब से *अनुपस्थित* रहा।\nबेहतर प्रगति के लिए नियमित उपस्थिति सुनिश्चित करें।";
-        break;
-      case Language.telugu:
-        msg = "అస్సలాము అలైకుమ్,\nప్రియమైన తల్లిదండ్రులారా,\nమీ బిడ్డ *$studentName* తేది *$dateStr* న మక్తబ్ నుండి *హాజరు కాలేదు (గైర్హాజరు)*.\nమెరుగైన పురోగతి కోసం క్రమం తప్పకుండా హాజరయ్యేలా చూడండి.";
-        break;
-    }
+    final buf = StringBuffer();
+    buf.writeln(t['absentHeader']);
+    buf.writeln();
+    buf.writeln('${t['student']}: $studentName');
+    buf.writeln('${t['date']}: $dateStr');
+    buf.writeln();
+    buf.writeln(t['absentBody']);
+    buf.writeln(t['pleaseContact']);
+    buf.writeln();
+    buf.writeln(t['footer']);
 
-    await launchWhatsApp(phone, msg + _signature);
+    await launchWhatsApp(phone, buf.toString(), context: context);
   }
 
   /// Send Batch Notice via WhatsApp with language prompt.
@@ -247,39 +220,19 @@ class WhatsAppUtility {
     required String batchName,
     required String timing,
     String? phone,
+    String languageCode = 'en',
   }) async {
-    final lang = await promptLanguageSelection(context);
-    if (lang == null || !context.mounted) return;
+    final t = ReceiptTemplates.get(languageCode);
 
-    String msg = '';
-    switch (lang) {
-      case Language.english:
-        msg = "Assalamu Alaikum,\nDear Guardians of *$batchName*,\n\n"
-            "📢 *MAKTAB ANNOUNCEMENT*\n"
-            "Please note the class timings for *$batchName*: *$timing*.\n"
-            "Please ensure timely attendance.";
-        break;
-      case Language.urdu:
-        msg = "السلام علیکم،\nمحترم سرپرستاں *$batchName*،\n\n"
-            "📢 *مکتب کا اہم اعلان*\n"
-            "براہ کرم *$batchName* کی کلاس کے اوقات ملاحظہ فرمائیں: *$timing*۔\n"
-            "وقت کی پابندی یقینی بنائیں۔";
-        break;
-      case Language.hindi:
-        msg = "अस्सलामु अलैकुम,\n*$batchName* के प्रिय अभिभावक,\n\n"
-            "📢 *मकतब महत्वपूर्ण सूचना*\n"
-            "कृपया *$batchName* की कक्षा का समय ध्यान दें: *$timing*।\n"
-            "समय पर उपस्थिति सुनिश्चित करें।";
-        break;
-      case Language.telugu:
-        msg = "అస్సలాము అలైకుమ్,\n*$batchName* యొక్క ప్రియమైన తల్లిదండ్రులారా,\n\n"
-            "📢 *మక్తబ్ ముఖ్య ప్రకటన*\n"
-            "దయచేసి *$batchName* క్లాస్ సమయం గమనించండి: *$timing*.\n"
-            "సమయ పాలన పాటించండి.";
-        break;
-    }
+    final buf = StringBuffer();
+    buf.writeln(t['batchNoticeHeader']);
+    buf.writeln();
+    buf.writeln('${t['batch']}: $batchName');
+    buf.writeln('${t['timing']}: $timing');
+    buf.writeln();
+    buf.writeln(t['footer']);
 
-    await launchWhatsApp(phone ?? '', msg + _signature, context: context);
+    await launchWhatsApp(phone ?? '', buf.toString(), context: context);
   }
 
   /// Send custom Notice or Announcement with language selection prompt.
@@ -289,42 +242,19 @@ class WhatsAppUtility {
     required String content,
     String? recipientPhone,
     String? targetName,
+    String languageCode = 'en',
   }) async {
-    final lang = await promptLanguageSelection(context);
-    if (lang == null) return;
+    final t = ReceiptTemplates.get(languageCode);
 
-    final target = (targetName != null && targetName.isNotEmpty) ? targetName : 'Guardian / Student';
-    String msg = '';
+    final buf = StringBuffer();
+    buf.writeln(t['announcementHeader']);
+    buf.writeln();
+    buf.writeln('📢 $title');
+    buf.writeln(content);
+    buf.writeln();
+    buf.writeln(t['footer']);
 
-    switch (lang) {
-      case Language.english:
-        msg = "Assalamu Alaikum,\nDear *$target*,\n\n"
-            "📢 *$title*\n"
-            "$content\n\n"
-            "Jazakallah Khair.";
-        break;
-      case Language.urdu:
-        msg = "السلام علیکم،\nمحترم *$target*،\n\n"
-            "📢 *$title*\n"
-            "$content\n\n"
-            "جزاک اللہ خیر۔";
-        break;
-      case Language.hindi:
-        msg = "अस्सलामु अलैकुम,\nप्रिय *$target*,\n\n"
-            "📢 *$title*\n"
-            "$content\n\n"
-            "जज़ाकल्लाह खैर।";
-        break;
-      case Language.telugu:
-        msg = "అస్సలాము అలైకుమ్,\nప్రియమైన *$target*,\n\n"
-            "📢 *$title*\n"
-            "$content\n\n"
-            "జజాకల్లా ఖైర్.";
-        break;
-    }
-
-    if (!context.mounted) return;
-    await launchWhatsApp(recipientPhone ?? '', msg + _signature, context: context);
+    await launchWhatsApp(recipientPhone ?? '', buf.toString(), context: context);
   }
 
   /// Build and share a plain-text attendance report (no language selection needed).
@@ -332,20 +262,48 @@ class WhatsAppUtility {
     required String date,
     required List<String> present,
     required List<String> absent,
+    List<String>? late,
+    List<String>? leave,
+    String? batch,
+    String? markedBy,
+    String languageCode = 'en',
   }) {
+    final t = ReceiptTemplates.get(languageCode);
     final buffer = StringBuffer();
-    buffer.writeln('📋 Attendance Report — $date');
+    buffer.writeln('*${t['attendanceHeader']}*');
+    if (batch != null && batch.isNotEmpty) {
+      buffer.writeln('${t['batch']}: $batch');
+    }
+    buffer.writeln('${t['date']}: $date');
+    if (markedBy != null && markedBy.isNotEmpty) {
+      buffer.writeln('${t['markedBy']}: $markedBy');
+    }
     buffer.writeln('─────────────────────────');
-    buffer.writeln('✅ Present (${present.length}):');
+    buffer.writeln('✅ ${t['present']} (${present.length}):');
     for (final name in present) {
       buffer.writeln('  • $name');
     }
     buffer.writeln();
-    buffer.writeln('❌ Absent / Leave (${absent.length}):');
+    buffer.writeln('❌ ${t['absent']} (${absent.length}):');
     for (final name in absent) {
       buffer.writeln('  • $name');
     }
-    buffer.write(_signature);
+    if (late != null && late.isNotEmpty) {
+      buffer.writeln();
+      buffer.writeln('🟡 ${t['late']} (${late.length}):');
+      for (final name in late) {
+        buffer.writeln('  • $name');
+      }
+    }
+    if (leave != null && leave.isNotEmpty) {
+      buffer.writeln();
+      buffer.writeln('🔵 ${t['leave']} (${leave.length}):');
+      for (final name in leave) {
+        buffer.writeln('  • $name');
+      }
+    }
+    buffer.writeln();
+    buffer.writeln(t['footer']);
     return buffer.toString();
   }
 

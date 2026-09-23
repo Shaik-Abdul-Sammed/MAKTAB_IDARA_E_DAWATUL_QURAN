@@ -13,6 +13,9 @@ import 'package:maktab_app/repositories/salary_repository.dart';
 import 'package:maktab_app/services/cloud_sync_service.dart';
 import 'package:maktab_app/utils/salary_pdf_generator.dart';
 import 'package:maktab_app/utils/whatsapp_utility.dart';
+import 'package:maktab_app/utils/receipt_templates.dart';
+import 'package:maktab_app/utils/receipt_pdf_generator.dart';
+import 'package:maktab_app/widgets/receipt_preview_dialog.dart';
 
 class TeacherSalaryManagementScreen extends StatefulWidget {
   const TeacherSalaryManagementScreen({super.key});
@@ -298,13 +301,53 @@ class _TeacherSalaryManagementScreenState extends State<TeacherSalaryManagementS
                       if (context.mounted) {
                         Navigator.pop(dialogCtx);
                         _loadSalaryData();
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('Payment of ₹$amount recorded for ${teacher.name}'),
-                            action: SnackBarAction(
-                              label: 'SHARE RECEIPT',
-                              onPressed: () => _shareReceipt(fullSp, teacher),
-                            ),
+
+                        final receiptText = SalaryPdfGenerator.generatePaymentReceiptText(
+                          payment: fullSp,
+                          teacherName: teacher.name,
+                          teacherMobile: teacher.mobile ?? '',
+                          maktabName: 'MAKTAB IDARA E DAWATUL QURAN',
+                        );
+
+                        await showDialog(
+                          context: context,
+                          builder: (previewCtx) => ReceiptPreviewDialog(
+                            title: 'Salary Recorded',
+                            receiptText: receiptText,
+                            recipientPhone: teacher.mobile ?? '',
+                            onSend: () async {
+                              Navigator.pop(previewCtx);
+                              if (teacher.mobile != null && teacher.mobile!.isNotEmpty) {
+                                await WhatsAppUtility.sendSalarySlip(
+                                  context,
+                                  teacher.mobile!,
+                                  teacher.name,
+                                  (teacher.monthlySalary ?? fullSp.amount).toDouble(),
+                                  fullSp.amount.toDouble(),
+                                  fullSp.salaryMonth,
+                                  paymentMode: fullSp.paymentMode,
+                                  upiId: teacher.upiId,
+                                  languageCode: 'en',
+                                );
+                                await _salaryRepository.markReceiptSent(id);
+                                _loadSalaryData();
+                              }
+                            },
+                            onBuildPdf: () async {
+                              final labels = ReceiptTemplates.get('en');
+                              return ReceiptPdfGenerator.buildSalaryReceiptPdf(
+                                maktabName: 'MAKTAB IDARA E DAWATUL QURAN',
+                                teacherName: teacher.name,
+                                salaryMonth: fullSp.salaryMonth,
+                                amount: fullSp.amount,
+                                paymentMode: fullSp.paymentMode,
+                                paymentDate: DateTime.tryParse(fullSp.paymentDate) ?? DateTime.now(),
+                                issuedBy: 'Management',
+                                labels: labels,
+                                notes: fullSp.notes,
+                                transactionReference: fullSp.transactionReference,
+                              );
+                            },
                           ),
                         );
                       }
@@ -323,38 +366,56 @@ class _TeacherSalaryManagementScreenState extends State<TeacherSalaryManagementS
   // ── Share Receipt ───────────────────────────────────────────────────────
 
   void _shareReceipt(SalaryPayment payment, User teacher) {
-    if (teacher.mobile != null && teacher.mobile!.isNotEmpty) {
-      WhatsAppUtility.sendSalarySlip(
-        context,
-        teacher.mobile!,
-        teacher.name,
-        (teacher.monthlySalary ?? payment.amount).toDouble(),
-        payment.amount.toDouble(),
-        payment.salaryMonth,
-        paymentMode: payment.paymentMode,
-        upiId: teacher.upiId,
-      );
-    } else {
-      final text = SalaryPdfGenerator.generatePaymentReceiptText(
-        payment: payment,
-        teacherName: teacher.name,
-        teacherMobile: teacher.mobile ?? '',
-        maktabName: 'IDARA E DAWATHUL QURAAN',
-      );
+    final receiptText = SalaryPdfGenerator.generatePaymentReceiptText(
+      payment: payment,
+      teacherName: teacher.name,
+      teacherMobile: teacher.mobile ?? '',
+      maktabName: 'MAKTAB IDARA E DAWATUL QURAN',
+    );
 
-      showDialog(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          title: const Text('Salary Payment Receipt'),
-          content: SingleChildScrollView(
-            child: SelectableText(text, style: const TextStyle(fontFamily: 'monospace', fontSize: 13)),
-          ),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Close')),
-          ],
-        ),
-      );
-    }
+    showDialog(
+      context: context,
+      builder: (previewCtx) => ReceiptPreviewDialog(
+        title: 'Salary Receipt',
+        receiptText: receiptText,
+        recipientPhone: teacher.mobile ?? '',
+        onSend: () async {
+          Navigator.pop(previewCtx);
+          if (teacher.mobile != null && teacher.mobile!.isNotEmpty) {
+            await WhatsAppUtility.sendSalarySlip(
+              context,
+              teacher.mobile!,
+              teacher.name,
+              (teacher.monthlySalary ?? payment.amount).toDouble(),
+              payment.amount.toDouble(),
+              payment.salaryMonth,
+              paymentMode: payment.paymentMode,
+              upiId: teacher.upiId,
+              languageCode: 'en',
+            );
+            if (payment.id != null) {
+              await _salaryRepository.markReceiptSent(payment.id!);
+              _loadSalaryData();
+            }
+          }
+        },
+        onBuildPdf: () async {
+          final labels = ReceiptTemplates.get('en');
+          return ReceiptPdfGenerator.buildSalaryReceiptPdf(
+            maktabName: 'MAKTAB IDARA E DAWATUL QURAN',
+            teacherName: teacher.name,
+            salaryMonth: payment.salaryMonth,
+            amount: payment.amount,
+            paymentMode: payment.paymentMode,
+            paymentDate: DateTime.tryParse(payment.paymentDate) ?? DateTime.now(),
+            issuedBy: 'Management',
+            labels: labels,
+            notes: payment.notes,
+            transactionReference: payment.transactionReference,
+          );
+        },
+      ),
+    );
   }
 
   // ── Edit Teacher Salary Config Dialog ────────────────────────────────────
@@ -445,12 +506,31 @@ class _TeacherSalaryManagementScreenState extends State<TeacherSalaryManagementS
                       child: ListTile(
                         title: Text('₹${p.amount} — ${p.salaryMonth}', style: const TextStyle(fontWeight: FontWeight.bold)),
                         subtitle: Text('${p.paymentDate} • ${p.paymentMode} ${p.transactionReference != null ? "• Ref: ${p.transactionReference}" : ""}'),
-                        trailing: IconButton(
-                          icon: const Icon(Icons.share, color: Color(0xFF004D40)),
-                          onPressed: () {
-                            Navigator.pop(ctx);
-                            _shareReceipt(p, teacher);
-                          },
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (p.receiptSent == 0)
+                              OutlinedButton.icon(
+                                icon: const Icon(Icons.send_rounded, size: 14),
+                                label: const Text('Send Receipt', style: TextStyle(fontSize: 11)),
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: const Color(0xFF004D40),
+                                  side: const BorderSide(color: Color(0xFF004D40)),
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                ),
+                                onPressed: () {
+                                  Navigator.pop(ctx);
+                                  _shareReceipt(p, teacher);
+                                },
+                              ),
+                            IconButton(
+                              icon: const Icon(Icons.share, color: Color(0xFF004D40)),
+                              onPressed: () {
+                                Navigator.pop(ctx);
+                                _shareReceipt(p, teacher);
+                              },
+                            ),
+                          ],
                         ),
                       ),
                     );
@@ -796,4 +876,13 @@ class _TeacherSalaryManagementScreenState extends State<TeacherSalaryManagementS
       ],
     );
   }
+}
+
+/// Tab-body alias used by PaymentsHubScreen.
+/// Delegates entirely to [TeacherSalaryManagementScreen]; no logic is changed.
+class TeacherSalaryScreenBody extends StatelessWidget {
+  const TeacherSalaryScreenBody({super.key});
+
+  @override
+  Widget build(BuildContext context) => const TeacherSalaryManagementScreen();
 }

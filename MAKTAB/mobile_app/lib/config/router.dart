@@ -38,7 +38,7 @@ import 'package:maktab_app/screens/teacher/notification_center.dart';
 import 'package:maktab_app/screens/teacher/message_box.dart';
 import 'package:maktab_app/screens/teacher/teacher_home.dart';
 import 'package:maktab_app/screens/teacher/teacher_batches.dart';
-import 'package:maktab_app/screens/teacher/class_announcements.dart';
+import 'package:maktab_app/screens/teacher/teacher_fees_screen.dart';
 import 'package:maktab_app/screens/teacher/attendance_history.dart';
 import 'package:maktab_app/screens/reports/reports_dashboard.dart';
 import 'package:maktab_app/screens/reports/student_academic_history.dart';
@@ -55,6 +55,7 @@ import 'package:maktab_app/screens/settings/export_config_screen.dart';
 import 'package:maktab_app/screens/fees/fee_management_screen.dart';
 import 'package:maktab_app/screens/fees/student_payment_history_screen.dart';
 import 'package:maktab_app/screens/admin/teacher_salary_management_screen.dart';
+import 'package:maktab_app/screens/admin/payments_hub.dart';
 import 'package:maktab_app/screens/tools/whatsapp_reminder_screen.dart';
 import 'package:maktab_app/screens/tools/calendar_sync_screen.dart';
 import 'package:maktab_app/screens/tools/contact_sync_screen.dart';
@@ -300,6 +301,10 @@ class AppRouter {
             pageBuilder: (context, state) => build3DPageTransition(child: const TeacherSalaryManagementScreen(), state: state),
           ),
           GoRoute(
+            path: 'payments',
+            pageBuilder: (context, state) => build3DPageTransition(child: const PaymentsHubScreen(), state: state),
+          ),
+          GoRoute(
             path: 'tools',
             builder: (context, state) => const WhatsAppReminderScreen(),
             routes: [
@@ -474,8 +479,19 @@ class AppRouter {
             builder: (context, state) => const TeacherBatchesScreen(),
           ),
           GoRoute(
+            path: 'fees',
+            pageBuilder: (context, state) => build3DPageTransition(
+              child: const TeacherFeesScreen(),
+              state: state,
+            ),
+          ),
+          GoRoute(
+            path: 'students',
+            builder: (context, state) => const StudentListScreen(),
+          ),
+          GoRoute(
             path: 'announcements',
-            builder: (context, state) => const ClassAnnouncementsScreen(),
+            redirect: (context, state) => '/teacher/messages?tab=1',
           ),
           GoRoute(
             path: 'my-attendance',
@@ -586,7 +602,10 @@ class AppRouter {
           ),
           GoRoute(
             path: 'messages',
-            builder: (context, state) => const MessageBoxScreen(),
+            builder: (context, state) {
+              final tab = int.tryParse(state.uri.queryParameters['tab'] ?? '') ?? 0;
+              return MessageBoxScreen(initialTab: tab);
+            },
           ),
           GoRoute(
             path: 'support',
@@ -601,6 +620,10 @@ class AppRouter {
             builder: (context, state) => SettingsScreen(),
           ),
         ],
+      ),
+      GoRoute(
+        path: '/settings',
+        builder: (context, state) => SettingsScreen(),
       ),
     ],
   );

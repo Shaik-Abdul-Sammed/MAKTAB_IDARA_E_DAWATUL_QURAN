@@ -9,6 +9,9 @@ import 'package:maktab_app/providers/auth_provider.dart';
 import 'package:maktab_app/config/api_config.dart';
 import 'package:maktab_app/screens/settings/diagnostics_screen.dart';
 
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:maktab_app/providers/locale_provider.dart';
+
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
 
@@ -20,6 +23,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
   final _backupService = BackupRestoreService();
   bool _isLoading = false;
   bool _biometricEnabled = true;
+  bool _bellNotificationsEnabled = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPreferences();
+  }
+
+  Future<void> _loadPreferences() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (mounted) {
+      setState(() {
+        _bellNotificationsEnabled = prefs.getBool('bell_notifications_enabled') ?? true;
+      });
+    }
+  }
+
+  Future<void> _setBellNotifications(bool enabled) async {
+    setState(() => _bellNotificationsEnabled = enabled);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('bell_notifications_enabled', enabled);
+  }
 
   Future<void> _handleBackup() async {
     setState(() => _isLoading = true);
@@ -111,65 +136,114 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       const SizedBox(height: 20),
                     ],
 
-                _buildSectionHeader('Server & Network Sync'),
-                FutureBuilder<String>(
-                  future: ApiConfig.baseUrl,
-                  builder: (context, snapshot) {
-                    final currentUrl = snapshot.data ?? 'http://127.0.0.1:8000';
-                    return ListTile(
-                      leading: const Icon(Icons.dns_rounded, color: Color(0xFF004D40)),
-                      title: const Text('FastAPI Server URL'),
-                      subtitle: Text(currentUrl),
-                      trailing: const Icon(Icons.edit_rounded),
-                      onTap: () => _showServerConfigDialog(currentUrl),
-                    );
-                  },
-                ),
-                const SizedBox(height: 20),
+                    if (isAdmin) ...[
+                      _buildSectionHeader('Server & Network Sync'),
+                      FutureBuilder<String>(
+                        future: ApiConfig.baseUrl,
+                        builder: (context, snapshot) {
+                          final currentUrl = snapshot.data ?? 'http://127.0.0.1:8000';
+                          return ListTile(
+                            leading: const Icon(Icons.dns_rounded, color: Color(0xFF004D40)),
+                            title: const Text('FastAPI Server URL'),
+                            subtitle: Text(currentUrl),
+                            trailing: const Icon(Icons.edit_rounded),
+                            onTap: () => _showServerConfigDialog(currentUrl),
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 20),
+                    ],
 
-                _buildSectionHeader('Security & Biometrics'),
-                SwitchListTile(
-                  secondary: const Icon(Icons.fingerprint_rounded, color: Color(0xFF004D40)),
-                  title: const Text('Biometric PIN Lock'),
-                  subtitle: const Text('Require Fingerprint/Face to open app'),
-                  value: _biometricEnabled,
-                  activeThumbColor: const Color(0xFF004D40),
-                  onChanged: (val) => setState(() => _biometricEnabled = val),
-                ),
-                const SizedBox(height: 20),
+                    if (!isAdmin) ...[
+                      _buildSectionHeader('Preferences'),
+                      Consumer<LocaleProvider>(
+                        builder: (context, localeProvider, _) {
+                          final currentCode = localeProvider.locale.languageCode;
+                          const languages = {
+                            'en': 'English',
+                            'ur': 'اردو (Urdu)',
+                            'te': 'తెలుగు (Telugu)',
+                            'hi': 'हिन्दी (Hindi)',
+                          };
+                          return ListTile(
+                            leading: const Icon(Icons.language_rounded, color: Color(0xFF004D40)),
+                            title: const Text('Language'),
+                            subtitle: Text(languages[currentCode] ?? 'English'),
+                            trailing: DropdownButton<String>(
+                              value: languages.containsKey(currentCode) ? currentCode : 'en',
+                              underline: const SizedBox(),
+                              items: languages.entries.map((e) {
+                                return DropdownMenuItem<String>(
+                                  value: e.key,
+                                  child: Text(e.value),
+                                );
+                              }).toList(),
+                              onChanged: (val) {
+                                if (val != null) {
+                                  localeProvider.setLocale(Locale(val));
+                                }
+                              },
+                            ),
+                          );
+                        },
+                      ),
+                      const Divider(height: 1),
+                      SwitchListTile(
+                        secondary: const Icon(Icons.notifications_active_rounded, color: Color(0xFF004D40)),
+                        title: const Text('Notifications'),
+                        subtitle: const Text('Enable bell notifications and alerts'),
+                        value: _bellNotificationsEnabled,
+                        activeThumbColor: const Color(0xFF004D40),
+                        onChanged: _setBellNotifications,
+                      ),
+                      const SizedBox(height: 20),
+                    ],
 
-                _buildSectionHeader('Data & Storage'),
-                ListTile(
-                  leading: const Icon(Icons.backup, color: Color(0xFF004D40)),
-                  title: const Text('Backup Database'),
-                  subtitle: const Text('Export your encrypted SQLite data to ZIP'),
-                  onTap: _handleBackup,
-                ),
-                const Divider(height: 1),
-                ListTile(
-                  leading: const Icon(Icons.restore, color: Color(0xFF004D40)),
-                  title: const Text('Restore Database'),
-                  subtitle: const Text('Import data from a backup ZIP file'),
-                  onTap: _handleRestore,
-                ),
-                const SizedBox(height: 20),
+                    _buildSectionHeader('Security & Biometrics'),
+                    SwitchListTile(
+                      secondary: const Icon(Icons.fingerprint_rounded, color: Color(0xFF004D40)),
+                      title: const Text('Biometric PIN Lock'),
+                      subtitle: const Text('Require Fingerprint/Face to open app'),
+                      value: _biometricEnabled,
+                      activeThumbColor: const Color(0xFF004D40),
+                      onChanged: (val) => setState(() => _biometricEnabled = val),
+                    ),
+                    const SizedBox(height: 20),
 
-                if (kDebugMode) ...[
-                  _buildSectionHeader('Diagnostics & Sync'),
-                  ListTile(
-                    leading: const Icon(Icons.bug_report, color: Colors.deepOrange),
-                    title: const Text('Sync Diagnostics'),
-                    subtitle: const Text('Inspect RTDB probes, auth state, and write logs'),
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const DiagnosticsScreen()),
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 20),
-                ],
+                    if (isAdmin) ...[
+                      _buildSectionHeader('Data & Storage'),
+                      ListTile(
+                        leading: const Icon(Icons.backup, color: Color(0xFF004D40)),
+                        title: const Text('Backup Database'),
+                        subtitle: const Text('Export your encrypted SQLite data to ZIP'),
+                        onTap: _handleBackup,
+                      ),
+                      const Divider(height: 1),
+                      ListTile(
+                        leading: const Icon(Icons.restore, color: Color(0xFF004D40)),
+                        title: const Text('Restore Database'),
+                        subtitle: const Text('Import data from a backup ZIP file'),
+                        onTap: _handleRestore,
+                      ),
+                      const SizedBox(height: 20),
+                    ],
+
+                    if (kDebugMode && isAdmin) ...[
+                      _buildSectionHeader('Diagnostics & Sync'),
+                      ListTile(
+                        leading: const Icon(Icons.bug_report, color: Colors.deepOrange),
+                        title: const Text('Sync Diagnostics'),
+                        subtitle: const Text('Inspect RTDB probes, auth state, and write logs'),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => const DiagnosticsScreen()),
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 20),
+                    ],
 
                 _buildSectionHeader('About App'),
                 const ListTile(

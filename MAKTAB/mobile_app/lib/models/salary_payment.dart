@@ -10,6 +10,8 @@ class SalaryPayment {
   final String? transactionReference;
   final String status; // "PAID", "PARTIALLY PAID", "PENDING"
   final String? notes;
+  final int receiptSent;
+  final String? receiptSentAt;
   final String createdAt;
   final String updatedAt;
 
@@ -25,6 +27,8 @@ class SalaryPayment {
     this.transactionReference,
     required this.status,
     this.notes,
+    this.receiptSent = 0,
+    this.receiptSentAt,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -42,6 +46,8 @@ class SalaryPayment {
       'transaction_reference': transactionReference,
       'status': status,
       'notes': notes,
+      'receipt_sent': receiptSent,
+      'receipt_sent_at': receiptSentAt,
       'created_at': createdAt,
       'updated_at': updatedAt,
     };
@@ -60,6 +66,8 @@ class SalaryPayment {
       transactionReference: map['transaction_reference']?.toString(),
       status: map['status']?.toString() ?? 'PAID',
       notes: map['notes']?.toString(),
+      receiptSent: (map['receipt_sent'] as int?) ?? (int.tryParse(map['receipt_sent']?.toString() ?? '') ?? 0),
+      receiptSentAt: map['receipt_sent_at']?.toString(),
       createdAt: map['created_at']?.toString() ?? DateTime.now().toIso8601String(),
       updatedAt: map['updated_at']?.toString() ?? DateTime.now().toIso8601String(),
     );
@@ -77,6 +85,8 @@ class SalaryPayment {
     String? transactionReference,
     String? status,
     String? notes,
+    int? receiptSent,
+    String? receiptSentAt,
     String? createdAt,
     String? updatedAt,
   }) {
@@ -92,6 +102,8 @@ class SalaryPayment {
       transactionReference: transactionReference ?? this.transactionReference,
       status: status ?? this.status,
       notes: notes ?? this.notes,
+      receiptSent: receiptSent ?? this.receiptSent,
+      receiptSentAt: receiptSentAt ?? this.receiptSentAt,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );

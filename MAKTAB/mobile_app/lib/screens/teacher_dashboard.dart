@@ -1,6 +1,15 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
 import 'dart:ui';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:maktab_app/models/app_message.dart';
+import 'package:maktab_app/models/announcement.dart';
+import 'package:maktab_app/models/teacher_attendance.dart';
+import 'package:maktab_app/repositories/message_repository.dart';
+import 'package:maktab_app/repositories/teacher_attendance_repository.dart';
+import 'package:maktab_app/repositories/announcement_repository.dart';
+import 'package:maktab_app/repositories/batch_repository.dart';
 import 'package:maktab_app/services/cloud_sync_service.dart';
 import 'package:maktab_app/providers/auth_provider.dart';
 import 'package:go_router/go_router.dart';
@@ -30,6 +39,17 @@ class _TeacherDashboardState extends State<TeacherDashboard>
   final List<String> _appNameChars = 'MAKTAB'.split('');
   late List<Animation<double>> _charFades;
   late List<Animation<Offset>> _charSlides;
+
+  // Notifications state
+  int _unreadMessagesCount = 0;
+  int _unreadAttendanceCount = 0;
+  int get _totalUnreadNotifications => _unreadMessagesCount + _unreadAttendanceCount;
+
+  List<AppMessage> _recentMessages = [];
+  List<TeacherAttendance> _recentAttendance = [];
+  List<Announcement> _recentAnnouncements = [];
+
+  StreamSubscription<String>? _syncSub;
 
   @override
   void initState() {
@@ -75,13 +95,306 @@ class _TeacherDashboardState extends State<TeacherDashboard>
         ),
       );
     });
+
+    _loadNotifications();
+
+    _syncSub = CloudSyncService.instance.dataChangeStream.listen((col) {
+      if (!mounted) return;
+      if (col == 'messages' || col == 'teacher_attendance' || col == 'announcements') {
+        _loadNotifications();
+      }
+    });
   }
 
   @override
   void dispose() {
+    _syncSub?.cancel();
     _bodyCtrl.dispose();
     _nameCtrl.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadNotifications() async {
+    try {
+      final auth = Provider.of<AuthProvider>(context, listen: false);
+      final canonicalTeacherId = auth.currentUser?.teacherId ?? auth.currentUser?.id ?? 0;
+      final today = DateTime.now().toIso8601String().substring(0, 10);
+
+      final unreadMsg = await MessageRepository().getUnreadCountForReceiver(canonicalTeacherId, isAdmin: false);
+      final unreadAtt = await TeacherAttendanceRepository().getUnreadCountForDate(today);
+
+      final msgs = await MessageRepository().getMessagesForUser(canonicalTeacherId);
+      final atts = await TeacherAttendanceRepository().getAttendanceByTeacher(canonicalTeacherId);
+      final anns = await AnnouncementRepository().getRecent(limit: 20);
+
+      final batches = await BatchRepository().fetchTeacherBatches(canonicalTeacherId);
+      final batchIds = batches.map((b) => b.id).whereType<int>().toSet();
+      final filteredAnns = anns.where((a) => batchIds.isEmpty || batchIds.contains(a.batchId)).take(20).toList();
+
+      if (!mounted) return;
+      setState(() {
+        _unreadMessagesCount = unreadMsg;
+        _unreadAttendanceCount = unreadAtt;
+        _recentMessages = msgs.take(20).toList();
+        _recentAttendance = atts.take(20).toList();
+        _recentAnnouncements = filteredAnns;
+      });
+    } catch (e) {
+      debugPrint('[TeacherDashboard] Error loading notifications: $e');
+    }
+  }
+
+  void _showNotificationsSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        return DefaultTabController(
+          length: 3,
+          child: Container(
+            height: MediaQuery.of(context).size.height * 0.72,
+            decoration: const BoxDecoration(
+              color: Color(0xFFF9FBE7),
+              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            ),
+            child: Column(
+              children: [
+                Container(
+                  margin: const EdgeInsets.only(top: 10, bottom: 6),
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade400,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(Icons.notifications_active_rounded, color: Color(0xFF004D40), size: 22),
+                          const SizedBox(width: 8),
+                          const Text(
+                            'Notifications',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF004D40),
+                            ),
+                          ),
+                          if (_totalUnreadNotifications > 0) ...[
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: Colors.redAccent,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                '$_totalUnreadNotifications new',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close_rounded, color: Colors.black54),
+                        onPressed: () => Navigator.pop(ctx),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.04),
+                        blurRadius: 6,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: TabBar(
+                    indicatorColor: const Color(0xFF004D40),
+                    indicatorWeight: 3,
+                    labelColor: const Color(0xFF004D40),
+                    unselectedLabelColor: Colors.black54,
+                    labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                    tabs: [
+                      Tab(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(Icons.chat_bubble_outline_rounded, size: 16),
+                            const SizedBox(width: 4),
+                            const Text('Messages'),
+                            if (_unreadMessagesCount > 0) ...[
+                              const SizedBox(width: 4),
+                              CircleAvatar(
+                                radius: 7,
+                                backgroundColor: Colors.redAccent,
+                                child: Text('$_unreadMessagesCount', style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold)),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                      Tab(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(Icons.how_to_reg_outlined, size: 16),
+                            const SizedBox(width: 4),
+                            const Text('Attendance'),
+                            if (_unreadAttendanceCount > 0) ...[
+                              const SizedBox(width: 4),
+                              CircleAvatar(
+                                radius: 7,
+                                backgroundColor: Colors.redAccent,
+                                child: Text('$_unreadAttendanceCount', style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold)),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                      const Tab(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.campaign_outlined, size: 16),
+                            SizedBox(width: 4),
+                            Text('Notices'),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Expanded(
+                  child: TabBarView(
+                    children: [
+                      _recentMessages.isEmpty
+                          ? const Center(child: Text('No recent messages.', style: TextStyle(color: Colors.black45)))
+                          : ListView.builder(
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                              itemCount: _recentMessages.length,
+                              itemBuilder: (c, i) {
+                                final m = _recentMessages[i];
+                                return Card(
+                                  color: m.isRead ? Colors.white : const Color(0xFFE8F5E9),
+                                  margin: const EdgeInsets.only(bottom: 8),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                  elevation: 1,
+                                  child: ListTile(
+                                    leading: CircleAvatar(
+                                      backgroundColor: m.isRead ? Colors.grey.shade200 : const Color(0xFF004D40),
+                                      foregroundColor: m.isRead ? Colors.black54 : Colors.white,
+                                      child: const Icon(Icons.mail_rounded, size: 18),
+                                    ),
+                                    title: Text(
+                                      m.content,
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(fontWeight: m.isRead ? FontWeight.normal : FontWeight.bold, fontSize: 13),
+                                    ),
+                                    subtitle: Text(DateFormat('dd MMM, hh:mm a').format(m.timestamp), style: const TextStyle(fontSize: 11, color: Colors.black45)),
+                                    onTap: () {
+                                      Navigator.pop(ctx);
+                                      context.push('/teacher/messages');
+                                    },
+                                  ),
+                                );
+                              },
+                            ),
+
+                      _recentAttendance.isEmpty
+                          ? const Center(child: Text('No attendance records found.', style: TextStyle(color: Colors.black45)))
+                          : ListView.builder(
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                              itemCount: _recentAttendance.length,
+                              itemBuilder: (c, i) {
+                                final a = _recentAttendance[i];
+                                final isPresent = a.status.toLowerCase() == 'present';
+                                return Card(
+                                  color: Colors.white,
+                                  margin: const EdgeInsets.only(bottom: 8),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                  elevation: 1,
+                                  child: ListTile(
+                                    leading: CircleAvatar(
+                                      backgroundColor: isPresent ? Colors.green.shade50 : Colors.red.shade50,
+                                      foregroundColor: isPresent ? Colors.green.shade700 : Colors.red.shade700,
+                                      child: Icon(isPresent ? Icons.check_circle_rounded : Icons.cancel_rounded, size: 20),
+                                    ),
+                                    title: Text('${a.status.toUpperCase()} on ${a.date}',
+                                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                                    subtitle: Text(
+                                      (a.remarks?.isNotEmpty ?? false) ? a.remarks! : 'Marked by administration',
+                                      style: const TextStyle(fontSize: 11, color: Colors.black45),
+                                    ),
+                                    trailing: a.time != null
+                                        ? Text(a.time!, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600))
+                                        : null,
+                                  ),
+                                );
+                              },
+                            ),
+
+                      _recentAnnouncements.isEmpty
+                          ? const Center(child: Text('No announcements posted.', style: TextStyle(color: Colors.black45)))
+                          : ListView.builder(
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                              itemCount: _recentAnnouncements.length,
+                              itemBuilder: (c, i) {
+                                final ann = _recentAnnouncements[i];
+                                return Card(
+                                  color: Colors.white,
+                                  margin: const EdgeInsets.only(bottom: 8),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                  elevation: 1,
+                                  child: ListTile(
+                                    leading: const CircleAvatar(
+                                      backgroundColor: Color(0xFF004D40),
+                                      foregroundColor: Colors.white,
+                                      child: Icon(Icons.campaign_rounded, size: 18),
+                                    ),
+                                    title: Text(ann.title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                                    subtitle: Text(
+                                      '${ann.date} · ${ann.content}',
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(fontSize: 11, color: Colors.black54),
+                                    ),
+                                    onTap: () {
+                                      Navigator.pop(ctx);
+                                      context.push('/teacher/messages?tab=1');
+                                    },
+                                  ),
+                                );
+                              },
+                            ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
 
@@ -280,6 +593,41 @@ class _TeacherDashboardState extends State<TeacherDashboard>
         elevation: 0,
         foregroundColor: Colors.white,
         actions: [
+          // Bell notifications icon with badge
+          Stack(
+            alignment: Alignment.center,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.notifications_outlined, size: 22),
+                tooltip: 'Notifications',
+                constraints: const BoxConstraints(minWidth: 34, minHeight: 34),
+                padding: EdgeInsets.zero,
+                onPressed: _showNotificationsSheet,
+              ),
+              if (_totalUnreadNotifications > 0)
+                Positioned(
+                  top: 4,
+                  right: 4,
+                  child: Container(
+                    padding: const EdgeInsets.all(2),
+                    decoration: const BoxDecoration(
+                      color: Colors.redAccent,
+                      shape: BoxShape.circle,
+                    ),
+                    constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+                    child: Text(
+                      _totalUnreadNotifications > 99 ? '99+' : '$_totalUnreadNotifications',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 9,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+            ],
+          ),
           IconButton(
             icon: const Icon(Icons.search_rounded, size: 20),
             tooltip: loc?.translate('search') ?? 'Search',
@@ -424,20 +772,32 @@ class _TeacherDashboardState extends State<TeacherDashboard>
             _drawerTile(
               context,
               icon: CupertinoIcons.house_fill,
-              label: 'Home Hub',
+              label: 'Home',
               route: '/teacher/home',
             ),
             _drawerTile(
               context,
               icon: CupertinoIcons.square_list_fill,
-              label: loc?.translate('attendance') ?? 'Attendance Register',
+              label: 'Attendance',
               route: '/teacher/attendance',
             ),
             _drawerTile(
               context,
+              icon: CupertinoIcons.person_2_fill,
+              label: 'Students',
+              route: '/teacher/students',
+            ),
+            _drawerTile(
+              context,
               icon: CupertinoIcons.book_fill,
-              label: loc?.translate('quran_progress') ?? 'Quran Recitation Log',
+              label: 'Quran Progress',
               route: '/teacher/quran_progress',
+            ),
+            _drawerTile(
+              context,
+              icon: Icons.account_balance_wallet_rounded,
+              label: 'Fees',
+              route: '/teacher/fees',
             ),
             _drawerTile(
               context,
@@ -447,87 +807,23 @@ class _TeacherDashboardState extends State<TeacherDashboard>
             ),
             _drawerTile(
               context,
-              icon: Icons.notifications_active_rounded,
-              label: 'Notification Center',
-              route: '/teacher/notifications',
-              color: const Color(0xFF6A1B9A),
-            ),
-            _drawerTile(
-              context,
               icon: Icons.chat_bubble_outline_rounded,
-              label: 'Parent Enquiries & Messages',
+              label: 'Messages',
               route: '/teacher/messages',
-              color: const Color(0xFF388E3C),
             ),
             _drawerTile(
               context,
-              icon: CupertinoIcons.graph_square_fill,
-              label: loc?.translate('reports') ?? 'Reports & Analytics',
-              route: '/teacher/reports',
-              color: const Color(0xFF1565C0),
-            ),
-            _drawerTile(
-              context,
-              icon: CupertinoIcons.checkmark_square_fill,
-              label: loc?.translate('checklist') ?? 'Daily Checklist',
-              route: '/teacher/checklist',
-            ),
-            _drawerTile(
-              context,
-              icon: Icons.campaign_rounded,
-              label: 'Announcements',
-              route: '/teacher/announcements',
-              color: const Color(0xFFE65100),
-            ),
-            _drawerTile(
-              context,
-              icon: Icons.menu_book_rounded,
-              label: 'Syllabus Tracker',
-              route: '/teacher/syllabus-tracker',
-              color: const Color(0xFF0277BD),
-            ),
-            _drawerTile(
-              context,
-              icon: Icons.monitor_heart_rounded,
-              label: 'Student Health & Emergency',
-              route: '/teacher/health',
-              color: const Color(0xFFD81B60),
-            ),
-            _drawerTile(
-              context,
-              icon: Icons.gavel_rounded,
-              label: 'Behavior & Incidents',
-              route: '/teacher/behavior',
-              color: const Color(0xFF5D4037),
-            ),
-            _drawerTile(
-              context,
-              icon: Icons.fact_check_rounded,
-              label: 'Self-Audit Submission',
-              route: '/teacher/checklist-entry',
-              color: const Color(0xFF00695C),
-            ),
-            _drawerTile(
-              context,
-              icon: Icons.history_edu_rounded,
-              label: 'Self-Audit History',
-              route: '/teacher/checklist-history',
-              color: const Color(0xFF455A64),
-            ),
-            _drawerTile(
-              context,
-              icon: Icons.help_outline_rounded,
-              label: 'Support & FAQ',
-              route: '/teacher/support',
-              color: Colors.blueGrey,
+              icon: Icons.settings_rounded,
+              label: 'Settings',
+              route: '/settings',
             ),
             const Divider(height: 24),
             ListTile(
               leading: const Icon(CupertinoIcons.square_arrow_right,
                   color: Colors.red),
-              title: Text(
-                loc?.translate('logout') ?? 'Logout',
-                style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+              title: const Text(
+                'Logout',
+                style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
               ),
               onTap: () async {
                 await auth.logout();

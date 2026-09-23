@@ -131,4 +131,30 @@ class SalaryRepository {
     );
     return maps.map((map) => SalaryPayment.fromMap(map)).toList();
   }
+
+  Future<void> markReceiptSent(int id, {DateTime? sentAt}) async {
+    final db = await _dbHelper.database;
+    await db.update(
+      'salary_payments',
+      {
+        'receipt_sent': 1,
+        'receipt_sent_at': (sentAt ?? DateTime.now()).toIso8601String(),
+      },
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  Future<List<SalaryPayment>> getUnsentReceipts({int? teacherId}) async {
+    final db = await _dbHelper.database;
+    final maps = await db.query(
+      'salary_payments',
+      where: teacherId != null
+          ? 'receipt_sent = 0 AND teacher_id = ?'
+          : 'receipt_sent = 0',
+      whereArgs: teacherId != null ? [teacherId] : null,
+      orderBy: 'payment_date DESC, id DESC',
+    );
+    return maps.map((m) => SalaryPayment.fromMap(m)).toList();
+  }
 }

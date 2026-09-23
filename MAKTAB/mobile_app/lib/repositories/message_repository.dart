@@ -117,16 +117,24 @@ class MessageRepository {
   // Total unread count for receiver
   Future<int> getUnreadCountForReceiver(int receiverId, {bool isAdmin = false}) async {
     final db = await _dbHelper.database;
-    final result = await db.rawQuery(
-      isAdmin
-          ? 'SELECT COUNT(*) as count FROM messages WHERE (receiver_id = ? OR receiver_id = 1) AND is_read = 0'
-          : 'SELECT COUNT(*) as count FROM messages WHERE receiver_id = ? AND is_read = 0',
-      [receiverId],
-    );
+    final int safeId = receiverId > 0 ? receiverId : 1;
+    final List<Map<String, dynamic>> result;
+    if (isAdmin) {
+      result = await db.rawQuery(
+        'SELECT COUNT(*) as count FROM messages WHERE (receiver_id = ? OR receiver_id = 1) AND (sender_id != ? AND sender_id != 1) AND is_read = 0',
+        [safeId, safeId],
+      );
+    } else {
+      result = await db.rawQuery(
+        'SELECT COUNT(*) as count FROM messages WHERE receiver_id = ? AND is_read = 0',
+        [safeId],
+      );
+    }
     if (result.isNotEmpty && result.first.values.isNotEmpty) {
-      final val = result.first.values.first;
+      final val = result.first['count'] ?? result.first.values.first;
       if (val is int) return val;
       if (val is num) return val.toInt();
+      return int.tryParse(val?.toString() ?? '') ?? 0;
     }
     return 0;
   }

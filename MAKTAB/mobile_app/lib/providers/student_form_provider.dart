@@ -28,6 +28,7 @@ class StudentFormProvider extends ChangeNotifier {
     String? guardianPhone,
     String? photoPath,
     int? batchId,
+    String preferredLanguage = 'en',
   }) async {
     _status = StudentFormStatus.loading;
     _errorMessage = '';
@@ -46,6 +47,7 @@ class StudentFormProvider extends ChangeNotifier {
         photoPath: photoPath,
         batchId: batchId,
         createdAt: DateTime.now().toIso8601String(),
+        preferredLanguage: preferredLanguage,
       );
       await _repo.insertStudent(student);
       _status = StudentFormStatus.success;

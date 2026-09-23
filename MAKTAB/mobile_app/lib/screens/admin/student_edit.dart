@@ -40,6 +40,7 @@ class _StudentEditScreenState extends State<StudentEditScreen> {
 
 
   late String _gender;
+  late String _preferredLanguage;
   int? _selectedBatchId;
   List<Batch> _batches = [];
   bool _loadingBatches = true;
@@ -49,6 +50,7 @@ class _StudentEditScreenState extends State<StudentEditScreen> {
     super.initState();
     _provider = StudentFormProvider(StudentRepository());
     final s = widget.student;
+    _preferredLanguage = s.preferredLanguage;
     _admCtrl = TextEditingController(text: s.admissionNumber);
     _nameCtrl = TextEditingController(text: s.name);
     _arabicNameCtrl = TextEditingController(text: s.arabicName ?? '');
@@ -131,7 +133,10 @@ class _StudentEditScreenState extends State<StudentEditScreen> {
     if (!_formKey.currentState!.validate()) return;
     final fees = int.tryParse(_feesCtrl.text.trim());
     await _provider.updateStudent(
-      existing: widget.student.copyWith(feesAmount: fees),
+      existing: widget.student.copyWith(
+        feesAmount: fees,
+        preferredLanguage: _preferredLanguage,
+      ),
       admissionNumber: _admCtrl.text.trim(),
       name: _nameCtrl.text.trim(),
       arabicName: _arabicNameCtrl.text.trim().isEmpty ? null : _arabicNameCtrl.text.trim(),
@@ -210,6 +215,22 @@ class _StudentEditScreenState extends State<StudentEditScreen> {
                   ),
                   const SizedBox(height: 16),
                   _buildBatchDropdown(),
+                  const SizedBox(height: 16),
+                  DropdownButtonFormField<String>(
+                    initialValue: _preferredLanguage,
+                    decoration: const InputDecoration(
+                      labelText: 'Preferred Language for Receipts',
+                      prefixIcon: Icon(Icons.translate),
+                      border: OutlineInputBorder(),
+                    ),
+                    items: const [
+                      DropdownMenuItem(value: 'en', child: Text('English')),
+                      DropdownMenuItem(value: 'ur', child: Text('اردو (Urdu)')),
+                      DropdownMenuItem(value: 'hi', child: Text('हिन्दी (Hindi)')),
+                      DropdownMenuItem(value: 'te', child: Text('తెలుగు (Telugu)')),
+                    ],
+                    onChanged: (v) => setState(() => _preferredLanguage = v ?? 'en'),
+                  ),
                   const SizedBox(height: 24),
 
                   const _SectionTitle('Student Profile'),
@@ -352,7 +373,7 @@ class _StudentEditScreenState extends State<StudentEditScreen> {
                   onTap: _pickImage,
                   child: CircleAvatar(
                     radius: 28,
-                    backgroundImage: hasPhoto ? FileImage(photoFile!) : null,
+                    backgroundImage: hasPhoto ? FileImage(photoFile) : null,
                     child: hasPhoto ? null : Text(initials, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
                   ),
                 ),

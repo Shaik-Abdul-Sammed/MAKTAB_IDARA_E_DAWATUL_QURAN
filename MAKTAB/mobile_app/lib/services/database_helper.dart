@@ -42,7 +42,7 @@ class DatabaseHelper {
       return await ffi.databaseFactoryFfi.openDatabase(
         path,
         options: ffi.OpenDatabaseOptions(
-          version: 22,
+          version: 24,
           onConfigure: (db) async {
             await db.execute('PRAGMA foreign_keys = ON');
           },
@@ -59,7 +59,7 @@ class DatabaseHelper {
     return await openDatabase(
       path,
       password: key,
-      version: 22,
+      version: 24,
       onConfigure: (db) async {
         await db.execute('PRAGMA foreign_keys = ON');
       },
@@ -148,6 +148,7 @@ class DatabaseHelper {
         fees_amount $integerNullable,
         is_deleted $integerNullable DEFAULT 0,
         deleted_at $textNullable,
+        preferred_language TEXT DEFAULT 'en',
         is_synced INTEGER DEFAULT 1
       )
     ''');
@@ -175,6 +176,8 @@ class DatabaseHelper {
         timestamp TEXT NOT NULL,
         notes TEXT,
         voice_note_path TEXT,
+        receipt_sent INTEGER DEFAULT 0,
+        receipt_sent_at TEXT,
         is_synced INTEGER DEFAULT 1
       )
     ''');
@@ -337,6 +340,8 @@ class DatabaseHelper {
         transaction_reference TEXT,
         status TEXT NOT NULL,
         notes TEXT,
+        receipt_sent INTEGER DEFAULT 0,
+        receipt_sent_at TEXT,
         created_at TEXT NOT NULL,
         updated_at TEXT NOT NULL,
         is_synced INTEGER DEFAULT 1
@@ -927,6 +932,34 @@ class DatabaseHelper {
         debugPrint('[MIGRATION v22] Added is_read to teacher_attendance');
       } catch (e) {
         debugPrint('[MIGRATION v22 ERROR] Adding is_read to teacher_attendance: $e');
+      }
+    }
+
+    if (oldVersion < 23) {
+      try {
+        await db.execute('ALTER TABLE fee_payments ADD COLUMN receipt_sent INTEGER DEFAULT 0');
+        debugPrint('[MIGRATION v23] Added receipt_sent to fee_payments');
+      } catch (e) { debugPrint('[MIGRATION v23] fee_payments.receipt_sent: $e'); }
+      try {
+        await db.execute('ALTER TABLE fee_payments ADD COLUMN receipt_sent_at TEXT');
+        debugPrint('[MIGRATION v23] Added receipt_sent_at to fee_payments');
+      } catch (e) { debugPrint('[MIGRATION v23] fee_payments.receipt_sent_at: $e'); }
+      try {
+        await db.execute('ALTER TABLE salary_payments ADD COLUMN receipt_sent INTEGER DEFAULT 0');
+        debugPrint('[MIGRATION v23] Added receipt_sent to salary_payments');
+      } catch (e) { debugPrint('[MIGRATION v23] salary_payments.receipt_sent: $e'); }
+      try {
+        await db.execute('ALTER TABLE salary_payments ADD COLUMN receipt_sent_at TEXT');
+        debugPrint('[MIGRATION v23] Added receipt_sent_at to salary_payments');
+      } catch (e) { debugPrint('[MIGRATION v23] salary_payments.receipt_sent_at: $e'); }
+    }
+
+    if (oldVersion < 24) {
+      try {
+        await db.execute("ALTER TABLE students ADD COLUMN preferred_language TEXT DEFAULT 'en'");
+        debugPrint('[MIGRATION v24] Added preferred_language to students');
+      } catch (e) {
+        debugPrint('[MIGRATION v24] students.preferred_language: $e');
       }
     }
   }

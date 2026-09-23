@@ -3,6 +3,7 @@ import 'package:maktab_app/config/app_colors.dart';
 import '../../../models/announcement.dart';
 import '../../../repositories/announcement_repository.dart';
 import '../../../utils/whatsapp_utility.dart';
+import '../../widgets/language_picker_dialog.dart';
 
 class ClassAnnouncementsScreen extends StatefulWidget {
   const ClassAnnouncementsScreen({super.key});
@@ -145,12 +146,15 @@ class _ClassAnnouncementsScreenState extends State<ClassAnnouncementsScreen> {
                     icon: const Icon(Icons.share_rounded, color: Colors.white, size: 18),
                     label: const Text('Share via WhatsApp', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                     style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF25D366)),
-                    onPressed: () {
+                    onPressed: () async {
                       Navigator.pop(context);
-                      WhatsAppUtility.sendNoticeMessage(
+                      final lang = await LanguagePickerDialog.show(context);
+                      if (lang == null || !context.mounted) return;
+                      await WhatsAppUtility.sendNoticeMessage(
                         context,
                         title: item.title,
                         content: item.content,
+                        languageCode: lang,
                       );
                     },
                   ),

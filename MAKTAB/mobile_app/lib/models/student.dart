@@ -19,6 +19,7 @@ class Student {
   final String? teacherNotes;
   final bool isDeleted;
   final String? deletedAt;
+  final String preferredLanguage;
 
   Student({
     this.id,
@@ -38,6 +39,7 @@ class Student {
     this.teacherNotes,
     this.isDeleted = false,
     this.deletedAt,
+    this.preferredLanguage = 'en',
   });
 
   Student copyWith({
@@ -58,6 +60,7 @@ class Student {
     String? teacherNotes,
     bool? isDeleted,
     String? deletedAt,
+    String? preferredLanguage,
   }) {
     return Student(
       id: id ?? this.id,
@@ -77,6 +80,7 @@ class Student {
       teacherNotes: teacherNotes ?? this.teacherNotes,
       isDeleted: isDeleted ?? this.isDeleted,
       deletedAt: deletedAt ?? this.deletedAt,
+      preferredLanguage: preferredLanguage ?? this.preferredLanguage,
     );
   }
 
@@ -99,6 +103,7 @@ class Student {
       'teacher_notes': teacherNotes,
       'is_deleted': isDeleted ? 1 : 0,
       'deleted_at': deletedAt,
+      'preferred_language': preferredLanguage,
     };
   }
 
@@ -148,6 +153,7 @@ class Student {
       teacherNotes: map['teacher_notes'] ?? map['teacherNotes'],
       isDeleted: isDel,
       deletedAt: map['deleted_at'] ?? map['deletedAt'],
+      preferredLanguage: (map['preferred_language'] as String?) ?? (map['preferredLanguage'] as String?) ?? 'en',
     );
   }
 }

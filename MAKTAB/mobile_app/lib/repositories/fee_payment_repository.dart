@@ -91,4 +91,96 @@ class FeePaymentRepository {
       }
     }
   }
+
+  Future<void> markReceiptSent(int id, {DateTime? sentAt}) async {
+    final db = await _dbHelper.database;
+    await db.update(
+      'fee_payments',
+      {
+        'receipt_sent': 1,
+        'receipt_sent_at': (sentAt ?? DateTime.now()).toIso8601String(),
+      },
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  Future<List<FeePayment>> getUnsentReceipts({int? studentId}) async {
+    final db = await _dbHelper.database;
+    final maps = await db.query(
+      'fee_payments',
+      where: studentId != null
+          ? 'receipt_sent = 0 AND student_id = ?'
+          : 'receipt_sent = 0',
+      whereArgs: studentId != null ? [studentId] : null,
+      orderBy: 'timestamp DESC',
+    );
+    return maps.map((m) => FeePayment.fromMap(m)).toList();
+  }
+
+  /// Returns all fee payments for students whose batch is assigned to the given
+  /// canonical teacherId. Sorted by timestamp descending.
+  Future<List<Map<String, dynamic>>> getPaymentsByTeacherBatches(int canonicalTeacherId) async {
+    final db = await _dbHelper.database;
+    final rows = await db.rawQuery('''
+      SELECT fp.*, s.name AS student_name, s.admission_number AS student_admission,
+             s.phone AS student_phone, s.preferred_language AS student_lang
+      FROM fee_payments fp
+      INNER JOIN students s ON fp.student_id = s.id
+      INNER JOIN batches b ON s.batch_id = b.id
+      WHERE b.teacher_id = ?
+        AND (s.is_deleted IS NULL OR s.is_deleted = 0)
+      ORDER BY fp.timestamp DESC
+    ''', [canonicalTeacherId]);
+    return rows;
+  }
+
+  /// Returns aggregate fee totals for a teacher's batches within an optional
+  /// date range. Both [fromDate] and [toDate] are inclusive yyyy-MM-dd strings.
+  Future<Map<String, dynamic>> getTeacherTotals({
+    required int canonicalTeacherId,
+    String? fromDate,
+    String? toDate,
+  }) async {
+    final db = await _dbHelper.database;
+    final where = <String>['b.teacher_id = ?'];
+    final args = <Object?>[canonicalTeacherId];
+    if (fromDate != null) {
+      where.add("substr(fp.timestamp, 1, 10) >= ?");
+      args.add(fromDate);
+    }
+    if (toDate != null) {
+      where.add("substr(fp.timestamp, 1, 10) <= ?");
+      args.add(toDate);
+    }
+    final whereSql = where.join(' AND ');
+
+    final summary = await db.rawQuery('''
+      SELECT
+        COALESCE(SUM(fp.amount), 0) AS total,
+        COUNT(fp.id) AS count
+      FROM fee_payments fp
+      INNER JOIN students s ON fp.student_id = s.id
+      INNER JOIN batches b ON s.batch_id = b.id
+      WHERE $whereSql
+    ''', args);
+
+    final byMode = await db.rawQuery('''
+      SELECT fp.mode, COALESCE(SUM(fp.amount), 0) AS total
+      FROM fee_payments fp
+      INNER JOIN students s ON fp.student_id = s.id
+      INNER JOIN batches b ON s.batch_id = b.id
+      WHERE $whereSql
+      GROUP BY fp.mode
+    ''', args);
+
+    return {
+      'total': (summary.first['total'] as num?)?.toInt() ?? 0,
+      'count': (summary.first['count'] as num?)?.toInt() ?? 0,
+      'byMode': {
+        for (final r in byMode)
+          (r['mode'] as String? ?? 'Unknown'): ((r['total'] as num?)?.toInt() ?? 0),
+      },
+    };
+  }
 }

@@ -7,6 +7,7 @@ import 'package:maktab_app/repositories/message_repository.dart';
 import 'package:maktab_app/repositories/user_repository.dart';
 import 'package:maktab_app/widgets/custom_app_bar.dart';
 import '../../utils/whatsapp_utility.dart';
+import '../../widgets/language_picker_dialog.dart';
 
 class AdminMessagesScreen extends StatefulWidget {
   const AdminMessagesScreen({super.key});
@@ -117,10 +118,13 @@ class _AdminMessagesScreenState extends State<AdminMessagesScreen> {
             onPressed: () async {
               if (titleCtrl.text.isEmpty || contentCtrl.text.isEmpty) return;
               Navigator.pop(ctx);
+              final lang = await LanguagePickerDialog.show(context);
+              if (lang == null || !mounted) return;
               await WhatsAppUtility.sendNoticeMessage(
                 context,
                 title: titleCtrl.text,
                 content: contentCtrl.text,
+                languageCode: lang,
               );
             },
           ),

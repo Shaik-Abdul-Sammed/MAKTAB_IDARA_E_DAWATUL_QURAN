@@ -12,6 +12,7 @@ import '../../widgets/shimmer_loader.dart';
 import '../../widgets/molecules/confirm_dialog.dart';
 import '../../widgets/molecules/custom_app_bar.dart';
 import '../../utils/whatsapp_utility.dart';
+import '../../widgets/language_picker_dialog.dart';
 
 class BatchDetailsScreen extends StatefulWidget {
   final int batchId;
@@ -82,10 +83,14 @@ class _BatchDetailsScreenState extends State<BatchDetailsScreen> {
       return;
     }
 
+    final lang = await LanguagePickerDialog.show(context);
+    if (lang == null || !mounted) return;
+
     await WhatsAppUtility.sendBatchNotice(
       context,
       batchName: batch.name,
       timing: batch.timing,
+      languageCode: lang,
     );
   }
 

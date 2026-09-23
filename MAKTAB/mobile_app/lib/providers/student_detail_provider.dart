@@ -59,12 +59,13 @@ class StudentDetailProvider extends ChangeNotifier {
   }
 
   
-  Future<void> addPayment(FeePayment payment) async {
-    await _feeRepo.insertFeePayment(payment);
+  Future<int> addPayment(FeePayment payment) async {
+    final id = await _feeRepo.insertFeePayment(payment);
     if (_student != null) {
       _payments = await _feeRepo.getPaymentsForStudent(_student!.id!);
       notifyListeners();
     }
+    return id;
   }
 
   Future<void> updatePayment(FeePayment payment) async {

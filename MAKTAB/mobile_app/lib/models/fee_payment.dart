@@ -6,6 +6,8 @@ class FeePayment {
   final String timestamp;
   final String? notes;
   final String? voiceNotePath;
+  final int receiptSent;
+  final String? receiptSentAt;
   /// 0 = pending cloud sync, 1 = synced. Defaults to 0 on insert so the
   /// retry queue can pick it up if the initial push fails.
   final int isSynced;
@@ -18,6 +20,8 @@ class FeePayment {
     required this.timestamp,
     this.notes,
     this.voiceNotePath,
+    this.receiptSent = 0,
+    this.receiptSentAt,
     this.isSynced = 0,
   });
 
@@ -30,6 +34,8 @@ class FeePayment {
       'timestamp': timestamp,
       if (notes != null) 'notes': notes,
       if (voiceNotePath != null) 'voice_note_path': voiceNotePath,
+      'receipt_sent': receiptSent,
+      if (receiptSentAt != null) 'receipt_sent_at': receiptSentAt,
       'is_synced': isSynced,
     };
   }
@@ -43,6 +49,8 @@ class FeePayment {
       timestamp: map['timestamp'] as String,
       notes: map['notes'] as String?,
       voiceNotePath: map['voice_note_path'] as String?,
+      receiptSent: (map['receipt_sent'] as int?) ?? 0,
+      receiptSentAt: map['receipt_sent_at'] as String?,
       isSynced: (map['is_synced'] as int?) ?? 0,
     );
   }
@@ -55,6 +63,8 @@ class FeePayment {
     String? timestamp,
     String? notes,
     String? voiceNotePath,
+    int? receiptSent,
+    String? receiptSentAt,
     int? isSynced,
   }) {
     return FeePayment(
@@ -65,6 +75,8 @@ class FeePayment {
       timestamp: timestamp ?? this.timestamp,
       notes: notes ?? this.notes,
       voiceNotePath: voiceNotePath ?? this.voiceNotePath,
+      receiptSent: receiptSent ?? this.receiptSent,
+      receiptSentAt: receiptSentAt ?? this.receiptSentAt,
       isSynced: isSynced ?? this.isSynced,
     );
   }

@@ -209,4 +209,30 @@ class StudentRepository {
     CloudSyncService.instance.notifyDataChanged('students');
     return res;
   }
+
+  /// Returns all active students who share the same phone or guardian_phone
+  /// as the given primary student. Includes the primary student in the result.
+  Future<List<Student>> findSiblings(Student primary) async {
+    final phones = <String>{};
+    if (primary.phone != null && primary.phone!.trim().isNotEmpty) {
+      phones.add(primary.phone!.trim());
+    }
+    if (primary.guardianPhone != null && primary.guardianPhone!.trim().isNotEmpty) {
+      phones.add(primary.guardianPhone!.trim());
+    }
+    if (phones.isEmpty) return [primary];
+
+    final db = await _dbHelper.database;
+    final placeholders = List.filled(phones.length * 2, '?').join(',');
+    final whereClause = '((phone IN ($placeholders)) OR (guardian_phone IN ($placeholders))) '
+        'AND (is_deleted IS NULL OR is_deleted = 0)';
+    final args = [...phones, ...phones];
+
+    final maps = await db.query('students', where: whereClause, whereArgs: args);
+    final all = maps.map((m) => Student.fromMap(m)).toList();
+    if (!all.any((s) => s.id == primary.id)) {
+      all.insert(0, primary);
+    }
+    return all;
+  }
 }

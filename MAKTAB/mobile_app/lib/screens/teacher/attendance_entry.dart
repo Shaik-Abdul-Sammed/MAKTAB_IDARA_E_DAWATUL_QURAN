@@ -17,6 +17,8 @@ import '../../repositories/user_repository.dart';
 import '../../services/cloud_sync_service.dart';
 import '../../utils/attendance_report_generator.dart';
 import '../../utils/whatsapp_utility.dart';
+import '../../utils/receipt_templates.dart';
+import '../../utils/receipt_pdf_generator.dart';
 import '../../widgets/molecules/custom_app_bar.dart';
 import '../../widgets/shimmer_loader.dart';
 import '../../widgets/voice_attendance_dialog.dart';
@@ -285,29 +287,16 @@ class _AttendanceEntryScreenState extends State<AttendanceEntryScreen>
 
   // ── #14: Bulk notify absent parents
   Future<void> _bulkNotifyAbsent(BuildContext ctx, List<Student> students) async {
-    final lang = await WhatsAppUtility.promptLanguageSelection(ctx);
-    if (lang == null || !ctx.mounted) return;
-
     for (final s in students) {
       final phone = s.phone ?? s.guardianPhone ?? '';
       if (phone.isNotEmpty && ctx.mounted) {
-        final dateStr = widget.date;
-        String msg = '';
-        switch (lang) {
-          case Language.english:
-            msg = "Assalamu Alaikum,\nDear Parent,\nYour child *${s.name}* was marked *Absent/Late* from Maktab on *$dateStr*.\nPlease ensure regular attendance for better progress.";
-            break;
-          case Language.urdu:
-            msg = "السلام علیکم،\nمحترم والدین،\nآپ کا بچہ *${s.name}* آج *$dateStr* کو مکتب سے *غیر حاضر/تاخیر* ہے۔\nبہتر ترقی کے لیے باقاعدہ حاضری یقینی بنائیں۔";
-            break;
-          case Language.hindi:
-            msg = "अस्सलामु अलैकुम,\nप्रिय माता-पिता,\nआपका बच्चा *${s.name}* आज *$dateStr* को मकतब से *अनुपस्थित/विलंब* रहा।\nबेहतर प्रगति के लिए नियमित उपस्थिति सुनिश्चित करें।";
-            break;
-          case Language.telugu:
-            msg = "అస్సలాము అలైకుమ్,\nప్రియమైన తల్లిదండ్రులారా,\nమీ బిడ్డ *${s.name}* తేది *$dateStr* న మక్తబ్ నుండి *హాజరు కాలేదు (గైర్హాజరు/ఆలస్యం)*.\nమెరుగైన పురోగతి కోసం క్రమం తప్పకుండా హాజరయ్యేలా చూడండి.";
-            break;
-        }
-        await WhatsAppUtility.launchWhatsApp(phone, '$msg\n\nFrom: MAKTAB IDARA E DAWATUL QURAN', context: ctx);
+        await WhatsAppUtility.sendAttendanceAlert(
+          ctx,
+          phone,
+          s.name,
+          date: widget.date,
+          languageCode: s.preferredLanguage,
+        );
         await Future.delayed(const Duration(milliseconds: 500));
       }
     }
@@ -315,14 +304,58 @@ class _AttendanceEntryScreenState extends State<AttendanceEntryScreen>
 
   // ── #15: Share report
   void _shareAttendanceReport(List<Student> present, List<Student> absent) {
-    final reportText = AttendanceReportGenerator.generateTextReport(
-      rawDate: widget.date,
-      batchName: _batchName,
-      teacherName: _teacherName,
-      students: _provider.students,
-      studentStatuses: _provider.studentStatuses,
+    final batchLang = _provider.students.isNotEmpty
+        ? _provider.students.first.preferredLanguage
+        : 'en';
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Share Attendance Report'),
+        actions: [
+          TextButton(
+            child: const Text('WhatsApp Text'),
+            onPressed: () {
+              Navigator.pop(ctx);
+              final text = WhatsAppUtility.buildAttendanceReportText(
+                date: widget.date,
+                batch: _batchName,
+                markedBy: _teacherName,
+                present: present.map((s) => s.name).toList(),
+                absent: absent.map((s) => s.name).toList(),
+                languageCode: batchLang,
+              );
+              SharePlus.instance.share(ShareParams(text: text));
+            },
+          ),
+          TextButton(
+            child: const Text('PDF'),
+            onPressed: () async {
+              Navigator.pop(ctx);
+              final labels = ReceiptTemplates.get(batchLang);
+              final bytes = await ReceiptPdfGenerator.buildAttendanceSummaryPdf(
+                maktabName: 'MAKTAB IDARA E DAWATUL QURAN',
+                batch: _batchName,
+                date: widget.date,
+                markedBy: _teacherName,
+                present: present.map((s) => s.name).toList(),
+                absent: absent.map((s) => s.name).toList(),
+                labels: labels,
+              );
+              await Printing.sharePdf(
+                bytes: bytes,
+                filename: 'attendance_${widget.date}.pdf',
+              );
+            },
+          ),
+          TextButton(
+            child: const Text('Cancel'),
+            onPressed: () => Navigator.pop(ctx),
+          ),
+        ],
+      ),
     );
-    SharePlus.instance.share(ShareParams(text: reportText));
   }
 
   // ── #15: PDF Export
@@ -944,7 +977,13 @@ class _SummaryTile extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.message, color: Colors.green, size: 20),
             tooltip: 'WhatsApp Parent',
-            onPressed: () => WhatsAppUtility.sendAttendanceAlert(context, parentMobile, student.name, date: date),
+            onPressed: () => WhatsAppUtility.sendAttendanceAlert(
+              context,
+              parentMobile,
+              student.name,
+              date: date,
+              languageCode: student.preferredLanguage,
+            ),
           ),
         ]
       ]),

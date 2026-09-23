@@ -778,3 +778,12 @@ class _FeeCard extends StatelessWidget {
     );
   }
 }
+
+/// Tab-body alias used by PaymentsHubScreen.
+/// Delegates entirely to [FeeManagementScreen]; no logic is changed.
+class FeeManagementScreenBody extends StatelessWidget {
+  const FeeManagementScreenBody({super.key});
+
+  @override
+  Widget build(BuildContext context) => const FeeManagementScreen();
+}

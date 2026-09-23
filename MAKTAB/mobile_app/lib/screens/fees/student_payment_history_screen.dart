@@ -11,6 +11,9 @@ import '../../providers/auth_provider.dart';
 import '../../repositories/fee_payment_repository.dart';
 import '../../repositories/student_repository.dart';
 import '../../utils/whatsapp_utility.dart';
+import '../../utils/receipt_templates.dart';
+import '../../utils/receipt_pdf_generator.dart';
+import '../../widgets/receipt_preview_dialog.dart';
 
 class PaymentTransaction {
   final FeePayment payment;
@@ -146,6 +149,156 @@ class _StudentPaymentHistoryScreenState extends State<StudentPaymentHistoryScree
     );
   }
 
+  Future<void> _handleSendReceipt(PaymentTransaction tx) async {
+    final parsed = DateTime.tryParse(tx.payment.timestamp);
+    final formattedTime = parsed != null ? DateFormat('dd MMM yyyy, hh:mm a').format(parsed) : tx.payment.timestamp;
+    final month = parsed != null ? DateFormat('MMMM yyyy').format(parsed) : tx.payment.timestamp.split('T')[0];
+    final dateStr = (parsed ?? DateTime.now()).toIso8601String().substring(0, 10);
+    final currentUser = Provider.of<AuthProvider>(context, listen: false).currentUser;
+    final collectorName = currentUser?.name ?? 'Management';
+
+    final primaryStudent = tx.student;
+    final siblings = await StudentRepository().findSiblings(primaryStudent);
+
+    final parentPhone = (primaryStudent.guardianPhone != null && primaryStudent.guardianPhone!.trim().isNotEmpty)
+        ? primaryStudent.guardianPhone!.trim()
+        : (primaryStudent.phone?.trim() ?? '');
+
+    final List<Map<String, dynamic>> includedChildren = [];
+    final List<int> includedPaymentIds = [];
+
+    if (siblings.length > 1) {
+      for (final s in siblings) {
+        final payments = await FeePaymentRepository().getPaymentsForStudent(s.id!);
+        final matching = payments.where((p) =>
+            p.timestamp.startsWith(dateStr) &&
+            p.mode == tx.payment.mode
+        ).toList();
+        for (final mp in matching) {
+          if (mp.id != null) {
+            includedPaymentIds.add(mp.id!);
+          }
+          includedChildren.add({
+            'name': s.name,
+            'admissionNumber': s.admissionNumber,
+            'amount': mp.amount,
+            'mode': mp.mode,
+            'notes': mp.notes,
+          });
+        }
+      }
+    }
+
+    final bool isCombined = siblings.length > 1 && includedChildren.length > 1;
+
+    String receiptText = '';
+    if (!isCombined) {
+      final buf = StringBuffer();
+      buf.writeln('*MAKTAB IDARA E DAWATUL QURAN — Payment Receipt*');
+      buf.writeln('Date: $formattedTime');
+      buf.writeln('Received by: $collectorName');
+      buf.writeln();
+      buf.writeln('*Student:* ${primaryStudent.name} (${primaryStudent.admissionNumber})');
+      buf.writeln('Amount: ₹${tx.payment.amount}');
+      buf.writeln('Mode: ${tx.payment.mode}');
+      if (tx.payment.notes != null && tx.payment.notes!.trim().isNotEmpty) {
+        buf.writeln('Note: ${tx.payment.notes}');
+      }
+      buf.writeln();
+      buf.writeln('Jazak Allah Khair.');
+      receiptText = buf.toString();
+    } else {
+      final buf = StringBuffer();
+      buf.writeln('*MAKTAB IDARA E DAWATUL QURAN — Payment Receipt*');
+      buf.writeln('Date: $formattedTime');
+      buf.writeln('Received by: $collectorName');
+      buf.writeln();
+
+      int grandTotal = 0;
+      for (final c in includedChildren) {
+        final amt = (c['amount'] as num).toInt();
+        grandTotal += amt;
+        buf.writeln('*${c['name']}* (${c['admissionNumber']}) — ₹$amt via ${c['mode']}');
+        final notes = c['notes'] as String?;
+        if (notes != null && notes.trim().isNotEmpty) {
+          buf.writeln('  _Note: ${notes}_');
+        }
+      }
+
+      buf.writeln();
+      buf.writeln('*Total: ₹$grandTotal*');
+      buf.writeln();
+      buf.writeln('Jazak Allah Khair.');
+      receiptText = buf.toString();
+    }
+
+    if (!mounted) return;
+
+    await showDialog(
+      context: context,
+      builder: (dialogCtx) => ReceiptPreviewDialog(
+        title: isCombined ? 'Combined Sibling Receipt' : 'Payment Receipt',
+        receiptText: receiptText,
+        recipientPhone: parentPhone,
+        onSend: () async {
+          Navigator.pop(dialogCtx);
+          if (!isCombined) {
+            await WhatsAppUtility.sendFeeReceipt(
+              context,
+              parentPhone,
+              primaryStudent.name,
+              tx.payment.amount.toDouble(),
+              month,
+              paymentMode: tx.payment.mode,
+              dateTime: formattedTime,
+              collectorName: collectorName,
+              languageCode: primaryStudent.preferredLanguage,
+            );
+            if (tx.payment.id != null) {
+              await FeePaymentRepository().markReceiptSent(tx.payment.id!);
+            }
+          } else {
+            await WhatsAppUtility.sendCombinedFeeReceipt(
+              context,
+              parentPhone: parentPhone,
+              children: includedChildren,
+              dateTime: formattedTime,
+              collectorName: collectorName,
+              languageCode: primaryStudent.preferredLanguage,
+            );
+            for (final pid in includedPaymentIds) {
+              await FeePaymentRepository().markReceiptSent(pid);
+            }
+          }
+          if (mounted) {
+            _loadHistory();
+          }
+        },
+        onBuildPdf: () async {
+          final labels = ReceiptTemplates.get(primaryStudent.preferredLanguage);
+          final recAt = DateTime.tryParse(tx.payment.timestamp) ?? DateTime.now();
+          return ReceiptPdfGenerator.buildFeeReceiptPdf(
+            maktabName: 'MAKTAB IDARA E DAWATUL QURAN',
+            collectorName: collectorName,
+            recordedAt: recAt,
+            children: isCombined
+                ? includedChildren
+                : [
+                    {
+                      'name': primaryStudent.name,
+                      'admissionNumber': primaryStudent.admissionNumber,
+                      'amount': tx.payment.amount,
+                      'mode': tx.payment.mode,
+                      'notes': null,
+                    }
+                  ],
+            labels: labels,
+          );
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -219,6 +372,18 @@ class _StudentPaymentHistoryScreenState extends State<StudentPaymentHistoryScree
                             Row(
                               mainAxisAlignment: MainAxisAlignment.end,
                               children: [
+                                if (tx.payment.receiptSent == 0) ...[
+                                  OutlinedButton.icon(
+                                    onPressed: () => _handleSendReceipt(tx),
+                                    icon: const Icon(Icons.send_rounded, size: 14),
+                                    label: const Text('Send Receipt', style: TextStyle(fontSize: 11)),
+                                    style: OutlinedButton.styleFrom(
+                                      foregroundColor: const Color(0xFF004D40),
+                                      side: const BorderSide(color: Color(0xFF004D40)),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                ],
                                 OutlinedButton.icon(
                                   onPressed: () async {
                                     final phone = tx.student.phone ?? '';
@@ -237,6 +402,7 @@ class _StudentPaymentHistoryScreenState extends State<StudentPaymentHistoryScree
                                       paymentMode: tx.payment.mode,
                                       dateTime: formattedTime,
                                       collectorName: collectorName,
+                                      languageCode: tx.student.preferredLanguage,
                                     );
                                   },
                                   icon: const Icon(Icons.send_rounded, size: 14),

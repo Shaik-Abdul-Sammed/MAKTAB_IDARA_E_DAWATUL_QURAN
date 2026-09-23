@@ -42,6 +42,7 @@ class _StudentAddScreenState extends State<StudentAddScreen> {
   String? _defaultAdmNumber;
 
   String _gender = 'Male';
+  String _preferredLanguage = 'en';
   int? _selectedBatchId;
   List<Batch> _batches = [];
   bool _loadingBatches = true;
@@ -216,15 +217,16 @@ class _StudentAddScreenState extends State<StudentAddScreen> {
 
     await _provider.addStudent(
       admissionNumber: adm,
-      name: _nameCtrl.text,
-      arabicName: _arabicNameCtrl.text,
+      name: _nameCtrl.text.trim(),
+      arabicName: _arabicNameCtrl.text.trim().isEmpty ? null : _arabicNameCtrl.text.trim(),
       dob: _dobCtrl.text.isEmpty ? null : _dobCtrl.text,
       gender: _gender,
-      fatherName: _fatherNameCtrl.text,
+      fatherName: _fatherNameCtrl.text.trim().isEmpty ? null : _fatherNameCtrl.text.trim(),
       phone: phone.isEmpty ? null : phone,
       guardianPhone: guardianPhone.isEmpty ? null : guardianPhone,
       photoPath: _selectedPhotoPath,
       batchId: _selectedBatchId,
+      preferredLanguage: _preferredLanguage,
     );
     if (!mounted) return;
     if (_provider.status == StudentFormStatus.success) {
@@ -326,7 +328,7 @@ class _StudentAddScreenState extends State<StudentAddScreen> {
                               child: CircleAvatar(
                                 radius: 50,
                                 backgroundColor: const Color(0xFFE9F1E9),
-                                backgroundImage: hasPhoto ? FileImage(photoFile!) : null,
+                                backgroundImage: hasPhoto ? FileImage(photoFile) : null,
                                 child: hasPhoto ? null : const Icon(Icons.person, color: Color(0xFF004D40), size: 40),
                               ),
                             ),
@@ -358,6 +360,22 @@ class _StudentAddScreenState extends State<StudentAddScreen> {
                   ),
                   const SizedBox(height: 16),
                   _buildBatchDropdown(),
+                  const SizedBox(height: 16),
+                  DropdownButtonFormField<String>(
+                    initialValue: _preferredLanguage,
+                    decoration: const InputDecoration(
+                      labelText: 'Preferred Language for Receipts',
+                      prefixIcon: Icon(Icons.translate),
+                      border: OutlineInputBorder(),
+                    ),
+                    items: const [
+                      DropdownMenuItem(value: 'en', child: Text('English')),
+                      DropdownMenuItem(value: 'ur', child: Text('اردو (Urdu)')),
+                      DropdownMenuItem(value: 'hi', child: Text('हिन्दी (Hindi)')),
+                      DropdownMenuItem(value: 'te', child: Text('తెలుగు (Telugu)')),
+                    ],
+                    onChanged: (v) => setState(() => _preferredLanguage = v ?? 'en'),
+                  ),
                   const SizedBox(height: 24),
 
                   const _SectionTitle('Student Profile'),
