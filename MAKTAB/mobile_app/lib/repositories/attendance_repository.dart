@@ -20,7 +20,7 @@ class AttendanceRepository {
     return id;
   }
 
-  Future<void> insertAttendances(List<Attendance> attendances) async {
+  Future<List<Attendance>> insertAttendances(List<Attendance> attendances) async {
     final db = await _dbHelper.database;
     final List<Attendance> createdList = [];
     await db.transaction((txn) async {
@@ -42,6 +42,7 @@ class AttendanceRepository {
       }
     }
     CloudSyncService.instance.notifyDataChanged('attendance');
+    return createdList;
   }
 
   Future<void> updateAttendances(List<Attendance> attendances) async {

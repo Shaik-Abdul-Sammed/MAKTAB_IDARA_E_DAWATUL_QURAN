@@ -412,7 +412,12 @@ class _BatchTile extends StatelessWidget {
             child: Text(initials, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
           ),
         ),
-        title: Text(batch.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF1A1A1A))),
+        title: Text(
+          batch.name,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF1A1A1A)),
+        ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -421,7 +426,14 @@ class _BatchTile extends StatelessWidget {
               children: [
                 const Icon(Icons.access_time_rounded, size: 14, color: Color(0xFF004D40)),
                 const SizedBox(width: 4),
-                Text(batch.timing, style: const TextStyle(fontSize: 12, color: Colors.black54)),
+                Expanded(
+                  child: Text(
+                    batch.timing,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: 12, color: Colors.black54),
+                  ),
+                ),
               ],
             ),
           ],

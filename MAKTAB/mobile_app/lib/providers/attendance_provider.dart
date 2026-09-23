@@ -13,10 +13,17 @@ class AttendanceProvider extends ChangeNotifier {
   final AttendanceRepository _attendanceRepo;
   final StudentRepository _studentRepo;
   StreamSubscription<String>? _syncSub;
+  bool _entryScreenActive = false;
+  bool get entryScreenActive => _entryScreenActive;
+
+  void setEntryScreenActive(bool active) {
+    _entryScreenActive = active;
+  }
 
   AttendanceProvider(this._attendanceRepo, this._studentRepo) {
     _syncSub = CloudSyncService.instance.onDataSynced.listen((col) {
       if (col == 'students' || col == 'batches' || col == 'attendance') {
+        if (_isSaving || _entryScreenActive) return; // Do not reload or wipe live session while saving or while entry screen is open
         if (_selectedBatchId != null) {
           loadBatchAttendance(_selectedBatchId!);
         }
@@ -97,6 +104,15 @@ class AttendanceProvider extends ChangeNotifier {
   int get leaveCount => _studentStatuses.values.where((v) => v == 'Leave').length;
   int get totalCount => _students.length;
 
+  // Time period for this session (e.g. 'Morning', 'Afternoon', 'Evening')
+  String? _timePeriod;
+  String? get timePeriod => _timePeriod;
+
+  void setTimePeriod(String? period) {
+    _timePeriod = period;
+    notifyListeners();
+  }
+
   void setDate(String date) {
     _selectedDate = date;
     if (_selectedBatchId != null) {
@@ -110,33 +126,37 @@ class AttendanceProvider extends ChangeNotifier {
   }
 
   Future<void> loadBatchAttendance(int batchId) async {
-    _status = AttendanceStatus.loading;
+    if (_students.isEmpty) {
+      _status = AttendanceStatus.loading;
+      _studentStatuses = {};
+      _studentRemarks = {};
+      _existingAttendanceIds = {};
+      notifyListeners();
+    }
     _errorMessage = '';
-    _students = [];
-    _studentStatuses = {};
-    _studentRemarks = {};
-    _existingAttendanceIds = {};
-    notifyListeners();
     try {
-      _students = await _studentRepo.getStudentsByBatch(batchId);
+      final fetchedStudents = await _studentRepo.getStudentsByBatch(batchId);
       final existing = await _attendanceRepo.getAttendanceByDateAndBatch(_selectedDate, batchId);
       
-      final Map<int, String> statuses = {};
-      final Map<int, String> remarks = {};
-      final Map<int, int?> existingIds = {};
+      final Map<int, String> statuses = Map<int, String>.from(_studentStatuses);
+      final Map<int, String> remarks = Map<int, String>.from(_studentRemarks);
+      final Map<int, int?> existingIds = Map<int, int?>.from(_existingAttendanceIds);
 
-      for (var s in _students) {
+      for (var s in fetchedStudents) {
         if (s.id != null) {
-          statuses[s.id!] = 'Present'; // Default to Present
+          // Keep live session status if already present, else default to Present
+          statuses[s.id!] = statuses[s.id!] ?? 'Present';
         }
       }
 
       for (var att in existing) {
-        statuses[att.studentId] = att.status;
+        // If DB record exists, use it unless actively modified
+        statuses[att.studentId] = _studentStatuses[att.studentId] ?? att.status;
         if (att.remarks != null) remarks[att.studentId] = att.remarks!;
         existingIds[att.studentId] = att.id;
       }
 
+      _students = fetchedStudents;
       _studentStatuses = statuses;
       _studentRemarks = remarks;
       _existingAttendanceIds = existingIds;
@@ -158,7 +178,8 @@ class AttendanceProvider extends ChangeNotifier {
     const cycle = ['Present', 'Absent', 'Late', 'Leave'];
     final current = _studentStatuses[studentId] ?? 'Present';
     final idx = cycle.indexOf(current);
-    _studentStatuses[studentId] = cycle[(idx + 1) % cycle.length];
+    final nextIdx = (idx == -1) ? 0 : (idx + 1) % cycle.length;
+    _studentStatuses[studentId] = cycle[nextIdx];
     notifyListeners();
   }
 
@@ -210,6 +231,7 @@ class AttendanceProvider extends ChangeNotifier {
           status: status,
           remarks: remark,
           time: nowTime,
+          timePeriod: _timePeriod,
         );
 
         if (existingId != null) {
@@ -220,7 +242,12 @@ class AttendanceProvider extends ChangeNotifier {
       }
 
       if (toInsert.isNotEmpty) {
-        await _attendanceRepo.insertAttendances(toInsert);
+        final created = await _attendanceRepo.insertAttendances(toInsert);
+        for (var c in created) {
+          if (c.id != null) {
+            _existingAttendanceIds[c.studentId] = c.id;
+          }
+        }
       }
       if (toUpdate.isNotEmpty) {
         await _attendanceRepo.updateAttendances(toUpdate);

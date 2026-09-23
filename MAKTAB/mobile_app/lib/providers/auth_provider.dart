@@ -771,6 +771,7 @@ class AuthProvider with ChangeNotifier {
 
     final input = teacherIdOrMobile.trim();
     final saltedHash = _hashPin(pin);
+    final rawHash = sha256.convert(utf8.encode(pin)).toString();
 
     List<User> allTeachers = await _userRepository.getAllTeachers();
     User? matchedUser;
@@ -778,27 +779,33 @@ class AuthProvider with ChangeNotifier {
     final parsedId = int.tryParse(input.replaceAll(RegExp(r'\D'), ''));
     for (var u in allTeachers) {
       bool idMatch = false;
-      if (u.id != null) {
-        if (u.id.toString() == input || (parsedId != null && u.id == parsedId)) {
-          idMatch = true;
+      if (u.id != null && (u.id.toString() == input || (parsedId != null && u.id == parsedId))) {
+        idMatch = true;
+      }
+      if (u.teacherId != null && (u.teacherId.toString() == input || (parsedId != null && u.teacherId == parsedId))) {
+        idMatch = true;
+      }
+      bool mobileMatch = false;
+      if (u.mobile != null && u.mobile!.isNotEmpty) {
+        final cleanMobile = u.mobile!.replaceAll(RegExp(r'\D'), '');
+        final cleanInput = input.replaceAll(RegExp(r'\D'), '');
+        if (cleanMobile.isNotEmpty && cleanInput.isNotEmpty) {
+          if (cleanMobile == cleanInput || (cleanInput.length >= 10 && cleanMobile.endsWith(cleanInput))) {
+            mobileMatch = true;
+          }
         }
       }
-      bool mobileMatch = u.mobile != null && u.mobile!.contains(input);
-      bool nameMatch = u.name.toLowerCase().contains(input.toLowerCase());
 
-      if (idMatch || mobileMatch || nameMatch) {
-        if (u.pinHash == saltedHash || u.pinHash == sha256.convert(utf8.encode(pin)).toString()) {
+      if (idMatch || mobileMatch) {
+        if (u.pinHash == saltedHash || u.pinHash == rawHash) {
           matchedUser = u;
           break;
         }
       }
     }
 
-    matchedUser ??= await _userRepository.authenticateUser(saltedHash);
-    matchedUser ??= await _userRepository.authenticateUser(sha256.convert(utf8.encode(pin)).toString());
-
     // Firebase RTDB direct Teacher lookup fallback for fresh device installations across all Maktabs
-    if (matchedUser == null && _db != null) {
+    if (matchedUser == null && _db != null && input.isNotEmpty) {
       try {
         final maktabsSnap = await _db!.ref('maktabs').get().timeout(const Duration(seconds: 4));
         if (maktabsSnap.exists && maktabsSnap.value is Map) {
@@ -813,11 +820,19 @@ class AuthProvider with ChangeNotifier {
                   final item = Map<String, dynamic>.from(entry.value as Map);
                   item['id'] ??= int.tryParse(entry.key.toString());
                   final u = User.fromMap(item);
-                  if (u.role == 'teacher' && (u.pinHash == saltedHash || u.pinHash == sha256.convert(utf8.encode(pin)).toString())) {
-                    final idMatch = parsedId != null && u.id == parsedId;
-                    final mobileMatch = input.isNotEmpty && (u.mobile ?? '').replaceAll(RegExp(r'\D'), '').endsWith(input);
-                    final nameMatch = u.name.toLowerCase().contains(input.toLowerCase());
-                    if (idMatch || mobileMatch || nameMatch || input.isEmpty) {
+                  if (u.role == 'teacher' && (u.pinHash == saltedHash || u.pinHash == rawHash)) {
+                    final idMatch = (parsedId != null && (u.id == parsedId || u.teacherId == parsedId)) ||
+                        entry.key.toString() == input;
+                    bool mobileMatch = false;
+                    if (u.mobile != null && u.mobile!.isNotEmpty) {
+                      final cleanMobile = u.mobile!.replaceAll(RegExp(r'\D'), '');
+                      final cleanInput = input.replaceAll(RegExp(r'\D'), '');
+                      if (cleanMobile.isNotEmpty && cleanInput.isNotEmpty &&
+                          (cleanMobile == cleanInput || (cleanInput.length >= 10 && cleanMobile.endsWith(cleanInput)))) {
+                        mobileMatch = true;
+                      }
+                    }
+                    if (idMatch || mobileMatch) {
                       matchedUser = u;
                       await CloudSyncService.instance.setMaktabId(mId);
                       await _userRepository.insertUser(u);
@@ -835,12 +850,11 @@ class AuthProvider with ChangeNotifier {
       }
     }
 
-    // Firebase Auth direct sign-in fallback for fresh device installations
-    if (matchedUser == null && _fbAuth != null) {
+    // Firebase Auth direct sign-in fallback for fresh device installations (only with valid numeric teacher ID)
+    if (matchedUser == null && _fbAuth != null && parsedId != null) {
       try {
         final activeMaktabId = await CloudSyncService.instance.getMaktabId();
-        final teacherIdGuess = parsedId ?? 1;
-        final derivedEmail = 'teacher_${activeMaktabId}_$teacherIdGuess@maktab.app';
+        final derivedEmail = 'teacher_${activeMaktabId}_$parsedId@maktab.app';
         final derivedPassword = saltedHash.padRight(32, '0').substring(0, 32);
 
         final cred = await _fbAuth!.signInWithEmailAndPassword(
@@ -854,7 +868,7 @@ class AuthProvider with ChangeNotifier {
             final val = Map<String, dynamic>.from(snapshot.value as Map);
             final uTeacherId = val['teacherId'] is int
                 ? val['teacherId'] as int
-                : int.tryParse(val['teacherId']?.toString() ?? '') ?? teacherIdGuess;
+                : int.tryParse(val['teacherId']?.toString() ?? '') ?? parsedId;
             final uName = val['name']?.toString() ?? 'Teacher';
             final uMobile = val['mobile']?.toString() ?? '';
             final isActive = val['active'] != false;

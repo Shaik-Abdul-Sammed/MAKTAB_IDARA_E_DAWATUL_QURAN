@@ -7,6 +7,7 @@ class QuranProgress {
   final int ayahFrom;
   final int ayahTo;
   final String grade; // 'A+', 'A', 'B', 'C'
+  final String recitationType; // 'Sabaq', 'Sabaqi', 'Manzil'
   final String? remarks;
 
   QuranProgress({
@@ -18,6 +19,7 @@ class QuranProgress {
     required this.ayahFrom,
     required this.ayahTo,
     required this.grade,
+    this.recitationType = 'Sabaq',
     this.remarks,
   });
 
@@ -30,6 +32,7 @@ class QuranProgress {
     int? ayahFrom,
     int? ayahTo,
     String? grade,
+    String? recitationType,
     String? remarks,
   }) {
     return QuranProgress(
@@ -41,6 +44,7 @@ class QuranProgress {
       ayahFrom: ayahFrom ?? this.ayahFrom,
       ayahTo: ayahTo ?? this.ayahTo,
       grade: grade ?? this.grade,
+      recitationType: recitationType ?? this.recitationType,
       remarks: remarks ?? this.remarks,
     );
   }
@@ -55,6 +59,7 @@ class QuranProgress {
       'ayah_from': ayahFrom,
       'ayah_to': ayahTo,
       'grade': grade,
+      'recitation_type': recitationType,
       'remarks': remarks,
     };
   }
@@ -75,6 +80,7 @@ class QuranProgress {
       ayahFrom: parseInt(map['ayah_from'] ?? map['ayahFrom']) ?? 1,
       ayahTo: parseInt(map['ayah_to'] ?? map['ayahTo']) ?? 1,
       grade: (map['grade'] ?? 'A').toString(),
+      recitationType: (map['recitation_type'] ?? map['recitationType'] ?? 'Sabaq').toString(),
       remarks: map['remarks']?.toString(),
     );
   }

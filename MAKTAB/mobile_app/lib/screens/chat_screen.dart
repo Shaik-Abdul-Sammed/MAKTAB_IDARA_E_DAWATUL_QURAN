@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:maktab_app/providers/auth_provider.dart';
 import 'package:maktab_app/providers/message_provider.dart';
+import 'package:maktab_app/repositories/message_repository.dart';
 import 'package:maktab_app/widgets/custom_app_bar.dart';
 
 class ChatScreen extends StatefulWidget {
@@ -29,14 +30,17 @@ class _ChatScreenState extends State<ChatScreen> {
     });
   }
 
-  void _loadMessages() {
+  void _loadMessages() async {
     final auth = Provider.of<AuthProvider>(context, listen: false);
     final msgProvider = Provider.of<MessageProvider>(context, listen: false);
+    final currentUserId = auth.currentUser?.teacherId ?? auth.currentUser?.id ?? 0;
     
     if (widget.otherUserId == 0) {
       msgProvider.loadBroadcastMessages();
     } else {
-      msgProvider.loadConversation(auth.currentUser!.id!, widget.otherUserId);
+      final isAdmin = auth.currentUser?.role == 'admin' || auth.currentUser?.role == 'manager';
+      await MessageRepository().markMessagesAsReadBetween(currentUserId, widget.otherUserId, isAdmin: isAdmin);
+      msgProvider.loadConversation(currentUserId, widget.otherUserId);
     }
   }
 
@@ -45,20 +49,23 @@ class _ChatScreenState extends State<ChatScreen> {
 
     final auth = Provider.of<AuthProvider>(context, listen: false);
     final msgProvider = Provider.of<MessageProvider>(context, listen: false);
+    final currentUserId = auth.currentUser?.teacherId ?? auth.currentUser?.id ?? 0;
     final content = _controller.text.trim();
     _controller.clear();
 
-    if (widget.otherUserId == 0 && auth.currentUser?.role == 'admin') {
-      await msgProvider.sendBroadcastMessage(auth.currentUser!.id!, content);
+    final isAdmin = auth.currentUser?.role == 'admin' || auth.currentUser?.role == 'manager';
+    if (widget.otherUserId == 0 && isAdmin) {
+      await msgProvider.sendBroadcastMessage(currentUserId, content);
     } else {
-      await msgProvider.sendMessage(auth.currentUser!.id!, widget.otherUserId, content);
+      await msgProvider.sendMessage(currentUserId, widget.otherUserId, content);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final auth = Provider.of<AuthProvider>(context);
-    final currentUserId = auth.currentUser?.id ?? 0;
+    final currentUserId = auth.currentUser?.teacherId ?? auth.currentUser?.id ?? 0;
+    final isAdmin = auth.currentUser?.role == 'admin' || auth.currentUser?.role == 'manager';
 
     return Scaffold(
       appBar: CustomAppBar(title: widget.otherUserName),
@@ -81,7 +88,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   itemCount: messages.length,
                   itemBuilder: (context, index) {
                     final msg = messages[index];
-                    final isMe = msg.senderId == currentUserId;
+                    final isMe = msg.senderId == currentUserId || (isAdmin && (msg.senderId == 1 || msg.senderId == currentUserId));
 
                     return Align(
                       alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
@@ -129,7 +136,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   ),
                 ),
                 // If it's a broadcast view and the user is NOT admin, they cannot reply to broadcast
-                if (!(widget.otherUserId == 0 && auth.currentUser?.role != 'admin'))
+                if (!(widget.otherUserId == 0 && !isAdmin))
                   IconButton(
                     icon: const Icon(Icons.send, color: Color(0xFF004D40)),
                     onPressed: _sendMessage,

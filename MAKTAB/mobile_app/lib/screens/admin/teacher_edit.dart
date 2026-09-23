@@ -196,34 +196,40 @@ class _TeacherEditScreenState extends State<TeacherEditScreen> {
             ),
           ),
           const SizedBox(width: 16),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(widget.teacher.name,
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF004D40))),
-              const SizedBox(height: 4),
-              Text('ID: ${widget.teacher.id ?? '-'} · ${widget.teacher.role}',
-                  style: const TextStyle(fontSize: 12, color: Colors.black45)),
-              const SizedBox(height: 4),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(
-                  color: widget.teacher.isActive ? Colors.green.shade50 : Colors.grey.shade100,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: widget.teacher.isActive ? Colors.green.shade300 : Colors.grey.shade300,
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  widget.teacher.name,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF004D40)),
+                ),
+                const SizedBox(height: 4),
+                Text('ID: ${widget.teacher.id ?? '-'} · ${widget.teacher.role}',
+                    style: const TextStyle(fontSize: 12, color: Colors.black45)),
+                const SizedBox(height: 4),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: widget.teacher.isActive ? Colors.green.shade50 : Colors.grey.shade100,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: widget.teacher.isActive ? Colors.green.shade300 : Colors.grey.shade300,
+                    ),
+                  ),
+                  child: Text(
+                    widget.teacher.isActive ? 'Active' : 'Inactive',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      color: widget.teacher.isActive ? Colors.green.shade700 : Colors.grey.shade600,
+                    ),
                   ),
                 ),
-                child: Text(
-                  widget.teacher.isActive ? 'Active' : 'Inactive',
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold,
-                    color: widget.teacher.isActive ? Colors.green.shade700 : Colors.grey.shade600,
-                  ),
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
         ],
       ),

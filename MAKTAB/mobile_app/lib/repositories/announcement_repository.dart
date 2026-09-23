@@ -8,6 +8,12 @@ class AnnouncementRepository {
     return maps.map((e) => Announcement.fromMap(e)).toList();
   }
 
+  Future<List<Announcement>> getRecent({int limit = 5}) async {
+    final db = await DatabaseHelper.instance.database;
+    final maps = await db.query('announcements', orderBy: 'id DESC', limit: limit);
+    return maps.map((e) => Announcement.fromMap(e)).toList();
+  }
+
   Future<int> insertAnnouncement(Announcement item) async {
     final db = await DatabaseHelper.instance.database;
     return await db.insert('announcements', item.toMap());

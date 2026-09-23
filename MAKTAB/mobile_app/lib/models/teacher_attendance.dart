@@ -6,6 +6,8 @@ class TeacherAttendance {
   final String? remarks;
   final int? markedBy; // Admin user ID
   final String? time; // e.g. "08:30 AM"
+  final String? timePeriod; // e.g. 'Morning', 'Afternoon', 'Evening'
+  final bool isRead;
 
   TeacherAttendance({
     this.id,
@@ -15,6 +17,8 @@ class TeacherAttendance {
     this.remarks,
     this.markedBy,
     this.time,
+    this.timePeriod,
+    this.isRead = false,
   });
 
   Map<String, dynamic> toMap() {
@@ -26,6 +30,8 @@ class TeacherAttendance {
       'remarks': remarks,
       'marked_by': markedBy,
       'time': time,
+      'time_period': timePeriod,
+      'is_read': isRead ? 1 : 0,
     };
   }
 
@@ -33,6 +39,7 @@ class TeacherAttendance {
     // Accept both snake_case (SQLite) and camelCase (Firebase) keys
     final rawTeacherId = map['teacher_id'] ?? map['teacherId'];
     final rawMarkedBy  = map['marked_by']  ?? map['markedBy'];
+    final rawIsRead    = map['is_read']    ?? map['isRead'];
 
     int? parseInt(dynamic v) {
       if (v == null) return null;
@@ -41,13 +48,15 @@ class TeacherAttendance {
     }
 
     return TeacherAttendance(
-      id:        parseInt(map['id']),
-      teacherId: parseInt(rawTeacherId) ?? 0,
-      date:      map['date']?.toString() ?? '',
-      status:    map['status']?.toString() ?? 'Present',
-      remarks:   map['remarks']?.toString(),
-      markedBy:  parseInt(rawMarkedBy),
-      time:      map['time']?.toString(),
+      id:         parseInt(map['id']),
+      teacherId:  parseInt(rawTeacherId) ?? 0,
+      date:       map['date']?.toString() ?? '',
+      status:     map['status']?.toString() ?? 'Present',
+      remarks:    map['remarks']?.toString(),
+      markedBy:   parseInt(rawMarkedBy),
+      time:       map['time']?.toString(),
+      timePeriod: (map['time_period'] ?? map['timePeriod'])?.toString(),
+      isRead:     rawIsRead == 1 || rawIsRead == true || rawIsRead == '1',
     );
   }
 
@@ -59,6 +68,8 @@ class TeacherAttendance {
     String? remarks,
     int? markedBy,
     String? time,
+    String? timePeriod,
+    bool? isRead,
   }) {
     return TeacherAttendance(
       id: id ?? this.id,
@@ -68,6 +79,8 @@ class TeacherAttendance {
       remarks: remarks ?? this.remarks,
       markedBy: markedBy ?? this.markedBy,
       time: time ?? this.time,
+      timePeriod: timePeriod ?? this.timePeriod,
+      isRead: isRead ?? this.isRead,
     );
   }
 }

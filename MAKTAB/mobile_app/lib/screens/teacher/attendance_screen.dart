@@ -11,6 +11,7 @@ import '../../repositories/user_repository.dart';
 import '../../services/cloud_sync_service.dart';
 import '../../widgets/molecules/custom_app_bar.dart';
 import '../../widgets/shimmer_loader.dart';
+import '../../l10n/app_localizations.dart';
 
 class AttendanceScreen extends StatefulWidget {
   const AttendanceScreen({super.key});
@@ -199,21 +200,22 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     final totalBatches = _batches.length;
     final markedBatches = _batchStats.values.where((s) => s.marked > 0).length;
     final pendingBatches = totalBatches - markedBatches;
+    final loc = AppLocalizations.of(context);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF9FBE7),
       appBar: CustomAppBar(
-        title: 'Attendance Register',
+        title: loc?.translate('attendance') ?? 'Attendance Register',
         actions: [
           IconButton(
             icon: const Icon(Icons.calendar_month_rounded),
             onPressed: _pickDate,
-            tooltip: 'Change Date',
+            tooltip: loc?.translate('select_date') ?? 'Change Date',
           ),
           IconButton(
             icon: const Icon(Icons.refresh_rounded),
             onPressed: _loadBatches,
-            tooltip: 'Refresh',
+            tooltip: loc?.translate('sync') ?? 'Refresh',
           ),
         ],
       ),
@@ -236,8 +238,10 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                   _buildSummaryHeader(totalBatches, markedBatches, pendingBatches),
 
                 const SizedBox(height: 16),
-                const Text('Select Batch to Mark Attendance',
-                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF004D40))),
+                Text(
+                  loc?.translate('batch_attendance') ?? 'Select Batch to Mark Attendance',
+                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF004D40)),
+                ),
                 const SizedBox(height: 10),
 
                 if (_isLoading) ...[
@@ -286,6 +290,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
   }
 
   Widget _buildSummaryHeader(int total, int marked, int pending) {
+    final loc = AppLocalizations.of(context);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
@@ -295,11 +300,11 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
       ),
       child: Row(
         children: [
-          Expanded(child: _SummaryChip(label: 'Total Batches', value: '$total', color: const Color(0xFF004D40))),
+          Expanded(child: _SummaryChip(label: loc?.translate('batches') ?? 'Total Batches', value: '$total', color: const Color(0xFF004D40))),
           Container(width: 1, height: 28, color: Colors.black12),
-          Expanded(child: _SummaryChip(label: 'Marked ✅', value: '$marked', color: Colors.green.shade700)),
+          Expanded(child: _SummaryChip(label: '${loc?.translate('marked') ?? 'Marked'} ✅', value: '$marked', color: Colors.green.shade700)),
           Container(width: 1, height: 28, color: Colors.black12),
-          Expanded(child: _SummaryChip(label: 'Pending ⏳', value: '$pending', color: Colors.orange.shade700)),
+          Expanded(child: _SummaryChip(label: '${loc?.translate('pending') ?? 'Pending'} ⏳', value: '$pending', color: Colors.orange.shade700)),
         ],
       ),
     );

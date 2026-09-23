@@ -51,6 +51,8 @@ class AppRoutes {
   static const String teacherDashboard = '/teacher';
   static const String teacherAttendance = '/teacher/attendance';
   static const String teacherQuranProgress = '/teacher/quran_progress';
+  static const String teacherQuranProgressHistory = '/teacher/quran_progress/history';
+  static const String teacherQuranProgressSummary = '/teacher/quran_progress/summary';
   static const String teacherReports = '/teacher/reports';
   static const String teacherChecklist = '/teacher/checklist';
   static const String teacherSyllabusTracker = '/teacher/syllabus-tracker';

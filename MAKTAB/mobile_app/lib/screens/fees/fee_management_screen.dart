@@ -52,12 +52,15 @@ class _FeeManagementScreenState extends State<FeeManagementScreen> {
   List<Batch> _batches = [];
   bool _isLoading = true;
   String _filter = 'All';
+  String _searchQuery = '';
   int? _selectedBatchId;
   final AudioPlayer _audioPlayer = AudioPlayer();
+  final TextEditingController _searchController = TextEditingController();
 
   @override
   void dispose() {
     _audioPlayer.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -198,9 +201,13 @@ class _FeeManagementScreenState extends State<FeeManagementScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final q = _searchQuery.toLowerCase();
     final filtered = _feeItems.where((i) {
-      if (_filter == 'All') return true;
-      return i.status == _filter;
+      final statusMatch = _filter == 'All' || i.status == _filter;
+      final searchMatch = q.isEmpty ||
+          i.student.name.toLowerCase().contains(q) ||
+          (i.student.admissionNumber).toLowerCase().contains(q);
+      return statusMatch && searchMatch;
     }).toList();
 
     final totalPending = _feeItems
@@ -232,7 +239,34 @@ class _FeeManagementScreenState extends State<FeeManagementScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _buildSummaryBanner(totalPending),
-              const SizedBox(height: 20),
+              const SizedBox(height: 16),
+
+              // ── Search bar ──────────────────────────────────────────────
+              TextField(
+                controller: _searchController,
+                decoration: InputDecoration(
+                  hintText: 'Search by name or admission no.',
+                  prefixIcon: const Icon(Icons.search, color: AppIcons.primaryTeal),
+                  suffixIcon: _searchQuery.isNotEmpty
+                      ? IconButton(
+                          icon: const Icon(Icons.clear),
+                          onPressed: () {
+                            _searchController.clear();
+                            setState(() => _searchQuery = '');
+                          },
+                        )
+                      : null,
+                  filled: true,
+                  fillColor: Colors.white,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+                onChanged: (val) => setState(() => _searchQuery = val),
+              ),
+              const SizedBox(height: 16),
 
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,

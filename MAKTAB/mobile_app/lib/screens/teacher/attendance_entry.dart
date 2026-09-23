@@ -20,6 +20,7 @@ import '../../utils/whatsapp_utility.dart';
 import '../../widgets/molecules/custom_app_bar.dart';
 import '../../widgets/shimmer_loader.dart';
 import '../../widgets/voice_attendance_dialog.dart';
+import '../../l10n/app_localizations.dart';
 
 class AttendanceEntryScreen extends StatefulWidget {
   final int batchId;
@@ -43,6 +44,7 @@ class _AttendanceEntryScreenState extends State<AttendanceEntryScreen>
 
   String _batchName = '';
   String _teacherName = '';
+  String? _batchTiming; // e.g. 'Morning', 'Afternoon', 'Evening'
   bool _isToolbarExpanded = false;
 
   @override
@@ -50,6 +52,7 @@ class _AttendanceEntryScreenState extends State<AttendanceEntryScreen>
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
     _provider = AttendanceProvider(AttendanceRepository(), StudentRepository());
+    _provider.setEntryScreenActive(true);
     _provider.setDate(widget.date);
     _provider.setBatchId(widget.batchId);
     _provider.addListener(_autoSaveDraft);
@@ -61,6 +64,12 @@ class _AttendanceEntryScreenState extends State<AttendanceEntryScreen>
       final batch = await BatchRepository().getBatchById(widget.batchId);
       if (batch != null) {
         _batchName = batch.name;
+        // Pre-populate time period from batch timing field (if present)
+        final timing = batch.timing;
+        if (timing.isNotEmpty) {
+          _batchTiming = timing;
+          _provider.setTimePeriod(timing);
+        }
         if (batch.teacherId != null) {
           final teacher = await UserRepository().getUserById(batch.teacherId!);
           if (teacher != null) {
@@ -85,6 +94,7 @@ class _AttendanceEntryScreenState extends State<AttendanceEntryScreen>
     _provider.removeListener(_autoSaveDraft);
     _tabController.dispose();
     _searchController.dispose();
+    _provider.setEntryScreenActive(false);
     _provider.dispose();
     super.dispose();
   }
@@ -331,17 +341,19 @@ class _AttendanceEntryScreenState extends State<AttendanceEntryScreen>
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context);
+
     return ChangeNotifierProvider.value(
       value: _provider,
       child: Scaffold(
         backgroundColor: const Color(0xFFF9FBE7),
         appBar: CustomAppBar(
-          title: 'Mark Attendance (${widget.date})',
+          title: '${loc?.translate('attendance') ?? 'Mark Attendance'} (${widget.date})',
           actions: [
             Consumer<AttendanceProvider>(
               builder: (context, p, _) => TextButton(
                 onPressed: p.isSaving ? null : _save,
-                child: const Text('SAVE', style: TextStyle(color: Color(0xFFFFD700), fontWeight: FontWeight.bold)),
+                child: Text((loc?.translate('save') ?? 'SAVE').toUpperCase(), style: const TextStyle(color: Color(0xFFFFD700), fontWeight: FontWeight.bold)),
               ),
             ),
           ],
@@ -397,7 +409,7 @@ class _AttendanceEntryScreenState extends State<AttendanceEntryScreen>
                 ),
                 child: p.isSaving
                     ? const CircularProgressIndicator(color: Color(0xFF004D40))
-                    : const Text('Save Attendance Records', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                    : Text(loc?.translate('save_attendance') ?? 'Save Attendance Records', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
               ),
             ),
           ),
@@ -474,6 +486,7 @@ class _AttendanceEntryScreenState extends State<AttendanceEntryScreen>
   }
 
   Widget _buildExpandableToolbar(AttendanceProvider p) {
+    final loc = AppLocalizations.of(context);
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       padding: const EdgeInsets.all(8),
@@ -489,14 +502,44 @@ class _AttendanceEntryScreenState extends State<AttendanceEntryScreen>
         ],
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // ── Time Period selector ────────────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.only(bottom: 6),
+            child: Row(
+              children: [
+                const Icon(Icons.access_time, size: 16, color: Color(0xFF004D40)),
+                const SizedBox(width: 6),
+                Text(loc?.translate('period') ?? 'Period:', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<String>(
+                      value: p.timePeriod,
+                      isDense: true,
+                      hint: Text(loc?.translate('search') ?? 'Select', style: const TextStyle(fontSize: 12)),
+                      items: [
+                        if (_batchTiming != null && _batchTiming!.isNotEmpty)
+                          DropdownMenuItem(value: _batchTiming!, child: Text('$_batchTiming (${loc?.translate('batches') ?? 'Batch'})', style: const TextStyle(fontSize: 12))),
+                        ...['Morning', 'Afternoon', 'Evening']
+                            .where((t) => t != _batchTiming)
+                            .map((t) => DropdownMenuItem(value: t, child: Text(loc?.translate(t.toLowerCase()) ?? t, style: const TextStyle(fontSize: 12)))),
+                      ],
+                      onChanged: (val) => p.setTimePeriod(val),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
           // Default: [Mark All Present] [⋮ more] [Search]
           Row(
             children: [
               ElevatedButton.icon(
                 onPressed: p.markAllPresent,
                 icon: const Icon(Icons.check_circle_outline, size: 14),
-                label: const Text('Mark All Present', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                label: Text(loc?.translate('mark_all_present') ?? 'Mark All Present', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF004D40),
                   foregroundColor: Colors.white,
@@ -517,7 +560,7 @@ class _AttendanceEntryScreenState extends State<AttendanceEntryScreen>
                     controller: _searchController,
                     onChanged: p.setSearch,
                     decoration: InputDecoration(
-                      hintText: 'Search...',
+                      hintText: loc?.translate('search') ?? 'Search...',
                       hintStyle: const TextStyle(fontSize: 12),
                       prefixIcon: const Icon(Icons.search, size: 16, color: Color(0xFF004D40)),
                       suffixIcon: _searchController.text.isNotEmpty
@@ -550,7 +593,7 @@ class _AttendanceEntryScreenState extends State<AttendanceEntryScreen>
                   child: OutlinedButton.icon(
                     onPressed: p.markAllAbsent,
                     icon: const Icon(Icons.cancel_outlined, size: 14),
-                    label: const Text('Clear All', style: TextStyle(fontSize: 11)),
+                    label: Text(loc?.translate('mark_all_absent') ?? 'Clear All', style: const TextStyle(fontSize: 11)),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: Colors.red.shade700,
                       side: BorderSide(color: Colors.red.shade300),
@@ -565,7 +608,7 @@ class _AttendanceEntryScreenState extends State<AttendanceEntryScreen>
                   child: ElevatedButton.icon(
                     onPressed: () => _openVoiceAttendance(p),
                     icon: const Icon(Icons.mic_rounded, size: 14),
-                    label: const Text('Voice Input', style: TextStyle(fontSize: 11)),
+                    label: Text(loc?.translate('voice_attendance') ?? 'Voice Input', style: const TextStyle(fontSize: 11), overflow: TextOverflow.ellipsis),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF004D40),
                       foregroundColor: Colors.white,
@@ -584,7 +627,7 @@ class _AttendanceEntryScreenState extends State<AttendanceEntryScreen>
                       _shareAttendanceReport(present, absent);
                     },
                     icon: const Icon(Icons.share, size: 14),
-                    label: const Text('Share WhatsApp', style: TextStyle(fontSize: 11)),
+                    label: Text(loc?.translate('send_whatsapp') ?? 'Share WhatsApp', style: const TextStyle(fontSize: 11), overflow: TextOverflow.ellipsis),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: const Color(0xFF25D366),
                       side: const BorderSide(color: Color(0xFF25D366)),
@@ -607,10 +650,10 @@ class _AttendanceEntryScreenState extends State<AttendanceEntryScreen>
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
-                  _StatItem(label: 'Present', value: p.presentCount.toString(), color: Colors.green.shade700),
-                  _StatItem(label: 'Absent',  value: p.absentCount.toString(),  color: Colors.red.shade700),
-                  _StatItem(label: 'Late',    value: p.lateCount.toString(),    color: Colors.amber.shade700),
-                  _StatItem(label: 'Leave',   value: p.leaveCount.toString(),   color: Colors.orange.shade700),
+                  _StatItem(label: loc?.translate('present') ?? 'Present', value: p.presentCount.toString(), color: Colors.green.shade700),
+                  _StatItem(label: loc?.translate('absent') ?? 'Absent',  value: p.absentCount.toString(),  color: Colors.red.shade700),
+                  _StatItem(label: loc?.translate('late') ?? 'Late',    value: p.lateCount.toString(),    color: Colors.amber.shade700),
+                  _StatItem(label: loc?.translate('leave') ?? 'Leave',   value: p.leaveCount.toString(),   color: Colors.orange.shade700),
                 ],
               ),
             ),
@@ -622,6 +665,7 @@ class _AttendanceEntryScreenState extends State<AttendanceEntryScreen>
 
   // ── #8: Tabs (All / Present / Absent / Late+Leave)
   Widget _buildTabs(AttendanceProvider p) {
+    final loc = AppLocalizations.of(context);
     return Container(
       color: Colors.white,
       child: TabBar(
@@ -639,7 +683,7 @@ class _AttendanceEntryScreenState extends State<AttendanceEntryScreen>
         indicatorColor: const Color(0xFFFFD700),
         labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
         tabs: [
-          Tab(text: 'All (${p.totalCount})'),
+          Tab(text: '${loc?.translate('all_students') ?? 'All'} (${p.totalCount})'),
           Tab(text: '✅ ${p.presentCount}'),
           Tab(text: '❌ ${p.absentCount}'),
           Tab(text: '🕒 ${p.lateCount + p.leaveCount}'),
@@ -708,6 +752,8 @@ class _StudentAttendanceTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final color = _AttendanceEntryScreenState.statusColor(status);
     final icon  = _AttendanceEntryScreenState.statusIcon(status);
+    final photoFile = student.photoPath != null && student.photoPath!.isNotEmpty ? File(student.photoPath!) : null;
+    final hasPhoto = photoFile != null && photoFile.existsSync();
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
@@ -755,16 +801,14 @@ class _StudentAttendanceTile extends StatelessWidget {
               // ── #12: Photo avatar
               CircleAvatar(
                 radius: 22,
-                backgroundImage: student.photoPath != null && File(student.photoPath!).existsSync()
-                    ? FileImage(File(student.photoPath!))
-                    : null,
+                backgroundImage: hasPhoto ? FileImage(photoFile) : null,
                 backgroundColor: color.withValues(alpha: 0.2),
-                child: student.photoPath == null
-                    ? Text(
+                child: hasPhoto
+                    ? null
+                    : Text(
                         student.name.isNotEmpty ? student.name[0].toUpperCase() : '?',
                         style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 18),
-                      )
-                    : null,
+                      ),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -861,6 +905,8 @@ class _SummaryTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final parentMobile = student.phone ?? student.guardianPhone ?? '';
     final color = _AttendanceEntryScreenState.statusColor(status);
+    final photoFile = student.photoPath != null && student.photoPath!.isNotEmpty ? File(student.photoPath!) : null;
+    final hasPhoto = photoFile != null && photoFile.existsSync();
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(12),
@@ -872,14 +918,12 @@ class _SummaryTile extends StatelessWidget {
       child: Row(children: [
         CircleAvatar(
           radius: 18,
-          backgroundImage: student.photoPath != null && File(student.photoPath!).existsSync()
-              ? FileImage(File(student.photoPath!))
-              : null,
+          backgroundImage: hasPhoto ? FileImage(photoFile) : null,
           backgroundColor: color.withValues(alpha: 0.15),
-          child: student.photoPath == null
-              ? Text(student.name.isNotEmpty ? student.name[0].toUpperCase() : '?',
-                  style: TextStyle(color: color, fontWeight: FontWeight.bold))
-              : null,
+          child: hasPhoto
+              ? null
+              : Text(student.name.isNotEmpty ? student.name[0].toUpperCase() : '?',
+                  style: TextStyle(color: color, fontWeight: FontWeight.bold)),
         ),
         const SizedBox(width: 10),
         Expanded(

@@ -4,7 +4,11 @@ import 'package:maktab_app/providers/auth_provider.dart';
 import 'package:maktab_app/repositories/student_repository.dart';
 import 'package:maktab_app/repositories/user_repository.dart';
 import 'package:maktab_app/repositories/batch_repository.dart';
+import 'dart:async';
+import 'package:maktab_app/repositories/teacher_attendance_repository.dart';
+import 'package:maktab_app/repositories/announcement_repository.dart';
 import 'package:maktab_app/repositories/attendance_repository.dart';
+import 'package:maktab_app/repositories/message_repository.dart';
 import 'package:maktab_app/services/cloud_sync_service.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter/cupertino.dart';
@@ -40,6 +44,10 @@ class _AdminDashboardState extends State<AdminDashboard>
   int _totalStudents = 0;
   int _totalTeachers = 0;
   int _totalBatches = 0;
+  int _unreadMessagesCount = 0;
+  int _unreadTeacherAttendanceCount = 0;
+  int _recentAnnouncementsCount = 0;
+  StreamSubscription<String>? _syncSub;
   List<Map<String, dynamic>> _recentAttendance = [];
   List<AnomalyAlert> _aiAlerts = [];
   bool _aiInsightsExpanded = false;
@@ -49,6 +57,10 @@ class _AdminDashboardState extends State<AdminDashboard>
     super.initState();
     _loadAiInsightsExpandedState();
     _fetchDashboardStats();
+
+    _syncSub = CloudSyncService.instance.onDataSynced.listen((_) {
+      if (mounted) _fetchDashboardStats();
+    });
 
     // Main body fade+slide
     _animController = AnimationController(
@@ -67,11 +79,37 @@ class _AdminDashboardState extends State<AdminDashboard>
   }
 
   Future<void> _fetchDashboardStats() async {
+    final auth = Provider.of<AuthProvider>(context, listen: false);
+    final currentUserId = auth.currentUser?.teacherId ?? auth.currentUser?.id ?? 1;
+
     final students = await StudentRepository().getAllStudents();
     final teachers = await UserRepository().getAllTeachers();
     final batches = await BatchRepository().getAllBatches();
     final recentAtt = await AttendanceRepository().getRecentStudentAttendance(limit: 5);
     final alerts = await AnalyticsService.instance.getDashboardAnomalyAlerts();
+
+    int unreadMsgCount = 0;
+    try {
+      unreadMsgCount = await MessageRepository().getUnreadCountForReceiver(currentUserId, isAdmin: true);
+    } catch (e) {
+      debugPrint('[AdminDashboard] Error fetching unread messages: $e');
+    }
+
+    final today = DateTime.now().toIso8601String().substring(0, 10);
+    int unreadTeacherAtt = 0;
+    try {
+      unreadTeacherAtt = await TeacherAttendanceRepository().getUnreadCountForDate(today);
+    } catch (e) {
+      debugPrint('[AdminDashboard] Error fetching unread teacher attendance: $e');
+    }
+
+    int annCount = 0;
+    try {
+      final anns = await AnnouncementRepository().getRecent(limit: 5);
+      annCount = anns.length;
+    } catch (e) {
+      debugPrint('[AdminDashboard] Error fetching announcements: $e');
+    }
 
     if (mounted) {
       setState(() {
@@ -80,6 +118,9 @@ class _AdminDashboardState extends State<AdminDashboard>
         _totalBatches = batches.length;
         _recentAttendance = recentAtt;
         _aiAlerts = alerts;
+        _unreadMessagesCount = unreadMsgCount;
+        _unreadTeacherAttendanceCount = unreadTeacherAtt;
+        _recentAnnouncementsCount = annCount;
       });
     }
   }
@@ -106,6 +147,7 @@ class _AdminDashboardState extends State<AdminDashboard>
 
   @override
   void dispose() {
+    _syncSub?.cancel();
     _animController.dispose();
     _nameController.dispose();
     super.dispose();
@@ -268,7 +310,7 @@ class _AdminDashboardState extends State<AdminDashboard>
 
   Widget _buildStatCard(String label, int value, IconData icon, Color color) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -358,16 +400,20 @@ class _AdminDashboardState extends State<AdminDashboard>
                       ),
                     ),
                     const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: Colors.red.shade50,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.red.shade200),
-                      ),
-                      child: Text(
-                        '${_aiAlerts.length} Action Needed',
-                        style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.red.shade900),
+                    Flexible(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: Colors.red.shade50,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.red.shade200),
+                        ),
+                        child: Text(
+                          '${_aiAlerts.length} Action Needed',
+                          style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.red.shade900),
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                        ),
                       ),
                     ),
                     const SizedBox(width: 4),
@@ -609,6 +655,7 @@ class _AdminDashboardState extends State<AdminDashboard>
           child: CustomScrollView(
             physics: const BouncingScrollPhysics(),
             slivers: [
+              _buildNotificationsBannerSliver(),
               if (auth.provisionFailures.isNotEmpty)
                 SliverToBoxAdapter(
                   child: Container(
@@ -812,9 +859,9 @@ class _AdminDashboardState extends State<AdminDashboard>
                       final isTablet = constraints.maxWidth >= 800;
                       return SingleChildScrollView(
                         scrollDirection: Axis.horizontal,
-                        physics: const NeverScrollableScrollPhysics(),
-                        child: SizedBox(
-                          width: constraints.maxWidth,
+                        physics: const BouncingScrollPhysics(),
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(minWidth: constraints.maxWidth),
                           child: Row(
                             children: [
                               Expanded(child: _buildStatCard('Students', _totalStudents, AppIcons.students, AppColors.primaryTeal)),
@@ -1020,6 +1067,14 @@ class _AdminDashboardState extends State<AdminDashboard>
                           bgColor: Colors.white,
                         ),
                         _buildFeatureCard(context,
+                          title: 'Messages',
+                          icon: Icons.chat_rounded,
+                          route: AppRoutes.adminMessages,
+                          iconColor: const Color(0xFF00796B),
+                          bgColor: Colors.white,
+                          badge: _unreadMessagesCount > 0 ? '$_unreadMessagesCount' : null,
+                        ),
+                        _buildFeatureCard(context,
                           title: 'WhatsApp',
                           icon: AppIcons.whatsapp,
                           route: AppRoutes.adminToolsWhatsApp,
@@ -1096,6 +1151,85 @@ class _AdminDashboardState extends State<AdminDashboard>
     );
   }
 
+  Widget _buildNotificationsBannerSliver() {
+    final totalUnread = _unreadMessagesCount + _unreadTeacherAttendanceCount;
+    if (totalUnread == 0 && _recentAnnouncementsCount == 0) {
+      return const SliverToBoxAdapter(child: SizedBox.shrink());
+    }
+
+    final parts = <String>[];
+    if (_unreadMessagesCount > 0) {
+      parts.add('$_unreadMessagesCount new message${_unreadMessagesCount > 1 ? 's' : ''}');
+    }
+    if (_unreadTeacherAttendanceCount > 0) {
+      parts.add('$_unreadTeacherAttendanceCount teacher attendance update${_unreadTeacherAttendanceCount > 1 ? 's' : ''}');
+    }
+    if (parts.isEmpty && _recentAnnouncementsCount > 0) {
+      parts.add('$_recentAnnouncementsCount announcement${_recentAnnouncementsCount > 1 ? 's' : ''}');
+    }
+
+    if (parts.isEmpty) {
+      return const SliverToBoxAdapter(child: SizedBox.shrink());
+    }
+
+    final summaryText = parts.join(' · ');
+
+    return SliverToBoxAdapter(
+      child: Container(
+        margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+        decoration: BoxDecoration(
+          color: const Color(0xFFE0F2F1),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFF80CBC4)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(12),
+            onTap: () {
+              if (_unreadMessagesCount > 0) {
+                context.push('/admin/messages');
+              } else if (_unreadTeacherAttendanceCount > 0) {
+                context.push('/admin/teacher-attendance');
+              } else {
+                context.push('/admin/announcements');
+              }
+            },
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              child: Row(
+                children: [
+                  const Icon(Icons.notifications_active_rounded, color: Color(0xFF00695C), size: 20),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      summaryText,
+                      style: const TextStyle(
+                        color: Color(0xFF004D40),
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  const Icon(Icons.chevron_right_rounded, color: Color(0xFF00695C), size: 18),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildDrawer(BuildContext context, AuthProvider auth, AppLocalizations? loc) {
     return Drawer(
       backgroundColor: Colors.transparent,
@@ -1157,6 +1291,7 @@ class _AdminDashboardState extends State<AdminDashboard>
                 _drawerItem(context, icon: AppIcons.batches, label: loc?.translate('batches') ?? 'Batches', route: AppRoutes.adminBatches),
                 _drawerItem(context, icon: AppIcons.reports, label: loc?.translate('reports') ?? 'Reports', route: AppRoutes.adminReports),
                 _drawerItem(context, icon: AppIcons.checklist, label: loc?.translate('checklist') ?? 'Checklist', route: AppRoutes.adminChecklist),
+                _drawerItem(context, icon: Icons.chat_rounded, label: 'Messages', route: AppRoutes.adminMessages),
                 _drawerItem(context, icon: AppIcons.settings, label: loc?.translate('settings') ?? 'Settings', route: AppRoutes.adminSettings),
                 const Divider(height: 1, indent: 16, endIndent: 16),
                 _drawerItem(

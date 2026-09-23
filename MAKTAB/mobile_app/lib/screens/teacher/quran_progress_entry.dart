@@ -35,6 +35,7 @@ class _QuranProgressEntryScreenState extends State<QuranProgressEntryScreen> {
   bool _isListening = false;
 
   String _grade = 'A+';
+  String _recitationType = 'Sabaq';
   int _tajweedMistakes = 0;
   int _memorizationMistakes = 0;
 
@@ -103,6 +104,7 @@ class _QuranProgressEntryScreenState extends State<QuranProgressEntryScreen> {
         ayahFrom: int.parse(_ayahFromCtrl.text),
         ayahTo: int.parse(_ayahToCtrl.text),
         grade: _grade,
+        recitationType: _recitationType,
         remarks: _remarksCtrl.text,
       );
       if (!mounted) return;
@@ -142,7 +144,24 @@ class _QuranProgressEntryScreenState extends State<QuranProgressEntryScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const _SectionTitle('Recitation Details'),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 10),
+                  SizedBox(
+                    width: double.infinity,
+                    child: SegmentedButton<String>(
+                      segments: const [
+                        ButtonSegment(value: 'Sabaq', label: Text('Sabaq')),
+                        ButtonSegment(value: 'Sabaqi', label: Text('Sabaqi')),
+                        ButtonSegment(value: 'Manzil', label: Text('Manzil')),
+                      ],
+                      selected: {_recitationType},
+                      onSelectionChanged: (newSelection) {
+                        setState(() {
+                          _recitationType = newSelection.first;
+                        });
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 16),
                   DropdownButtonFormField<String>(
                     initialValue: _surahCtrl.text.isNotEmpty ? _surahCtrl.text : _surahPresets.first,
                     decoration: InputDecoration(

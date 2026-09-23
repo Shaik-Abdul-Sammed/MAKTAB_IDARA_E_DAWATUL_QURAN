@@ -315,24 +315,30 @@ class _StudentAddScreenState extends State<StudentAddScreen> {
                   const SizedBox(height: 12),
 
                   Center(
-                    child: Column(
-                      children: [
-                        GestureDetector(
-                          onTap: _pickImage,
-                          child: CircleAvatar(
-                            radius: 50,
-                            backgroundColor: const Color(0xFFE9F1E9),
-                            backgroundImage: _selectedPhotoPath != null ? FileImage(File(_selectedPhotoPath!)) : null,
-                            child: _selectedPhotoPath == null ? const Icon(Icons.person, color: Color(0xFF004D40), size: 40) : null,
-                          ),
-                        ),
-                        TextButton.icon(
-                          onPressed: _pickImage,
-                          icon: const Icon(Icons.add_a_photo, size: 18),
-                          label: Text(_selectedPhotoPath == null ? 'Add Photo' : 'Change Photo'),
-                          style: TextButton.styleFrom(foregroundColor: const Color(0xFF004D40)),
-                        ),
-                      ],
+                    child: Builder(
+                      builder: (context) {
+                        final photoFile = _selectedPhotoPath != null && _selectedPhotoPath!.isNotEmpty ? File(_selectedPhotoPath!) : null;
+                        final hasPhoto = photoFile != null && photoFile.existsSync();
+                        return Column(
+                          children: [
+                            GestureDetector(
+                              onTap: _pickImage,
+                              child: CircleAvatar(
+                                radius: 50,
+                                backgroundColor: const Color(0xFFE9F1E9),
+                                backgroundImage: hasPhoto ? FileImage(photoFile!) : null,
+                                child: hasPhoto ? null : const Icon(Icons.person, color: Color(0xFF004D40), size: 40),
+                              ),
+                            ),
+                            TextButton.icon(
+                              onPressed: _pickImage,
+                              icon: const Icon(Icons.add_a_photo, size: 18),
+                              label: Text(_selectedPhotoPath == null ? 'Add Photo' : 'Change Photo'),
+                              style: TextButton.styleFrom(foregroundColor: const Color(0xFF004D40)),
+                            ),
+                          ],
+                        );
+                      },
                     ),
                   ),
                   const SizedBox(height: 16),

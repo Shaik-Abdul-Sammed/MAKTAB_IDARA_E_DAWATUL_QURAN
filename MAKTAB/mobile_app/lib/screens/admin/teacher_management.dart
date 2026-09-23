@@ -592,8 +592,12 @@ class _TeacherManagementScreenState extends State<TeacherManagementScreen> {
                           leading: CircleAvatar(
                             backgroundColor: const Color(0xFFE9F1E9),
                             radius: 25,
-                            backgroundImage: teacher.photoPath != null ? FileImage(File(teacher.photoPath!)) : null,
-                            child: teacher.photoPath == null ? const Icon(Icons.person, color: Color(0xFF004D40)) : null,
+                            backgroundImage: (teacher.photoPath != null && teacher.photoPath!.isNotEmpty && File(teacher.photoPath!).existsSync())
+                                ? FileImage(File(teacher.photoPath!))
+                                : null,
+                            child: (teacher.photoPath == null || teacher.photoPath!.isEmpty || !File(teacher.photoPath!).existsSync())
+                                ? const Icon(Icons.person, color: Color(0xFF004D40))
+                                : null,
                           ),
                           title: Text(
                             teacher.name,

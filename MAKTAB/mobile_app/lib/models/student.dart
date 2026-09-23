@@ -1,3 +1,5 @@
+import 'dart:io';
+
 class Student {
   final int? id;
   final String admissionNumber;
@@ -123,6 +125,11 @@ class Student {
       }
     }
 
+    final rawPhoto = (map['photo_path'] ?? map['photoPath'])?.toString();
+    final validPhoto = (rawPhoto != null && rawPhoto.isNotEmpty && File(rawPhoto).existsSync())
+        ? rawPhoto
+        : null;
+
     return Student(
       id: rawId,
       admissionNumber: (map['admission_number'] ?? map['admissionNumber'] ?? '').toString(),
@@ -134,7 +141,7 @@ class Student {
       phone: map['phone'],
       guardianName: map['guardian_name'] ?? map['guardianName'],
       guardianPhone: map['guardian_phone'] ?? map['guardianPhone'],
-      photoPath: map['photo_path'] ?? map['photoPath'],
+      photoPath: validPhoto,
       batchId: bId,
       createdAt: (map['created_at'] ?? map['createdAt'] ?? DateTime.now().toIso8601String()).toString(),
       feesAmount: map['fees_amount'] != null ? int.tryParse(map['fees_amount'].toString()) : null,

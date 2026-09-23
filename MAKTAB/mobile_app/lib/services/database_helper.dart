@@ -42,7 +42,7 @@ class DatabaseHelper {
       return await ffi.databaseFactoryFfi.openDatabase(
         path,
         options: ffi.OpenDatabaseOptions(
-          version: 17,
+          version: 22,
           onConfigure: (db) async {
             await db.execute('PRAGMA foreign_keys = ON');
           },
@@ -59,7 +59,7 @@ class DatabaseHelper {
     return await openDatabase(
       path,
       password: key,
-      version: 17,
+      version: 22,
       onConfigure: (db) async {
         await db.execute('PRAGMA foreign_keys = ON');
       },
@@ -161,8 +161,7 @@ class DatabaseHelper {
         name $textType,
         timing $textType,
         teacher_id $integerNullable,
-        is_synced INTEGER DEFAULT 1,
-        FOREIGN KEY (teacher_id) REFERENCES users (id) ON DELETE SET NULL
+        is_synced INTEGER DEFAULT 1
       )
     ''');
 
@@ -190,6 +189,7 @@ class DatabaseHelper {
         status $textType,
         remarks $textNullable,
         time $textNullable,
+        time_period $textNullable,
         is_synced INTEGER DEFAULT 1
       )
     ''');
@@ -206,6 +206,8 @@ class DatabaseHelper {
         remarks $textNullable,
         marked_by $integerNullable,
         time $textNullable,
+        time_period $textNullable,
+        is_read INTEGER DEFAULT 0,
         is_synced INTEGER DEFAULT 1
       )
     ''');
@@ -223,6 +225,7 @@ class DatabaseHelper {
         ayah_from $integerType,
         ayah_to $integerType,
         grade $textType,
+        recitation_type TEXT DEFAULT 'Sabaq',
         remarks $textNullable,
         is_synced INTEGER DEFAULT 1
       )
@@ -819,6 +822,111 @@ class DatabaseHelper {
         debugPrint('[MIGRATION v17] Updated manager name in local users table');
       } catch (e) {
         debugPrint('[MIGRATION v17 ERROR] Manager name update: $e');
+      }
+    }
+
+    if (oldVersion < 18) {
+      try {
+        await db.execute('ALTER TABLE batches RENAME TO batches_old');
+        await db.execute('''
+          CREATE TABLE batches (
+            id INTEGER PRIMARY KEY,
+            name TEXT NOT NULL,
+            timing TEXT,
+            teacher_id INTEGER,
+            is_synced INTEGER DEFAULT 1
+          )
+        ''');
+        await db.execute('INSERT INTO batches (id, name, timing, teacher_id, is_synced) SELECT id, name, timing, teacher_id, is_synced FROM batches_old');
+        await db.execute('DROP TABLE batches_old');
+        await db.execute('CREATE INDEX IF NOT EXISTS idx_batch_teacher ON batches(teacher_id)');
+        debugPrint('[MIGRATION v18] Rebuilt batches table without FK');
+      } catch (e) {
+        debugPrint('[MIGRATION v18 ERROR] Rebuilding batches: $e');
+      }
+
+      try {
+        await db.execute('ALTER TABLE teacher_attendance RENAME TO teacher_attendance_old');
+        await db.execute('''
+          CREATE TABLE teacher_attendance (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            teacher_id INTEGER NOT NULL,
+            date TEXT NOT NULL,
+            status TEXT NOT NULL,
+            remarks TEXT,
+            marked_by INTEGER,
+            time TEXT,
+            is_synced INTEGER DEFAULT 1
+          )
+        ''');
+        await db.execute('INSERT INTO teacher_attendance SELECT * FROM teacher_attendance_old');
+        await db.execute('DROP TABLE teacher_attendance_old');
+        await db.execute('CREATE INDEX IF NOT EXISTS idx_teach_att_date ON teacher_attendance(date)');
+        await db.execute('CREATE INDEX IF NOT EXISTS idx_teach_att_teacher_date ON teacher_attendance(teacher_id, date)');
+        debugPrint('[MIGRATION v18] Rebuilt teacher_attendance table without FK');
+      } catch (e) {
+        debugPrint('[MIGRATION v18 ERROR] Rebuilding teacher_attendance: $e');
+      }
+
+      try {
+        await db.execute('ALTER TABLE salary_payments RENAME TO salary_payments_old');
+        await db.execute('''
+          CREATE TABLE salary_payments (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            teacher_id INTEGER NOT NULL,
+            maktab_id TEXT NOT NULL,
+            salary_month TEXT NOT NULL,
+            amount INTEGER NOT NULL,
+            payment_date TEXT NOT NULL,
+            payment_mode TEXT NOT NULL,
+            upi_id_snapshot TEXT,
+            transaction_reference TEXT,
+            status TEXT NOT NULL,
+            notes TEXT,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            is_synced INTEGER DEFAULT 1
+          )
+        ''');
+        await db.execute('INSERT INTO salary_payments SELECT * FROM salary_payments_old');
+        await db.execute('DROP TABLE salary_payments_old');
+        await db.execute('CREATE INDEX IF NOT EXISTS idx_sp_teacher_month ON salary_payments(teacher_id, salary_month)');
+        debugPrint('[MIGRATION v18] Rebuilt salary_payments table without FK');
+      } catch (e) {
+        debugPrint('[MIGRATION v18 ERROR] Rebuilding salary_payments: $e');
+      }
+    }
+
+    if (oldVersion < 20) {
+      try {
+        await db.execute("ALTER TABLE quran_progress ADD COLUMN recitation_type TEXT DEFAULT 'Sabaq'");
+        debugPrint('[MIGRATION v20] Added recitation_type column to quran_progress');
+      } catch (e) {
+        debugPrint('[MIGRATION v20 ERROR] Adding recitation_type: $e');
+      }
+    }
+
+    if (oldVersion < 21) {
+      try {
+        await db.execute('ALTER TABLE attendance ADD COLUMN time_period TEXT');
+        debugPrint('[MIGRATION v21] Added time_period to attendance');
+      } catch (e) {
+        debugPrint('[MIGRATION v21 ERROR] Adding time_period to attendance: $e');
+      }
+      try {
+        await db.execute('ALTER TABLE teacher_attendance ADD COLUMN time_period TEXT');
+        debugPrint('[MIGRATION v21] Added time_period to teacher_attendance');
+      } catch (e) {
+        debugPrint('[MIGRATION v21 ERROR] Adding time_period to teacher_attendance: $e');
+      }
+    }
+
+    if (oldVersion < 22) {
+      try {
+        await db.execute('ALTER TABLE teacher_attendance ADD COLUMN is_read INTEGER DEFAULT 0');
+        debugPrint('[MIGRATION v22] Added is_read to teacher_attendance');
+      } catch (e) {
+        debugPrint('[MIGRATION v22 ERROR] Adding is_read to teacher_attendance: $e');
       }
     }
   }

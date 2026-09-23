@@ -132,6 +132,7 @@ class CloudSyncService {
   Future<bool>? _activePullFuture;
 
   Stream<String> get onDataSynced => _syncController.stream;
+  Stream<String> get dataChangeStream => _syncController.stream;
 
   void notifyDataChanged(String collection) {
     if (!_syncController.isClosed) {

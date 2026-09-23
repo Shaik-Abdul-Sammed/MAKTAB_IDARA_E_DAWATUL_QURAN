@@ -4,6 +4,7 @@ import 'package:maktab_app/widgets/custom_app_bar.dart';
 import 'package:provider/provider.dart';
 import 'package:maktab_app/providers/auth_provider.dart';
 import 'package:maktab_app/providers/message_provider.dart';
+import 'package:maktab_app/repositories/user_repository.dart';
 
 class MessageBoxScreen extends StatefulWidget {
   const MessageBoxScreen({super.key});
@@ -13,13 +14,31 @@ class MessageBoxScreen extends StatefulWidget {
 }
 
 class _MessageBoxScreenState extends State<MessageBoxScreen> {
+  /// The resolved local DB id of the admin/manager.  Falls back to 1 if no
+  /// admin record is found (the historic default for single-device deployments).
+  int _adminId = 1;
+
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       final auth = Provider.of<AuthProvider>(context, listen: false);
       if (auth.currentUser != null) {
-        Provider.of<MessageProvider>(context, listen: false).loadUserMessages(auth.currentUser!.id!);
+        final teacherId = auth.currentUser?.teacherId ?? auth.currentUser?.id ?? 0;
+
+        // Resolve the admin's canonical ID so messages are addressed correctly
+        // even when the manager's local id differs from 1.
+        final adminUser = await UserRepository().getAdminUser();
+        if (adminUser != null && mounted) {
+          setState(() {
+            _adminId = adminUser.teacherId ?? adminUser.id ?? 1;
+          });
+        }
+
+        if (mounted) {
+          Provider.of<MessageProvider>(context, listen: false)
+              .loadUserMessages(teacherId);
+        }
       }
     });
   }
@@ -35,8 +54,10 @@ class _MessageBoxScreenState extends State<MessageBoxScreen> {
           }
 
           final messages = msgProvider.userMessages;
-          final unreadBroadcasts = messages.where((m) => m.receiverId == null && !m.isRead).length;
-          final unreadDirect = messages.where((m) => m.receiverId != null && !m.isRead).length;
+          final unreadBroadcasts =
+              messages.where((m) => m.receiverId == null && !m.isRead).length;
+          final unreadDirect =
+              messages.where((m) => m.receiverId != null && !m.isRead).length;
 
           return ListView(
             padding: const EdgeInsets.all(16),
@@ -59,8 +80,7 @@ class _MessageBoxScreenState extends State<MessageBoxScreen> {
                 icon: Icons.admin_panel_settings,
                 unreadCount: unreadDirect,
                 onTap: () {
-                  // Admin is user ID 1 in this single-device offline flow usually
-                  context.push('/chat/1?name=Administration');
+                  context.push('/chat/$_adminId?name=Administration');
                 },
               ),
             ],
@@ -70,7 +90,8 @@ class _MessageBoxScreenState extends State<MessageBoxScreen> {
     );
   }
 
-  Widget _buildChatTile(BuildContext context, {
+  Widget _buildChatTile(
+    BuildContext context, {
     required String title,
     required String subtitle,
     required IconData icon,
@@ -98,7 +119,10 @@ class _MessageBoxScreenState extends State<MessageBoxScreen> {
                 backgroundColor: Colors.redAccent,
                 child: Text(
                   unreadCount.toString(),
-                  style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold),
                 ),
               )
             : const Icon(Icons.chevron_right),

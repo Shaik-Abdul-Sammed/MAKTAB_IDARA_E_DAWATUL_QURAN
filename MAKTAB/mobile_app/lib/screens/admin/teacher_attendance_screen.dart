@@ -85,7 +85,8 @@ class _TeacherAttendanceScreenState extends State<TeacherAttendanceScreen> {
 
       // Default everyone to Present
       for (final t in teachers) {
-        if (t.id != null) loadedAttendance[t.id!] = 'Present';
+        final tid = t.teacherId ?? t.id;
+        if (tid != null) loadedAttendance[tid] = 'Present';
       }
 
       for (final record in attendanceList) {
@@ -97,11 +98,12 @@ class _TeacherAttendanceScreenState extends State<TeacherAttendanceScreen> {
 
       // Sync controllers
       for (final t in teachers) {
-        if (t.id == null) continue;
-        if (!_remarksControllers.containsKey(t.id)) {
-          _remarksControllers[t.id!] = TextEditingController();
+        final tid = t.teacherId ?? t.id;
+        if (tid == null) continue;
+        if (!_remarksControllers.containsKey(tid)) {
+          _remarksControllers[tid] = TextEditingController();
         }
-        _remarksControllers[t.id!]!.text = loadedRemarks[t.id!] ?? '';
+        _remarksControllers[tid]!.text = loadedRemarks[tid] ?? '';
       }
 
       if (mounted) {
@@ -175,11 +177,12 @@ class _TeacherAttendanceScreenState extends State<TeacherAttendanceScreen> {
     try {
       final nowTime = DateFormat('hh:mm a').format(DateTime.now());
       for (final teacher in _teachers) {
-        if (teacher.id == null) continue;
-        final status = _attendanceMap[teacher.id!] ?? 'Present';
-        final remarks = _remarksControllers[teacher.id!]?.text.trim();
+        final tid = teacher.teacherId ?? teacher.id;
+        if (tid == null) continue;
+        final status = _attendanceMap[tid] ?? 'Present';
+        final remarks = _remarksControllers[tid]?.text.trim();
         await _attendanceRepository.upsertAttendance(TeacherAttendance(
-          teacherId: teacher.teacherId ?? teacher.id!,   // canonical, not local
+          teacherId: tid,   // canonical, not local
           date: dateStr,
           status: status,
           remarks: remarks?.isEmpty == true ? null : remarks,
@@ -204,13 +207,13 @@ class _TeacherAttendanceScreenState extends State<TeacherAttendanceScreen> {
 
   void _showPostSaveSummary(String dateStr) {
     final present =
-        _teachers.where((t) => t.id != null && _attendanceMap[t.id] == 'Present').toList();
+        _teachers.where((t) => _attendanceMap[t.teacherId ?? t.id] == 'Present').toList();
     final absent =
-        _teachers.where((t) => t.id != null && _attendanceMap[t.id] == 'Absent').toList();
+        _teachers.where((t) => _attendanceMap[t.teacherId ?? t.id] == 'Absent').toList();
     final late =
-        _teachers.where((t) => t.id != null && _attendanceMap[t.id] == 'Late').toList();
+        _teachers.where((t) => _attendanceMap[t.teacherId ?? t.id] == 'Late').toList();
     final leave =
-        _teachers.where((t) => t.id != null && _attendanceMap[t.id] == 'Leave').toList();
+        _teachers.where((t) => _attendanceMap[t.teacherId ?? t.id] == 'Leave').toList();
     final nonPresent = [...absent, ...late, ...leave];
 
     showModalBottomSheet(
@@ -283,7 +286,7 @@ class _TeacherAttendanceScreenState extends State<TeacherAttendanceScreen> {
                       _SectionLabel(label: '❌ Not Present (${nonPresent.length})', color: Colors.red),
                       ...nonPresent.map((t) => _SummaryTeacherTile(
                           teacher: t,
-                          status: _attendanceMap[t.id] ?? 'Absent',
+                          status: _attendanceMap[t.teacherId ?? t.id] ?? 'Absent',
                           dateStr: dateStr)),
                       const SizedBox(height: 16),
                     ],
@@ -372,11 +375,14 @@ class _TeacherAttendanceScreenState extends State<TeacherAttendanceScreen> {
   }
 
   void _openVoiceAttendance() {
-    final items = _teachers.where((t) => t.id != null).map((t) => VoiceAttendanceItem(
-      id: t.id!,
-      name: t.name,
-      currentStatus: _attendanceMap[t.id!] ?? 'Present',
-    )).toList();
+    final items = _teachers.where((t) => (t.teacherId ?? t.id) != null).map((t) {
+      final tid = t.teacherId ?? t.id!;
+      return VoiceAttendanceItem(
+        id: tid,
+        name: t.name,
+        currentStatus: _attendanceMap[tid] ?? 'Present',
+      );
+    }).toList();
 
     showDialog(
       context: context,
@@ -627,8 +633,9 @@ class _TeacherAttendanceScreenState extends State<TeacherAttendanceScreen> {
                           child: OutlinedButton.icon(
                             onPressed: () => setState(() {
                               for (final t in _teachers) {
-                                if (t.id != null) {
-                                  _attendanceMap[t.id!] = 'Present';
+                                final tid = t.teacherId ?? t.id;
+                                if (tid != null) {
+                                  _attendanceMap[tid] = 'Present';
                                 }
                               }
                             }),
@@ -644,8 +651,9 @@ class _TeacherAttendanceScreenState extends State<TeacherAttendanceScreen> {
                           child: OutlinedButton.icon(
                             onPressed: () => setState(() {
                               for (final t in _teachers) {
-                                if (t.id != null) {
-                                  _attendanceMap[t.id!] = 'Absent';
+                                final tid = t.teacherId ?? t.id;
+                                if (tid != null) {
+                                  _attendanceMap[tid] = 'Absent';
                                 }
                               }
                             }),
@@ -678,10 +686,10 @@ class _TeacherAttendanceScreenState extends State<TeacherAttendanceScreen> {
                             itemCount: _teachers.length,
                             itemBuilder: (context, index) {
                               final teacher = _teachers[index];
-                              if (teacher.id == null) {
+                              final id = teacher.teacherId ?? teacher.id;
+                              if (id == null) {
                                 return const SizedBox.shrink();
                               }
-                              final id = teacher.id!;
                               final hasPhoto = teacher.photoPath != null &&
                                   teacher.photoPath!.isNotEmpty &&
                                   File(teacher.photoPath!).existsSync();

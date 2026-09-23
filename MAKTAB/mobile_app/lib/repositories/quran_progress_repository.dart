@@ -99,4 +99,51 @@ class QuranProgressRepository {
     ''', [teacherId, '$yearMonth%']);
     return (rows.first['cnt'] as int?) ?? 0;
   }
+
+  /// Total count of all progress entries submitted by a teacher.
+  Future<int> getTotalProgressCount(int teacherId) async {
+    final db = await _dbHelper.database;
+    final rows = await db.rawQuery('''
+      SELECT COUNT(*) as cnt
+      FROM quran_progress qp
+      INNER JOIN students s ON qp.student_id = s.id
+      INNER JOIN batches b ON s.batch_id = b.id
+      WHERE b.teacher_id = ?
+    ''', [teacherId]);
+    return (rows.first['cnt'] as int?) ?? 0;
+  }
+
+  /// Count of distinct students under a teacher who have at least one progress record.
+  Future<int> getStudentsWithProgressCount(int teacherId) async {
+    final db = await _dbHelper.database;
+    final rows = await db.rawQuery('''
+      SELECT COUNT(DISTINCT qp.student_id) as cnt
+      FROM quran_progress qp
+      INNER JOIN students s ON qp.student_id = s.id
+      INNER JOIN batches b ON s.batch_id = b.id
+      WHERE b.teacher_id = ?
+    ''', [teacherId]);
+    return (rows.first['cnt'] as int?) ?? 0;
+  }
+
+  /// Grade distribution breakdown for a teacher.
+  Future<Map<String, int>> getGradeDistribution(int teacherId) async {
+    final db = await _dbHelper.database;
+    final rows = await db.rawQuery('''
+      SELECT qp.grade, COUNT(*) as cnt
+      FROM quran_progress qp
+      INNER JOIN students s ON qp.student_id = s.id
+      INNER JOIN batches b ON s.batch_id = b.id
+      WHERE b.teacher_id = ?
+      GROUP BY qp.grade
+    ''', [teacherId]);
+    final map = <String, int>{};
+    for (final row in rows) {
+      final grade = row['grade']?.toString();
+      if (grade != null && grade.isNotEmpty) {
+        map[grade] = (row['cnt'] as int?) ?? 0;
+      }
+    }
+    return map;
+  }
 }

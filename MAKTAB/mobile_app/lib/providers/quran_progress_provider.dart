@@ -42,6 +42,7 @@ class QuranProgressProvider extends ChangeNotifier {
     required int ayahFrom,
     required int ayahTo,
     required String grade,
+    String recitationType = 'Sabaq',
     String? remarks,
   }) async {
     _isSaving = true;
@@ -55,6 +56,7 @@ class QuranProgressProvider extends ChangeNotifier {
         ayahFrom: ayahFrom,
         ayahTo: ayahTo,
         grade: grade,
+        recitationType: recitationType,
         remarks: remarks?.trim().isEmpty ?? true ? null : remarks?.trim(),
       );
       await _repo.insertQuranProgress(entry);

@@ -5,6 +5,8 @@ import 'package:maktab_app/providers/auth_provider.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:maktab_app/services/backup_restore_service.dart';
 import 'package:maktab_app/services/remember_me_service.dart';
+import 'package:maktab_app/l10n/app_localizations.dart';
+import 'package:maktab_app/providers/locale_provider.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -300,13 +302,34 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final auth = Provider.of<AuthProvider>(context);
+    final loc = AppLocalizations.of(context);
+    final localeProvider = Provider.of<LocaleProvider>(context);
 
     return Scaffold(
       backgroundColor: const Color(0xFF004D40), // Dark Islamic Emerald Green
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        actions: [
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.language, color: Color(0xFFFFD700)),
+            tooltip: loc?.translate('language') ?? 'Language',
+            onSelected: (code) {
+              localeProvider.setLocale(Locale(code));
+            },
+            itemBuilder: (ctx) => [
+              const PopupMenuItem(value: 'en', child: Text('English')),
+              const PopupMenuItem(value: 'ur', child: Text('اردو (Urdu)')),
+              const PopupMenuItem(value: 'te', child: Text('తెలుగు (Telugu)')),
+              const PopupMenuItem(value: 'hi', child: Text('हिन्दी (Hindi)')),
+            ],
+          ),
+        ],
+      ),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24.0),
+            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -324,20 +347,21 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                const Text(
-                  "MAKTAB",
-                  style: TextStyle(
+                Text(
+                  loc?.translate('app_title') ?? "MAKTAB",
+                  style: const TextStyle(
                     color: Color(0xFFFFD700),
-                    fontSize: 32,
+                    fontSize: 28,
                     fontWeight: FontWeight.bold,
                     letterSpacing: 2,
                   ),
+                  textAlign: TextAlign.center,
                 ),
                 const Text(
                   "Idara-e-Dawatul Qur'an",
                   style: TextStyle(color: Colors.white70, fontSize: 16),
                 ),
-                const SizedBox(height: 32),
+                const SizedBox(height: 24),
 
                 // Card Container for Login Form
                 Container(
@@ -359,9 +383,9 @@ class _LoginScreenState extends State<LoginScreen> {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         // Role Selection Button Bar ("Manager / Admin" vs "Teacher")
-                        const Text(
-                          "SELECT LOGGING ROLE",
-                          style: TextStyle(
+                        Text(
+                          loc?.translate('login') ?? "SELECT LOGGING ROLE",
+                          style: const TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.bold,
                             color: Color(0xFF004D40),
@@ -375,16 +399,16 @@ class _LoginScreenState extends State<LoginScreen> {
                             selectedBackgroundColor: const Color(0xFF004D40),
                             selectedForegroundColor: Colors.white,
                           ),
-                          segments: const [
+                          segments: [
                             ButtonSegment<String>(
                               value: 'manager',
-                              label: Text('Manager / Admin'),
-                              icon: Icon(Icons.admin_panel_settings),
+                              label: Text(loc?.translate('login_as_manager') ?? 'Manager / Admin'),
+                              icon: const Icon(Icons.admin_panel_settings),
                             ),
                             ButtonSegment<String>(
                               value: 'teacher',
-                              label: Text('Teacher'),
-                              icon: Icon(Icons.school),
+                              label: Text(loc?.translate('login_as_teacher') ?? 'Teacher'),
+                              icon: const Icon(Icons.school),
                             ),
                           ],
                           selected: {_selectedRole},
@@ -402,7 +426,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             controller: _emailController,
                             keyboardType: TextInputType.emailAddress,
                             decoration: InputDecoration(
-                              labelText: 'Email Address',
+                              labelText: loc?.translate('email') ?? 'Email Address',
                               hintText: 'manager@example.com',
                               prefixIcon: const Icon(Icons.email_outlined, color: Color(0xFF004D40)),
                               border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
@@ -410,8 +434,8 @@ class _LoginScreenState extends State<LoginScreen> {
                               fillColor: const Color(0xFFF5F7F5),
                             ),
                             validator: (val) {
-                              if (val == null || val.trim().isEmpty) return 'Please enter your email';
-                              if (!val.contains('@')) return 'Enter a valid email address';
+                              if (val == null || val.trim().isEmpty) return loc?.translate('enter_valid_email') ?? 'Please enter your email';
+                              if (!val.contains('@')) return loc?.translate('enter_valid_email') ?? 'Enter a valid email address';
                               return null;
                             },
                           ),
@@ -422,7 +446,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             controller: _passwordController,
                             obscureText: _obscurePassword,
                             decoration: InputDecoration(
-                              labelText: 'Password',
+                              labelText: loc?.translate('password') ?? 'Password',
                               prefixIcon: const Icon(Icons.lock_outline, color: Color(0xFF004D40)),
                               suffixIcon: IconButton(
                                 icon: Icon(
@@ -440,7 +464,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               fillColor: const Color(0xFFF5F7F5),
                             ),
                             validator: (val) {
-                              if (val == null || val.trim().isEmpty) return 'Please enter your password';
+                              if (val == null || val.trim().isEmpty) return loc?.translate('enter_password') ?? 'Please enter your password';
                               if (val.length < 6) return 'Password must be at least 6 characters';
                               return null;
                             },
@@ -468,9 +492,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                     ),
                                   ),
                                   const SizedBox(width: 8),
-                                  const Text(
-                                    'Remember me',
-                                    style: TextStyle(
+                                  Text(
+                                    loc?.translate('remember_me') ?? 'Remember me',
+                                    style: const TextStyle(
                                       fontSize: 14,
                                       fontWeight: FontWeight.w500,
                                     ),
@@ -479,9 +503,9 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                               TextButton(
                                 onPressed: _showForgotPasswordDialog,
-                                child: const Text(
-                                  'Forgot Password?',
-                                  style: TextStyle(
+                                child: Text(
+                                  loc?.translate('forgot_password') ?? 'Forgot Password?',
+                                  style: const TextStyle(
                                     color: Color(0xFF004D40),
                                     fontWeight: FontWeight.w600,
                                   ),
@@ -517,7 +541,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           TextFormField(
                             controller: _teacherIdController,
                             decoration: InputDecoration(
-                              labelText: 'Teacher ID or Mobile',
+                              labelText: loc?.translate('teacher_id') ?? 'Teacher ID or Mobile',
                               hintText: 'e.g. 2026-1 or 9177024433',
                               prefixIcon: const Icon(Icons.badge_outlined, color: Color(0xFF004D40)),
                               border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
@@ -525,7 +549,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               fillColor: const Color(0xFFF5F7F5),
                             ),
                             validator: (val) {
-                              if (val == null || val.trim().isEmpty) return 'Please enter Teacher ID or Mobile';
+                              if (val == null || val.trim().isEmpty) return loc?.translate('enter_teacher_id') ?? 'Please enter Teacher ID or Mobile';
                               return null;
                             },
                           ),
@@ -538,7 +562,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             keyboardType: TextInputType.number,
                             maxLength: 6,
                             decoration: InputDecoration(
-                              labelText: '4-Digit PIN',
+                              labelText: loc?.translate('pin') ?? '4-Digit PIN',
                               prefixIcon: const Icon(Icons.lock_outline, color: Color(0xFF004D40)),
                               suffixIcon: IconButton(
                                 icon: Icon(
@@ -557,7 +581,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               counterText: '',
                             ),
                             validator: (val) {
-                              if (val == null || val.trim().isEmpty) return 'Please enter 4-digit PIN';
+                              if (val == null || val.trim().isEmpty) return loc?.translate('enter_pin') ?? 'Please enter 4-digit PIN';
                               if (val.trim().length < 4) return 'PIN must be at least 4 digits';
                               return null;
                             },
@@ -581,9 +605,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ),
                               ),
                               const SizedBox(width: 8),
-                              const Text(
-                                'Remember Teacher ID',
-                                style: TextStyle(
+                              Text(
+                                loc?.translate('remember_me') ?? 'Remember Teacher ID',
+                                style: const TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w500,
                                 ),
@@ -638,7 +662,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                   ),
                                 )
                               : Text(
-                                  _selectedRole == 'manager' ? 'LOGIN AS MANAGER' : 'LOGIN AS TEACHER',
+                                  _selectedRole == 'manager'
+                                      ? (loc?.translate('login_as_manager') ?? 'LOGIN AS MANAGER').toUpperCase()
+                                      : (loc?.translate('login_as_teacher') ?? 'LOGIN AS TEACHER').toUpperCase(),
                                   style: const TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.bold,

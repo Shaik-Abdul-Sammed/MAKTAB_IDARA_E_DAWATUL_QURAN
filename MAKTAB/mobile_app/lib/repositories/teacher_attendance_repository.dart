@@ -61,6 +61,29 @@ class TeacherAttendanceRepository {
     return List.generate(maps.length, (i) => TeacherAttendance.fromMap(maps[i]));
   }
 
+  Future<int> getUnreadCountForDate(String date) async {
+    final db = await _dbHelper.database;
+    final result = await db.rawQuery(
+      'SELECT COUNT(*) as count FROM teacher_attendance WHERE date = ? AND (is_read IS NULL OR is_read = 0)',
+      [date],
+    );
+    if (result.isNotEmpty && result.first['count'] != null) {
+      return int.tryParse(result.first['count'].toString()) ?? 0;
+    }
+    return 0;
+  }
+
+  Future<void> markAllAsReadForDate(String date) async {
+    final db = await _dbHelper.database;
+    await db.update(
+      'teacher_attendance',
+      {'is_read': 1},
+      where: 'date = ?',
+      whereArgs: [date],
+    );
+    CloudSyncService.instance.notifyDataChanged('teacher_attendance');
+  }
+
   Future<List<TeacherAttendance>> getAttendanceByTeacher(
     int teacherId, {
     String? from,

@@ -16,6 +16,7 @@ import 'package:maktab_app/repositories/attendance_repository.dart';
 import 'package:maktab_app/services/cloud_sync_service.dart';
 import 'package:maktab_app/widgets/teacher/teacher_quick_actions.dart';
 import 'package:table_calendar/table_calendar.dart';
+import 'package:maktab_app/l10n/app_localizations.dart';
 
 class TeacherHomeScreen extends StatefulWidget {
   const TeacherHomeScreen({super.key});
@@ -30,6 +31,7 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
   final _teacherAttRepo = TeacherAttendanceRepository();
   final _attRepo = AttendanceRepository();
   StreamSubscription<String>? _syncSub;
+  StreamSubscription<String>? _teacherAttendanceSub;
 
   List<Batch> _myBatches = [];
   List<Student> _myStudents = [];
@@ -46,6 +48,11 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
   @override
   void initState() {
     super.initState();
+    _teacherAttendanceSub = CloudSyncService.instance.dataChangeStream.listen((collection) {
+      if (collection == 'teacher_attendance' && mounted) {
+        _loadAttendance();
+      }
+    });
     _syncSub = CloudSyncService.instance.onDataSynced.listen((collection) {
       if (mounted &&
           (collection == 'attendance' ||
@@ -61,8 +68,32 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
 
   @override
   void dispose() {
+    _teacherAttendanceSub?.cancel();
     _syncSub?.cancel();
     super.dispose();
+  }
+
+  Future<void> _loadAttendance() async {
+    final auth = Provider.of<AuthProvider>(context, listen: false);
+    final canonicalId = auth.currentUser?.teacherId ?? auth.currentUser?.id ?? 0;
+    if (canonicalId == 0) return;
+
+    final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
+    final yearMonth = DateFormat('yyyy-MM').format(DateTime.now());
+
+    final results = await Future.wait([
+      _teacherAttRepo.getAttendanceByTeacher(canonicalId, from: _monthStart(), to: today),
+      _teacherAttRepo.getMonthSummary(canonicalId, yearMonth),
+    ]);
+
+    final attendances = results[0] as List<TeacherAttendance>;
+    final summary = results[1] as Map<String, int>;
+
+    if (!mounted) return;
+    setState(() {
+      _recentAttendance = attendances.take(10).toList();
+      _monthSummary = summary;
+    });
   }
 
   Future<void> _load() async {
@@ -75,8 +106,8 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
     final yearMonth = DateFormat('yyyy-MM').format(DateTime.now());
 
     final results = await Future.wait([
-      _batchRepo.fetchTeacherBatches(_teacherId),
-      _studentRepo.getStudentsByTeacher(_teacherId),
+      _batchRepo.fetchTeacherBatches(canonicalId),
+      _studentRepo.getStudentsByTeacher(canonicalId),
       _teacherAttRepo.getAttendanceByTeacher(canonicalId, from: _monthStart(), to: today),
       _teacherAttRepo.getMonthSummary(canonicalId, yearMonth),
     ]);
@@ -174,6 +205,7 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
     final teacherName = auth.currentUser?.name ?? 'Teacher';
     final today = DateFormat('EEEE, d MMM yyyy').format(DateTime.now());
     final yearMonth = DateFormat('MMMM yyyy').format(DateTime.now());
+    final loc = AppLocalizations.of(context);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7F0),
@@ -210,7 +242,7 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
                           mainAxisAlignment: MainAxisAlignment.end,
                           children: [
                             Text(
-                              'Assalamu Alaikum,',
+                              '${loc?.translate('welcome') ?? "Assalamu Alaikum"},',
                               style: TextStyle(
                                 color: Colors.white.withValues(alpha: 0.80),
                                 fontSize: 13,
@@ -241,24 +273,24 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
                     actions: [
                       IconButton(
                         icon: const Icon(Icons.mail_outline),
-                        tooltip: 'Messages',
+                        tooltip: loc?.translate('messages') ?? 'Messages',
                         onPressed: () => context.push('/teacher/messages'),
                       ),
                       IconButton(
                         icon: const Icon(Icons.help_outline),
-                        tooltip: 'Support & Help',
+                        tooltip: loc?.translate('help_support') ?? 'Support & Help',
                         onPressed: () => context.push('/teacher/support'),
                       ),
                       IconButton(
                         icon: const Icon(Icons.notifications_outlined),
                         onPressed: () =>
                             context.push('/teacher/notifications'),
-                        tooltip: 'Notifications',
+                        tooltip: loc?.translate('announcements') ?? 'Notifications',
                       ),
                       IconButton(
                         icon: const Icon(Icons.person_outline_rounded),
                         onPressed: () => context.push('/teacher/profile'),
-                        tooltip: 'My Profile',
+                        tooltip: loc?.translate('profiles') ?? 'My Profile',
                       ),
                     ],
                   ),
@@ -270,7 +302,7 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          _sectionLabel('Quick Actions'),
+                          _sectionLabel(loc?.translate('quick_actions') ?? 'Quick Actions'),
                           const SizedBox(height: 12),
                           TeacherQuickActions(
                             teacherId: _teacherId,
@@ -285,13 +317,13 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
                   SliverToBoxAdapter(
                     child: Padding(
                       padding: const EdgeInsets.fromLTRB(16, 24, 16, 0),
-                      child: _sectionLabel('Today\'s Batches'),
+                      child: _sectionLabel(loc?.translate('my_batches') ?? 'Today\'s Batches'),
                     ),
                   ),
                   _myBatches.isEmpty
                       ? SliverToBoxAdapter(
                           child: _emptyCard(
-                            'No batches assigned yet.\nContact Admin to assign your batches.',
+                            loc?.translate('no_batches_assigned') ?? 'No batches assigned yet.\nContact Admin to assign your batches.',
                             Icons.class_outlined,
                           ),
                         )
@@ -325,13 +357,13 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          _sectionLabel('My Attendance Submissions'),
+                          _sectionLabel(loc?.translate('attendance_summary') ?? 'My Attendance Submissions'),
                           TextButton(
                             onPressed: () =>
                                 context.push('/teacher/my-attendance'),
-                            child: const Text(
-                              'View All',
-                              style: TextStyle(color: AppColors.primaryTeal),
+                            child: Text(
+                              loc?.translate('view_all') ?? 'View All',
+                              style: const TextStyle(color: AppColors.primaryTeal),
                             ),
                           ),
                         ],
@@ -531,6 +563,8 @@ class _BatchTimelineCard extends StatelessWidget {
                             batch.timing,
                             style: const TextStyle(
                                 fontSize: 12, color: Colors.black54),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ],
                       ),
@@ -611,6 +645,7 @@ class _AttendanceSummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context);
     final total = summary['total'] ?? 0;
     final present = summary['present'] ?? 0;
 
@@ -645,17 +680,25 @@ class _AttendanceSummaryCard extends StatelessWidget {
           const SizedBox(height: 12),
           Row(
             children: [
-              _SummaryChip('Present', summary['present'] ?? 0,
+              _SummaryChip(
+                  loc?.translate('present') ?? 'Present',
+                  summary['present'] ?? 0,
                   const Color(0xFF81C784)),
               const SizedBox(width: 8),
-              _SummaryChip('Absent', summary['absent'] ?? 0,
+              _SummaryChip(
+                  loc?.translate('absent') ?? 'Absent',
+                  summary['absent'] ?? 0,
                   const Color(0xFFEF9A9A)),
               const SizedBox(width: 8),
               _SummaryChip(
-                  'Late', summary['late'] ?? 0, const Color(0xFFFFCC80)),
+                  loc?.translate('late') ?? 'Late',
+                  summary['late'] ?? 0,
+                  const Color(0xFFFFCC80)),
               const SizedBox(width: 8),
               _SummaryChip(
-                  'Leave', summary['leave'] ?? 0, const Color(0xFF90CAF9)),
+                  loc?.translate('leave') ?? 'Leave',
+                  summary['leave'] ?? 0,
+                  const Color(0xFF90CAF9)),
             ],
           ),
         ],

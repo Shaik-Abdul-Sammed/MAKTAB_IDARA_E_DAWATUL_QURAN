@@ -5,6 +5,7 @@ class Attendance {
   final String status; // 'Present', 'Absent', 'Leave', 'Late'
   final String? remarks;
   final String? time; // e.g. "08:30 AM"
+  final String? timePeriod; // e.g. 'Morning', 'Afternoon', 'Evening'
 
   Attendance({
     this.id,
@@ -13,6 +14,7 @@ class Attendance {
     required this.status,
     this.remarks,
     this.time,
+    this.timePeriod,
   });
 
   Attendance copyWith({
@@ -22,6 +24,7 @@ class Attendance {
     String? status,
     String? remarks,
     String? time,
+    String? timePeriod,
   }) {
     return Attendance(
       id: id ?? this.id,
@@ -30,6 +33,7 @@ class Attendance {
       status: status ?? this.status,
       remarks: remarks ?? this.remarks,
       time: time ?? this.time,
+      timePeriod: timePeriod ?? this.timePeriod,
     );
   }
 
@@ -41,6 +45,7 @@ class Attendance {
       'status': status,
       'remarks': remarks,
       'time': time,
+      'time_period': timePeriod,
     };
   }
 
@@ -72,6 +77,7 @@ class Attendance {
       status: rawStatus,
       remarks: map['remarks']?.toString(),
       time: map['time']?.toString(),
+      timePeriod: (map['time_period'] ?? map['timePeriod'])?.toString(),
     );
   }
 }

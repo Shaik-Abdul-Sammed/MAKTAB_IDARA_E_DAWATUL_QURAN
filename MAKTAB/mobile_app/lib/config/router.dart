@@ -31,6 +31,8 @@ import 'package:maktab_app/screens/admin/admin_messages_screen.dart';
 import 'package:maktab_app/screens/chat_screen.dart';
 import 'package:maktab_app/screens/teacher/quran_progress_screen.dart';
 import 'package:maktab_app/screens/teacher/quran_progress_entry.dart';
+import 'package:maktab_app/screens/teacher/quran_progress_history.dart';
+import 'package:maktab_app/screens/reports/quran_progress_summary.dart';
 import 'package:maktab_app/screens/teacher/daily_checklist_screen.dart';
 import 'package:maktab_app/screens/teacher/notification_center.dart';
 import 'package:maktab_app/screens/teacher/message_box.dart';
@@ -539,6 +541,14 @@ class AppRouter {
                     },
                   );
                 },
+              ),
+              GoRoute(
+                path: 'history',
+                builder: (context, state) => const QuranProgressHistoryScreen(),
+              ),
+              GoRoute(
+                path: 'summary',
+                builder: (context, state) => const QuranProgressSummaryScreen(),
               ),
             ],
           ),

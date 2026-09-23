@@ -333,6 +333,8 @@ class _StudentEditScreenState extends State<StudentEditScreen> {
     final initials = s.name.isNotEmpty
         ? s.name.trim().split(' ').map((e) => e.isNotEmpty ? e[0] : '').take(2).join().toUpperCase()
         : 'S';
+    final photoFile = _selectedPhotoPath != null && _selectedPhotoPath!.isNotEmpty ? File(_selectedPhotoPath!) : null;
+    final hasPhoto = photoFile != null && photoFile.existsSync();
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -350,8 +352,8 @@ class _StudentEditScreenState extends State<StudentEditScreen> {
                   onTap: _pickImage,
                   child: CircleAvatar(
                     radius: 28,
-                    backgroundImage: _selectedPhotoPath != null ? FileImage(File(_selectedPhotoPath!)) : null,
-                    child: _selectedPhotoPath == null ? Text(initials, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)) : null,
+                    backgroundImage: hasPhoto ? FileImage(photoFile!) : null,
+                    child: hasPhoto ? null : Text(initials, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
                   ),
                 ),
               ),

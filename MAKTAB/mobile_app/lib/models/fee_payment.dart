@@ -6,6 +6,9 @@ class FeePayment {
   final String timestamp;
   final String? notes;
   final String? voiceNotePath;
+  /// 0 = pending cloud sync, 1 = synced. Defaults to 0 on insert so the
+  /// retry queue can pick it up if the initial push fails.
+  final int isSynced;
 
   FeePayment({
     this.id,
@@ -15,6 +18,7 @@ class FeePayment {
     required this.timestamp,
     this.notes,
     this.voiceNotePath,
+    this.isSynced = 0,
   });
 
   Map<String, dynamic> toMap() {
@@ -26,6 +30,7 @@ class FeePayment {
       'timestamp': timestamp,
       if (notes != null) 'notes': notes,
       if (voiceNotePath != null) 'voice_note_path': voiceNotePath,
+      'is_synced': isSynced,
     };
   }
 
@@ -38,6 +43,7 @@ class FeePayment {
       timestamp: map['timestamp'] as String,
       notes: map['notes'] as String?,
       voiceNotePath: map['voice_note_path'] as String?,
+      isSynced: (map['is_synced'] as int?) ?? 0,
     );
   }
 
@@ -49,6 +55,7 @@ class FeePayment {
     String? timestamp,
     String? notes,
     String? voiceNotePath,
+    int? isSynced,
   }) {
     return FeePayment(
       id: id ?? this.id,
@@ -58,6 +65,7 @@ class FeePayment {
       timestamp: timestamp ?? this.timestamp,
       notes: notes ?? this.notes,
       voiceNotePath: voiceNotePath ?? this.voiceNotePath,
+      isSynced: isSynced ?? this.isSynced,
     );
   }
 }
