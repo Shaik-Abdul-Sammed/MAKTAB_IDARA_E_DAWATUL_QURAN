@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:maktab_app/services/database_helper.dart';
 
 enum AlertSeverity { critical, warning, info }
@@ -63,6 +64,7 @@ class AnalyticsService {
       final quranAnomalies = await getQuranStagnationAnomalies();
       alerts.addAll(quranAnomalies);
     } catch (e) {
+      debugPrint('[AnalyticsService.getDashboardAnomalyAlerts] anomaly calculation failed: $e');
       // Return empty or partial list gracefully if database is uninitialized
     }
 

@@ -113,20 +113,34 @@ class _StudentAcademicHistoryScreenState extends State<StudentAcademicHistoryScr
               if (_isLoading)
                 const CircularProgressIndicator()
               else
-                DropdownButtonFormField<Student>(
-                  initialValue: _selectedStudent,
-                  decoration: InputDecoration(
-                    filled: true,
-                    fillColor: Colors.white,
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                  ),
-                  items: _students.map((s) {
-                    return DropdownMenuItem<Student>(
-                      value: s,
-                      child: Text(s.name, style: const TextStyle(fontSize: 14)),
+                Builder(
+                  builder: (context) {
+                    final uniqueStudents = {
+                      for (final s in _students)
+                        if (s.id != null) s.id!: s
+                    }.values.toList();
+                    final matchedStudent = _selectedStudent == null
+                        ? null
+                        : uniqueStudents.cast<Student?>().firstWhere(
+                            (s) => s?.id == _selectedStudent?.id,
+                            orElse: () => null,
+                          );
+                    return DropdownButtonFormField<Student?>(
+                      initialValue: matchedStudent,
+                      decoration: InputDecoration(
+                        filled: true,
+                        fillColor: Colors.white,
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                      ),
+                      items: uniqueStudents.map((s) {
+                        return DropdownMenuItem<Student?>(
+                          value: s,
+                          child: Text(s.name, style: const TextStyle(fontSize: 14)),
+                        );
+                      }).toList(),
+                      onChanged: (val) => setState(() => _selectedStudent = val),
                     );
-                  }).toList(),
-                  onChanged: (val) => setState(() => _selectedStudent = val),
+                  },
                 ),
               const SizedBox(height: 24),
 

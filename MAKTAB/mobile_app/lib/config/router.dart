@@ -39,6 +39,7 @@ import 'package:maktab_app/screens/teacher/message_box.dart';
 import 'package:maktab_app/screens/teacher/teacher_home.dart';
 import 'package:maktab_app/screens/teacher/teacher_batches.dart';
 import 'package:maktab_app/screens/teacher/teacher_fees_screen.dart';
+import 'package:maktab_app/screens/teacher/teacher_salary_screen.dart';
 import 'package:maktab_app/screens/teacher/attendance_history.dart';
 import 'package:maktab_app/screens/reports/reports_dashboard.dart';
 import 'package:maktab_app/screens/reports/student_academic_history.dart';
@@ -482,6 +483,13 @@ class AppRouter {
             path: 'fees',
             pageBuilder: (context, state) => build3DPageTransition(
               child: const TeacherFeesScreen(),
+              state: state,
+            ),
+          ),
+          GoRoute(
+            path: 'salary',
+            pageBuilder: (context, state) => build3DPageTransition(
+              child: const TeacherSalaryScreen(),
               state: state,
             ),
           ),

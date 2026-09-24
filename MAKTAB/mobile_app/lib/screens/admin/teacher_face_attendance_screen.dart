@@ -225,27 +225,41 @@ class _TeacherFaceAttendanceScreenState extends State<TeacherFaceAttendanceScree
                 border: Border.all(color: Colors.white24),
               ),
               child: DropdownButtonHideUnderline(
-                child: DropdownButton<User>(
-                  value: _selectedTeacher,
-                  dropdownColor: const Color(0xFF1A2634),
-                  hint: const Text('Select Teacher', style: TextStyle(color: Colors.white70)),
-                  isExpanded: true,
-                  icon: const Icon(Icons.person_search_rounded, color: AppColors.goldAccent),
-                  items: _teachers.map((User teacher) {
-                    return DropdownMenuItem<User>(
-                      value: teacher,
-                      child: Text(
-                        teacher.name,
-                        style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
-                      ),
+                child: Builder(
+                  builder: (context) {
+                    final uniqueTeachers = {
+                      for (final t in _teachers)
+                        if (t.id != null) t.id!: t
+                    }.values.toList();
+                    final matchedTeacher = _selectedTeacher == null
+                        ? null
+                        : uniqueTeachers.cast<User?>().firstWhere(
+                            (t) => t?.id == _selectedTeacher?.id,
+                            orElse: () => null,
+                          );
+                    return DropdownButton<User>(
+                      value: matchedTeacher,
+                      dropdownColor: const Color(0xFF1A2634),
+                      hint: const Text('Select Teacher', style: TextStyle(color: Colors.white70)),
+                      isExpanded: true,
+                      icon: const Icon(Icons.person_search_rounded, color: AppColors.goldAccent),
+                      items: uniqueTeachers.map((User teacher) {
+                        return DropdownMenuItem<User>(
+                          value: teacher,
+                          child: Text(
+                            teacher.name,
+                            style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+                          ),
+                        );
+                      }).toList(),
+                      onChanged: (val) {
+                        setState(() {
+                          _selectedTeacher = val;
+                          _isMatched = false;
+                          _statusMessage = 'Align face inside circle';
+                        });
+                      },
                     );
-                  }).toList(),
-                  onChanged: (val) {
-                    setState(() {
-                      _selectedTeacher = val;
-                      _isMatched = false;
-                      _statusMessage = 'Align face inside circle';
-                    });
                   },
                 ),
               ),

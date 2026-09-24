@@ -143,6 +143,7 @@ class _LogFeePaymentDialogState extends State<LogFeePaymentDialog> {
           receiptText = buf.toString();
         }
 
+        if (!mounted) return;
         await showDialog(
           context: context,
           builder: (dialogCtx) => ReceiptPreviewDialog(
@@ -250,13 +251,13 @@ class _LogFeePaymentDialogState extends State<LogFeePaymentDialog> {
                 
                 // Mode Dropdown
                 DropdownButtonFormField<String>(
-                  initialValue: _selectedMode,
+                  initialValue: _modes.contains(_selectedMode) ? _selectedMode : _modes.first,
                   decoration: const InputDecoration(
                     labelText: 'Payment Mode',
                     prefixIcon: Icon(Icons.account_balance_wallet_outlined),
                     border: OutlineInputBorder(),
                   ),
-                  items: _modes.map((mode) {
+                  items: _modes.toSet().map((mode) {
                     return DropdownMenuItem(value: mode, child: Text(mode));
                   }).toList(),
                   onChanged: (val) {

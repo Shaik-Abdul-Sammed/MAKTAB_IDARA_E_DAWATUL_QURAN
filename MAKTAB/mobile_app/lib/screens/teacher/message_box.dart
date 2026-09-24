@@ -112,8 +112,10 @@ class _MessageBoxScreenState extends State<MessageBoxScreen> {
               } else {
                 await _announcementRepo.insertAnnouncement(newObj);
               }
-              if (mounted) {
+              if (ctx.mounted) {
                 Navigator.pop(ctx);
+              }
+              if (mounted) {
                 _loadAnnouncements();
               }
             },
@@ -152,8 +154,10 @@ class _MessageBoxScreenState extends State<MessageBoxScreen> {
                       icon: const Icon(Icons.delete, color: Colors.red),
                       onPressed: () async {
                         await _announcementRepo.deleteAnnouncement(item.id!);
-                        if (mounted) {
+                        if (ctx.mounted) {
                           Navigator.pop(ctx);
+                        }
+                        if (mounted) {
                           _loadAnnouncements();
                         }
                       },
@@ -186,7 +190,7 @@ class _MessageBoxScreenState extends State<MessageBoxScreen> {
                     onPressed: () async {
                       Navigator.pop(ctx);
                       final lang = await LanguagePickerDialog.show(context);
-                      if (lang == null || !context.mounted) return;
+                      if (lang == null || !mounted) return;
                       await WhatsAppUtility.sendNoticeMessage(
                         context,
                         title: item.title,

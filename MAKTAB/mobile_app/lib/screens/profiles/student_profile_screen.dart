@@ -71,7 +71,17 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Calling $phone...')));
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('[StudentProfileScreen._callParent] launch failed: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Could not open the app. Please try again.'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _openWhatsApp() async {
@@ -90,7 +100,17 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Could not open WhatsApp for $phone')));
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('[StudentProfileScreen._openWhatsApp] launch failed: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Could not open the app. Please try again.'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _showEditStudentDialog() async {

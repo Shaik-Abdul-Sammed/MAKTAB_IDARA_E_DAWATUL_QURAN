@@ -68,7 +68,14 @@ class _StudentListScreenState extends State<StudentListScreen> {
       if (mounted) {
         setState(() => _batches = list);
       }
-    } catch (_) {}
+    } catch (e, st) {
+      debugPrint('[StudentListScreen._loadBatches] load failed: $e\n$st');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not load data.')),
+        );
+      }
+    }
   }
 
   Future<void> _loadUnassignedStudents() async {
@@ -136,23 +143,33 @@ class _StudentListScreenState extends State<StudentListScreen> {
                     style: const TextStyle(fontSize: 13, color: Colors.black54),
                   ),
                   const SizedBox(height: 20),
-                  DropdownButtonFormField<int>(
-                    initialValue: selectedBatchId,
-                    decoration: InputDecoration(
-                      labelText: 'Select Batch',
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                      prefixIcon: const Icon(Icons.class_outlined, color: Color(0xFF004D40)),
-                    ),
-                    items: _batches.map((b) {
-                      return DropdownMenuItem<int>(
-                        value: b.id,
-                        child: Text(b.name),
+                  Builder(
+                    builder: (context) {
+                      final uniqueBatches = {
+                        for (final b in _batches)
+                          if (b.id != null) b.id: b
+                      }.values.toList();
+                      final hasMatch = selectedBatchId != null &&
+                          uniqueBatches.any((b) => b.id == selectedBatchId);
+                      return DropdownButtonFormField<int?>(
+                        initialValue: hasMatch ? selectedBatchId : null,
+                        decoration: InputDecoration(
+                          labelText: 'Select Batch',
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                          prefixIcon: const Icon(Icons.class_outlined, color: Color(0xFF004D40)),
+                        ),
+                        items: uniqueBatches.map((b) {
+                          return DropdownMenuItem<int?>(
+                            value: b.id,
+                            child: Text(b.name),
+                          );
+                        }).toList(),
+                        onChanged: (val) {
+                          if (val != null) {
+                            setSheetState(() => selectedBatchId = val);
+                          }
+                        },
                       );
-                    }).toList(),
-                    onChanged: (val) {
-                      if (val != null) {
-                        setSheetState(() => selectedBatchId = val);
-                      }
                     },
                   ),
                   const SizedBox(height: 24),

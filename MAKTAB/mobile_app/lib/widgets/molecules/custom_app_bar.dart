@@ -62,24 +62,27 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           LayoutBuilder(
-            builder: (_, constraints) => ConstrainedBox(
-              // Cap width so actions don't get pushed off screen
-              constraints: BoxConstraints(
-                maxWidth: constraints.maxWidth > 0
-                    ? constraints.maxWidth
-                    : double.infinity,
-              ),
-              child: Text(
-                title,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18,
+            builder: (context, constraints) {
+              if (!constraints.hasBoundedWidth || constraints.maxWidth <= 0) {
+                return const SizedBox.shrink();
+              }
+              return ConstrainedBox(
+                // Cap width so actions don't get pushed off screen
+                constraints: BoxConstraints(
+                  maxWidth: constraints.maxWidth,
                 ),
-              ),
-            ),
+                child: Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                  ),
+                ),
+              );
+            },
           ),
           if (subtitle != null)
             Text(

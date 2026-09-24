@@ -117,7 +117,7 @@ class _MilestoneAddScreenState extends State<MilestoneAddScreen> {
                   ),
                   child: DropdownButtonHideUnderline(
                     child: DropdownButton<String>(
-                      value: _selectedValue,
+                      value: ['Option A', 'Option B', 'Option C'].contains(_selectedValue) ? _selectedValue : 'Option A',
                       isExpanded: true,
                       onChanged: (String? newValue) {
                         if (newValue != null) {

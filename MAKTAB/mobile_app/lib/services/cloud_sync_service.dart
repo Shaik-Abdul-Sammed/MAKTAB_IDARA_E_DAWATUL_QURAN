@@ -918,6 +918,25 @@ class CloudSyncService {
     }
   }
 
+  Future<void> deleteQuranProgressCloud(int id) async {
+    try {
+      final maktabId = await getMaktabId();
+      await _db?.ref('maktabs/$maktabId/quran_progress/$id').remove();
+      final snap = await _db?.ref('maktabs/$maktabId/quran_progress').get();
+      if (snap?.value is Map) {
+        final map = snap!.value as Map;
+        for (final entry in map.entries) {
+          if (entry.key == id.toString() || entry.key.toString().endsWith('_$id')) {
+            await _db?.ref('maktabs/$maktabId/quran_progress/${entry.key}').remove();
+          }
+        }
+      }
+      notifyDataChanged('quran_progress');
+    } catch (e) {
+      debugPrint('[CloudSync] deleteQuranProgressCloud error: $e');
+    }
+  }
+
   // ── Sync All Offline SQLite Records ────────────────────────────────────────
 
   bool _isSyncing = false;

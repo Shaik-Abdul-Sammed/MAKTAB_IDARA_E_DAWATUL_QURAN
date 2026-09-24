@@ -23,6 +23,7 @@ import 'package:path_provider/path_provider.dart';
 import '../../utils/permission_helper.dart';
 import '../../widgets/molecules/custom_app_bar.dart';
 import '../../widgets/shimmer_loader.dart';
+import '../../widgets/finance/finance_totals_card.dart';
 
 import '../../widgets/bulk_fee_messaging_dialog.dart';
 
@@ -50,6 +51,8 @@ class FeeManagementScreen extends StatefulWidget {
 class _FeeManagementScreenState extends State<FeeManagementScreen> {
   List<FeeStudentItem> _feeItems = [];
   List<Batch> _batches = [];
+  Map<String, int> _feeTotals = const {};
+  Map<String, int> _modeBreakdown = const {};
   bool _isLoading = true;
   String _filter = 'All';
   String _searchQuery = '';
@@ -104,10 +107,15 @@ class _FeeManagementScreenState extends State<FeeManagementScreen> {
         ));
       }
       
+      final feeTotals = await FeePaymentRepository().getFeeTotals();
+      final modeBreakdown = await FeePaymentRepository().getFeeModeBreakdown();
+
       if (mounted) {
         setState(() {
           _batches = batches;
           _feeItems = items;
+          _feeTotals = feeTotals;
+          _modeBreakdown = modeBreakdown;
           _isLoading = false;
         });
       }
@@ -238,6 +246,12 @@ class _FeeManagementScreenState extends State<FeeManagementScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              if (_feeTotals.isNotEmpty)
+                FinanceTotalsCard(
+                  title: 'Collection Overview',
+                  periodTotals: _feeTotals,
+                  modeBreakdown: _modeBreakdown,
+                ),
               _buildSummaryBanner(totalPending),
               const SizedBox(height: 16),
 
@@ -296,18 +310,28 @@ class _FeeManagementScreenState extends State<FeeManagementScreen> {
                     ),
                   ),
                   if (_batches.isNotEmpty)
-                    DropdownButton<int?>(
-                      value: _selectedBatchId,
-                      hint: const Text('Filter Batch'),
-                      items: [
-                        const DropdownMenuItem(value: null, child: Text('All Batches')),
-                        ..._batches.map((b) => DropdownMenuItem(value: b.id, child: Text(b.name))),
-                      ],
-                      onChanged: (val) {
-                        setState(() {
-                          _selectedBatchId = val;
-                        });
-                        _loadFeeRecords();
+                    Builder(
+                      builder: (context) {
+                        final uniqueBatches = {
+                          for (final b in _batches)
+                            if (b.id != null) b.id: b
+                        }.values.toList();
+                        final hasMatch = _selectedBatchId == null ||
+                            uniqueBatches.any((b) => b.id == _selectedBatchId);
+                        return DropdownButton<int?>(
+                          value: hasMatch ? _selectedBatchId : null,
+                          hint: const Text('Filter Batch'),
+                          items: [
+                            const DropdownMenuItem(value: null, child: Text('All Batches')),
+                            ...uniqueBatches.map((b) => DropdownMenuItem(value: b.id, child: Text(b.name))),
+                          ],
+                          onChanged: (val) {
+                            setState(() {
+                              _selectedBatchId = val;
+                            });
+                            _loadFeeRecords();
+                          },
+                        );
                       },
                     ),
                 ],
@@ -447,13 +471,13 @@ class _FeeManagementScreenState extends State<FeeManagementScreen> {
               Text('Monthly Fee: ₹${item.student.feesAmount ?? 500}', style: const TextStyle(fontWeight: FontWeight.bold)),
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
-                initialValue: selectedMode,
+                initialValue: modes.contains(selectedMode) ? selectedMode : modes.first,
                 decoration: const InputDecoration(
                   labelText: 'Payment Mode',
                   border: OutlineInputBorder(),
                   contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 ),
-                items: modes.map((m) => DropdownMenuItem(value: m, child: Text(m))).toList(),
+                items: modes.toSet().map((m) => DropdownMenuItem(value: m, child: Text(m))).toList(),
                 onChanged: (val) {
                   if (val != null) setStateBuilder(() => selectedMode = val);
                 },

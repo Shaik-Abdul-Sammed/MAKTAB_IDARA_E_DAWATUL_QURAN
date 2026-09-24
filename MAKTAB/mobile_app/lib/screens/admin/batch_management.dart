@@ -89,27 +89,37 @@ class _BatchManagementScreenState extends State<BatchManagementScreen> {
                         validator: (val) => val == null || val.trim().isEmpty ? 'Please enter timings' : null,
                       ),
                       const SizedBox(height: 16),
-                      DropdownButtonFormField<int?>(
-                        decoration: InputDecoration(
-                          labelText: 'Assign Teacher',
-                          prefixIcon: const Icon(Icons.person, color: Color(0xFF004D40)),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                        ),
-                        initialValue: selectedTeacherId,
-                        items: [
-                          const DropdownMenuItem<int?>(
-                            value: null,
-                            child: Text('Unassigned'),
-                          ),
-                          ..._teachers.map((t) => DropdownMenuItem<int?>(
-                            value: t.id,
-                            child: Text(t.name),
-                          )),
-                        ],
-                        onChanged: (val) {
-                          setStateDialog(() {
-                            selectedTeacherId = val;
-                          });
+                      Builder(
+                        builder: (context) {
+                          final uniqueTeachers = {
+                            for (final t in _teachers)
+                              if (t.id != null) t.id: t
+                          }.values.toList();
+                          final hasMatch = selectedTeacherId == null ||
+                              uniqueTeachers.any((t) => t.id == selectedTeacherId);
+                          return DropdownButtonFormField<int?>(
+                            decoration: InputDecoration(
+                              labelText: 'Assign Teacher',
+                              prefixIcon: const Icon(Icons.person, color: Color(0xFF004D40)),
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                            ),
+                            initialValue: hasMatch ? selectedTeacherId : null,
+                            items: [
+                              const DropdownMenuItem<int?>(
+                                value: null,
+                                child: Text('Unassigned'),
+                              ),
+                              ...uniqueTeachers.map((t) => DropdownMenuItem<int?>(
+                                value: t.id,
+                                child: Text(t.name),
+                              )),
+                            ],
+                            onChanged: (val) {
+                              setStateDialog(() {
+                                selectedTeacherId = val;
+                              });
+                            },
+                          );
                         },
                       ),
                     ],
@@ -188,27 +198,37 @@ class _BatchManagementScreenState extends State<BatchManagementScreen> {
                         validator: (val) => val == null || val.trim().isEmpty ? 'Please enter timings' : null,
                       ),
                       const SizedBox(height: 16),
-                      DropdownButtonFormField<int?>(
-                        decoration: InputDecoration(
-                          labelText: 'Assign Teacher',
-                          prefixIcon: const Icon(Icons.person, color: Color(0xFF004D40)),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                        ),
-                        initialValue: selectedTeacherId,
-                        items: [
-                          const DropdownMenuItem<int?>(
-                            value: null,
-                            child: Text('Unassigned'),
-                          ),
-                          ..._teachers.map((t) => DropdownMenuItem<int?>(
-                            value: t.id,
-                            child: Text(t.name),
-                          )),
-                        ],
-                        onChanged: (val) {
-                          setStateDialog(() {
-                            selectedTeacherId = val;
-                          });
+                      Builder(
+                        builder: (context) {
+                          final uniqueTeachers = {
+                            for (final t in _teachers)
+                              if (t.id != null) t.id: t
+                          }.values.toList();
+                          final hasMatch = selectedTeacherId == null ||
+                              uniqueTeachers.any((t) => t.id == selectedTeacherId);
+                          return DropdownButtonFormField<int?>(
+                            decoration: InputDecoration(
+                              labelText: 'Assign Teacher',
+                              prefixIcon: const Icon(Icons.person, color: Color(0xFF004D40)),
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                            ),
+                            initialValue: hasMatch ? selectedTeacherId : null,
+                            items: [
+                              const DropdownMenuItem<int?>(
+                                value: null,
+                                child: Text('Unassigned'),
+                              ),
+                              ...uniqueTeachers.map((t) => DropdownMenuItem<int?>(
+                                value: t.id,
+                                child: Text(t.name),
+                              )),
+                            ],
+                            onChanged: (val) {
+                              setStateDialog(() {
+                                selectedTeacherId = val;
+                              });
+                            },
+                          );
                         },
                       ),
                     ],

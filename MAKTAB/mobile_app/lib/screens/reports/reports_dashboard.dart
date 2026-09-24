@@ -206,19 +206,33 @@ class _ReportsDashboardState extends State<ReportsDashboard> {
                 const Icon(Icons.class_, color: Color(0xFF004D40)),
                 const SizedBox(width: 10),
                 Expanded(
-                  child: DropdownButton<Batch>(
-                    isExpanded: true,
-                    value: _selectedBatch,
-                    underline: const SizedBox(),
-                    items: _batches.map((b) => DropdownMenuItem(
-                      value: b,
-                      child: Text(b.name, style: const TextStyle(fontWeight: FontWeight.bold)),
-                    )).toList(),
-                    onChanged: (val) {
-                      setState(() {
-                        _selectedBatch = val;
-                        _fetchStudents();
-                      });
+                  child: Builder(
+                    builder: (context) {
+                      final uniqueBatches = {
+                        for (final b in _batches)
+                          if (b.id != null) b.id: b
+                      }.values.toList();
+                      final matchedBatch = _selectedBatch == null
+                          ? null
+                          : uniqueBatches.cast<Batch?>().firstWhere(
+                              (b) => b?.id == _selectedBatch?.id,
+                              orElse: () => null,
+                            );
+                      return DropdownButton<Batch>(
+                        isExpanded: true,
+                        value: matchedBatch,
+                        underline: const SizedBox(),
+                        items: uniqueBatches.map((b) => DropdownMenuItem(
+                          value: b,
+                          child: Text(b.name, style: const TextStyle(fontWeight: FontWeight.bold)),
+                        )).toList(),
+                        onChanged: (val) {
+                          setState(() {
+                            _selectedBatch = val;
+                            _fetchStudents();
+                          });
+                        },
+                      );
                     },
                   ),
                 ),

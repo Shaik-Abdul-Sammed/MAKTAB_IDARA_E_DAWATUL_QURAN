@@ -9,6 +9,7 @@ class QuranProgress {
   final String grade; // 'A+', 'A', 'B', 'C'
   final String recitationType; // 'Sabaq', 'Sabaqi', 'Manzil'
   final String? remarks;
+  final int isSynced;
 
   QuranProgress({
     this.id,
@@ -21,6 +22,7 @@ class QuranProgress {
     required this.grade,
     this.recitationType = 'Sabaq',
     this.remarks,
+    this.isSynced = 1,
   });
 
   QuranProgress copyWith({
@@ -34,6 +36,7 @@ class QuranProgress {
     String? grade,
     String? recitationType,
     String? remarks,
+    int? isSynced,
   }) {
     return QuranProgress(
       id: id ?? this.id,
@@ -46,6 +49,7 @@ class QuranProgress {
       grade: grade ?? this.grade,
       recitationType: recitationType ?? this.recitationType,
       remarks: remarks ?? this.remarks,
+      isSynced: isSynced ?? this.isSynced,
     );
   }
 
@@ -61,6 +65,7 @@ class QuranProgress {
       'grade': grade,
       'recitation_type': recitationType,
       'remarks': remarks,
+      'is_synced': isSynced,
     };
   }
 
@@ -82,6 +87,7 @@ class QuranProgress {
       grade: (map['grade'] ?? 'A').toString(),
       recitationType: (map['recitation_type'] ?? map['recitationType'] ?? 'Sabaq').toString(),
       remarks: map['remarks']?.toString(),
+      isSynced: parseInt(map['is_synced'] ?? map['isSynced']) ?? 1,
     );
   }
 }

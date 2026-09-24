@@ -548,18 +548,27 @@ class _AttendanceEntryScreenState extends State<AttendanceEntryScreen>
                 const SizedBox(width: 8),
                 Expanded(
                   child: DropdownButtonHideUnderline(
-                    child: DropdownButton<String>(
-                      value: p.timePeriod,
-                      isDense: true,
-                      hint: Text(loc?.translate('search') ?? 'Select', style: const TextStyle(fontSize: 12)),
-                      items: [
-                        if (_batchTiming != null && _batchTiming!.isNotEmpty)
-                          DropdownMenuItem(value: _batchTiming!, child: Text('$_batchTiming (${loc?.translate('batches') ?? 'Batch'})', style: const TextStyle(fontSize: 12))),
-                        ...['Morning', 'Afternoon', 'Evening']
-                            .where((t) => t != _batchTiming)
-                            .map((t) => DropdownMenuItem(value: t, child: Text(loc?.translate(t.toLowerCase()) ?? t, style: const TextStyle(fontSize: 12)))),
-                      ],
-                      onChanged: (val) => p.setTimePeriod(val),
+                    child: Builder(
+                      builder: (context) {
+                        final validPeriods = [
+                          if (_batchTiming != null && _batchTiming!.isNotEmpty) _batchTiming!,
+                          ...['Morning', 'Afternoon', 'Evening'].where((t) => t != _batchTiming),
+                        ];
+                        final effectivePeriod = validPeriods.contains(p.timePeriod) ? p.timePeriod : null;
+                        return DropdownButton<String>(
+                          value: effectivePeriod,
+                          isDense: true,
+                          hint: Text(loc?.translate('search') ?? 'Select', style: const TextStyle(fontSize: 12)),
+                          items: [
+                            if (_batchTiming != null && _batchTiming!.isNotEmpty)
+                              DropdownMenuItem(value: _batchTiming!, child: Text('$_batchTiming (${loc?.translate('batches') ?? 'Batch'})', style: const TextStyle(fontSize: 12))),
+                            ...['Morning', 'Afternoon', 'Evening']
+                                .where((t) => t != _batchTiming)
+                                .map((t) => DropdownMenuItem(value: t, child: Text(loc?.translate(t.toLowerCase()) ?? t, style: const TextStyle(fontSize: 12)))),
+                          ],
+                          onChanged: (val) => p.setTimePeriod(val),
+                        );
+                      },
                     ),
                   ),
                 ),

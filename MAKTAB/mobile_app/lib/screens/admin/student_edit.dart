@@ -116,7 +116,9 @@ class _StudentEditScreenState extends State<StudentEditScreen> {
     if (_dobCtrl.text.isNotEmpty) {
       try {
         initial = DateTime.parse(_dobCtrl.text);
-      } catch (_) {}
+      } catch (e) {
+        debugPrint('[StudentEditScreen._pickDob] failed to parse DOB: $e');
+      }
     }
     final picked = await showDatePicker(
       context: context,
@@ -217,7 +219,9 @@ class _StudentEditScreenState extends State<StudentEditScreen> {
                   _buildBatchDropdown(),
                   const SizedBox(height: 16),
                   DropdownButtonFormField<String>(
-                    initialValue: _preferredLanguage,
+                    initialValue: ['en', 'ur', 'hi', 'te'].contains(_preferredLanguage)
+                        ? _preferredLanguage
+                        : 'en',
                     decoration: const InputDecoration(
                       labelText: 'Preferred Language for Receipts',
                       prefixIcon: Icon(Icons.translate),
@@ -415,10 +419,15 @@ class _StudentEditScreenState extends State<StudentEditScreen> {
         child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
       );
     }
+    final uniqueBatches = {
+      for (final b in _batches)
+        if (b.id != null) b.id: b
+    }.values.toList();
+    final hasMatch = _selectedBatchId == null ||
+        uniqueBatches.any((b) => b.id == _selectedBatchId);
+
     return DropdownButtonFormField<int?>(
-      initialValue: _batches.any((b) => b.id == _selectedBatchId)
-          ? _selectedBatchId
-          : null,
+      initialValue: hasMatch ? _selectedBatchId : null,
       decoration: _inputDecoration(
         label: 'Assigned Batch',
         hint: 'Select Batch',
@@ -426,7 +435,7 @@ class _StudentEditScreenState extends State<StudentEditScreen> {
       ),
       items: [
         const DropdownMenuItem<int?>(value: null, child: Text('Unassigned')),
-        ..._batches.map((b) {
+        ...uniqueBatches.map((b) {
           return DropdownMenuItem<int?>(
             value: b.id,
             child: Text(b.name, style: const TextStyle(fontSize: 14)),
@@ -438,6 +447,8 @@ class _StudentEditScreenState extends State<StudentEditScreen> {
   }
 
   Widget _buildGenderSelector() {
+    const validGenders = ['Male', 'Female'];
+    final effectiveGender = validGenders.contains(_gender) ? _gender : validGenders.first;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       decoration: BoxDecoration(
@@ -447,10 +458,10 @@ class _StudentEditScreenState extends State<StudentEditScreen> {
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
-          value: _gender,
+          value: effectiveGender,
           isExpanded: true,
           icon: const Icon(Icons.arrow_drop_down, color: Color(0xFF004D40)),
-          items: const ['Male', 'Female'].map((g) {
+          items: validGenders.map((g) {
             return DropdownMenuItem<String>(
               value: g,
               child: Text(g, style: const TextStyle(fontSize: 14)),

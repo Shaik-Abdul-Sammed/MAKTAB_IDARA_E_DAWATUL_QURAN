@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiConfig {
@@ -20,6 +21,8 @@ class ApiConfig {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('api_base_url', url);
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('[ApiConfig.setBaseUrl] failed to save api_base_url: $e');
+    }
   }
 }

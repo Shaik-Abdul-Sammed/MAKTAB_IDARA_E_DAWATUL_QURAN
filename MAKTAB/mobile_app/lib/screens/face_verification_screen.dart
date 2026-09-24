@@ -197,7 +197,10 @@ class _FaceVerificationScreenState extends State<FaceVerificationScreen> {
   void dispose() {
     try {
       _cameraController?.dispose();
-    } catch (_) {}
+    // Intentionally silent: cleanup during dispose; controller may already be torn down.
+    } catch (_) {
+      // Controller may already be torn down
+    }
     if (_faceDetector != null) {
       // close() invokes the native 'vision#closeFaceDetector' channel.
       // On unsupported platforms this throws MissingPluginException;

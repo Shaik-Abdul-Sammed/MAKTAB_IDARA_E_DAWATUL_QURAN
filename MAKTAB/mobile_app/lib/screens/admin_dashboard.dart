@@ -867,25 +867,28 @@ class _AdminDashboardState extends State<AdminDashboard>
                   padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
                   child: LayoutBuilder(
                     builder: (context, constraints) {
+                      if (!constraints.hasBoundedWidth || constraints.maxWidth <= 0) {
+                        return const SizedBox.shrink();
+                      }
                       final isTablet = constraints.maxWidth >= 800;
+                      final cardCount = isTablet ? 4 : 3;
+                      final totalSpacing = 8.0 * (cardCount - 1);
+                      final cardWidth = ((constraints.maxWidth - totalSpacing) / cardCount).clamp(110.0, 200.0);
                       return SingleChildScrollView(
                         scrollDirection: Axis.horizontal,
                         physics: const BouncingScrollPhysics(),
-                        child: ConstrainedBox(
-                          constraints: BoxConstraints(minWidth: constraints.maxWidth),
-                          child: Row(
-                            children: [
-                              Expanded(child: _buildStatCard('Students', _totalStudents, AppIcons.students, AppColors.primaryTeal)),
+                        child: Row(
+                          children: [
+                            SizedBox(width: cardWidth, child: _buildStatCard('Students', _totalStudents, AppIcons.students, AppColors.primaryTeal)),
+                            const SizedBox(width: 8),
+                            SizedBox(width: cardWidth, child: _buildStatCard('Teachers', _totalTeachers, AppIcons.teachers, const Color(0xFF1976D2))),
+                            const SizedBox(width: 8),
+                            SizedBox(width: cardWidth, child: _buildStatCard('Batches', _totalBatches, AppIcons.batches, const Color(0xFF388E3C))),
+                            if (isTablet) ...[
                               const SizedBox(width: 8),
-                              Expanded(child: _buildStatCard('Teachers', _totalTeachers, AppIcons.teachers, const Color(0xFF1976D2))),
-                              const SizedBox(width: 8),
-                              Expanded(child: _buildStatCard('Batches', _totalBatches, AppIcons.batches, const Color(0xFF388E3C))),
-                              if (isTablet) ...[
-                                const SizedBox(width: 8),
-                                Expanded(child: _buildStatCard('Attendance', 0, Icons.how_to_reg_rounded, const Color(0xFF7B1FA2))),
-                              ],
+                              SizedBox(width: cardWidth, child: _buildStatCard('Attendance', 0, Icons.how_to_reg_rounded, const Color(0xFF7B1FA2))),
                             ],
-                          ),
+                          ],
                         ),
                       );
                     },
@@ -910,7 +913,11 @@ class _AdminDashboardState extends State<AdminDashboard>
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 sliver: SliverLayoutBuilder(
                   builder: (context, constraints) {
-                    final isTablet = constraints.crossAxisExtent >= 800;
+                    final width = constraints.crossAxisExtent;
+                    if (width <= 0) {
+                      return const SliverToBoxAdapter(child: SizedBox.shrink());
+                    }
+                    final isTablet = width >= 800;
                     return SliverGrid(
                       delegate: SliverChildListDelegate([
                         _buildFeatureCard(context,
@@ -992,7 +999,11 @@ class _AdminDashboardState extends State<AdminDashboard>
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 30),
                 sliver: SliverLayoutBuilder(
                   builder: (context, constraints) {
-                    final isTablet = constraints.crossAxisExtent >= 800;
+                    final width = constraints.crossAxisExtent;
+                    if (width <= 0) {
+                      return const SliverToBoxAdapter(child: SizedBox.shrink());
+                    }
+                    final isTablet = width >= 800;
                     return SliverGrid(
                       delegate: SliverChildListDelegate([
                         _buildFeatureCard(context,
@@ -1060,7 +1071,11 @@ class _AdminDashboardState extends State<AdminDashboard>
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 sliver: SliverLayoutBuilder(
                   builder: (context, constraints) {
-                    final isTablet = constraints.crossAxisExtent >= 800;
+                    final width = constraints.crossAxisExtent;
+                    if (width <= 0) {
+                      return const SliverToBoxAdapter(child: SizedBox.shrink());
+                    }
+                    final isTablet = width >= 800;
                     return SliverGrid(
                       delegate: SliverChildListDelegate([
                         _buildFeatureCard(context,

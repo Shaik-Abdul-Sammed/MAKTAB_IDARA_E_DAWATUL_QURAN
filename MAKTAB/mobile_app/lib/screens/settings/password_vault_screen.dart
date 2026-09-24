@@ -263,20 +263,26 @@ class _PasswordVaultScreenState extends State<PasswordVaultScreen>
                     validator: (v) => (v == null || v.isEmpty) ? 'Required' : null,
                   ),
                   const SizedBox(height: 12),
-                  DropdownButtonFormField<String>(
-                    initialValue: category,
-                    decoration: InputDecoration(
-                      labelText: 'Category',
-                      prefixIcon: const Icon(Icons.category_outlined),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                      filled: true,
-                      fillColor: Colors.grey.shade50,
-                    ),
-                    items: _categories
-                        .where((c) => c != 'All')
-                        .map((c) => DropdownMenuItem(value: c, child: Text(c)))
-                        .toList(),
-                    onChanged: (v) => setS(() => category = v!),
+                  Builder(
+                    builder: (context) {
+                      final cats = _categories.where((c) => c != 'All').toList();
+                      final effectiveCat = cats.contains(category) ? category : (cats.isNotEmpty ? cats.first : null);
+                      return DropdownButtonFormField<String>(
+                        initialValue: effectiveCat,
+                        decoration: InputDecoration(
+                          labelText: 'Category',
+                          prefixIcon: const Icon(Icons.category_outlined),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                          filled: true,
+                          fillColor: Colors.grey.shade50,
+                        ),
+                        items: cats
+                            .toSet()
+                            .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+                            .toList(),
+                        onChanged: (v) => setS(() => category = v ?? cats.first),
+                      );
+                    },
                   ),
                   const SizedBox(height: 12),
                   _field(urlCtrl, 'URL / Website (optional)', Icons.link_outlined),

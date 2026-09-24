@@ -75,7 +75,14 @@ class _StudentAddScreenState extends State<StudentAddScreen> {
           _defaultAdmNumber = 'ADM-$year-$nextSeq';
         });
       }
-    } catch (_) {}
+    } catch (e, st) {
+      debugPrint('[StudentAddScreen._loadDefaultAdmissionNumber] load failed: $e\n$st');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not load data.')),
+        );
+      }
+    }
   }
 
   Future<void> _loadBatches() async {
@@ -85,7 +92,9 @@ class _StudentAddScreenState extends State<StudentAddScreen> {
       try {
         final prefs = await SharedPreferences.getInstance();
         lastUsedBatchId = prefs.getInt('last_used_batch_id');
-      } catch (_) {}
+      } catch (e) {
+        debugPrint('[StudentAddScreen._loadBatches] failed to read last_used_batch_id: $e');
+      }
 
       if (mounted) {
         setState(() {
@@ -234,8 +243,11 @@ class _StudentAddScreenState extends State<StudentAddScreen> {
         try {
           final prefs = await SharedPreferences.getInstance();
           await prefs.setInt('last_used_batch_id', _selectedBatchId!);
-        } catch (_) {}
+        } catch (e) {
+          debugPrint('[StudentAddScreen._submit] failed to save last_used_batch_id: $e');
+        }
       }
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Student registered successfully!'),
@@ -362,7 +374,9 @@ class _StudentAddScreenState extends State<StudentAddScreen> {
                   _buildBatchDropdown(),
                   const SizedBox(height: 16),
                   DropdownButtonFormField<String>(
-                    initialValue: _preferredLanguage,
+                    initialValue: ['en', 'ur', 'hi', 'te'].contains(_preferredLanguage)
+                        ? _preferredLanguage
+                        : 'en',
                     decoration: const InputDecoration(
                       labelText: 'Preferred Language for Receipts',
                       prefixIcon: Icon(Icons.translate),
@@ -512,15 +526,22 @@ class _StudentAddScreenState extends State<StudentAddScreen> {
         child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
       );
     }
-    return DropdownButtonFormField<int>(
-      initialValue: _selectedBatchId,
+    final uniqueBatches = {
+      for (final b in _batches)
+        if (b.id != null) b.id: b
+    }.values.toList();
+    final hasMatch = _selectedBatchId != null &&
+        uniqueBatches.any((b) => b.id == _selectedBatchId);
+
+    return DropdownButtonFormField<int?>(
+      initialValue: hasMatch ? _selectedBatchId : null,
       decoration: _inputDecoration(
         label: 'Assigned Batch',
         hint: 'Select Batch',
         icon: Icons.class_outlined,
       ),
-      items: _batches.map((b) {
-        return DropdownMenuItem<int>(
+      items: uniqueBatches.map((b) {
+        return DropdownMenuItem<int?>(
           value: b.id,
           child: Text(b.name, style: const TextStyle(fontSize: 14)),
         );
@@ -530,6 +551,8 @@ class _StudentAddScreenState extends State<StudentAddScreen> {
   }
 
   Widget _buildGenderSelector() {
+    const validGenders = ['Male', 'Female'];
+    final effectiveGender = validGenders.contains(_gender) ? _gender : validGenders.first;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       decoration: BoxDecoration(
@@ -539,10 +562,10 @@ class _StudentAddScreenState extends State<StudentAddScreen> {
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
-          value: _gender,
+          value: effectiveGender,
           isExpanded: true,
           icon: const Icon(Icons.arrow_drop_down, color: Color(0xFF004D40)),
-          items: const ['Male', 'Female'].map((g) {
+          items: validGenders.map((g) {
             return DropdownMenuItem<String>(
               value: g,
               child: Text(g, style: const TextStyle(fontSize: 14)),

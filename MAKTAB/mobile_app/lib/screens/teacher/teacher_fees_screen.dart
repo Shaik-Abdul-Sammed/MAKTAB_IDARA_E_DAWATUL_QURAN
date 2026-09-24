@@ -11,6 +11,7 @@ import 'package:maktab_app/utils/receipt_templates.dart';
 import 'package:maktab_app/utils/receipt_pdf_generator.dart';
 import 'package:maktab_app/utils/whatsapp_utility.dart';
 import 'package:maktab_app/widgets/receipt_preview_dialog.dart';
+import 'package:maktab_app/widgets/finance/finance_totals_card.dart';
 
 // ─── Main screen ─────────────────────────────────────────────────────────────
 
@@ -29,6 +30,8 @@ class _TeacherFeesScreenState extends State<TeacherFeesScreen> {
 
   // Aggregation totals for header card
   Map<String, dynamic> _totals = {'total': 0, 'count': 0, 'byMode': <String, int>{}};
+  Map<String, int> _feeTotals = const {};
+  Map<String, int> _modeBreakdown = const {};
 
   bool _isLoading = true;
 
@@ -84,6 +87,8 @@ class _TeacherFeesScreenState extends State<TeacherFeesScreen> {
 
   Future<void> _load() async {
     if (!mounted) return;
+    final auth = Provider.of<AuthProvider>(context, listen: false);
+    final canonicalTeacherId = auth.currentUser?.teacherId ?? auth.currentUser?.id;
     setState(() => _isLoading = true);
     try {
       final (from, to) = _dateRange();
@@ -93,10 +98,18 @@ class _TeacherFeesScreenState extends State<TeacherFeesScreen> {
         fromDate: from,
         toDate: to,
       );
+      final feeTotals = await _repo.getFeeTotals(
+        canonicalTeacherId: canonicalTeacherId,
+      );
+      final modeBreakdown = await _repo.getFeeModeBreakdown(
+        canonicalTeacherId: canonicalTeacherId,
+      );
       if (mounted) {
         setState(() {
           _allRows = rows;
           _totals = totals;
+          _feeTotals = feeTotals;
+          _modeBreakdown = modeBreakdown;
           _isLoading = false;
         });
       }
@@ -160,7 +173,9 @@ class _TeacherFeesScreenState extends State<TeacherFeesScreen> {
       final sid = existing['student_id'] as int?;
       try {
         selectedStudent = batchStudents.firstWhere((s) => s.id == sid);
-      } catch (_) {}
+      } catch (e) {
+        debugPrint('[TeacherFeesScreen._showRecordDialog] student id $sid not found in batch: $e');
+      }
     }
 
     final amountCtrl = TextEditingController(
@@ -184,21 +199,31 @@ class _TeacherFeesScreenState extends State<TeacherFeesScreen> {
               children: [
                 // Student picker — disabled for edit
                 if (!isEdit)
-                  DropdownButtonFormField<Student>(
-                    initialValue: selectedStudent,
-                    decoration: const InputDecoration(
-                      labelText: 'Student',
-                      border: OutlineInputBorder(),
-                      contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    ),
-                    items: batchStudents
-                        .map((s) => DropdownMenuItem(
-                              value: s,
-                              child: Text('${s.name} (${s.admissionNumber})',
-                                  overflow: TextOverflow.ellipsis),
-                            ))
-                        .toList(),
-                    onChanged: (s) => setLocal(() => selectedStudent = s),
+                  Builder(
+                    builder: (context) {
+                      final uniqueStudents = {
+                        for (final s in batchStudents)
+                          if (s.id != null) s.id!: s
+                      }.values.toList();
+                      final hasMatch = selectedStudent != null &&
+                          uniqueStudents.any((s) => s.id == selectedStudent?.id);
+                      return DropdownButtonFormField<Student?>(
+                        initialValue: hasMatch ? selectedStudent : null,
+                        decoration: const InputDecoration(
+                          labelText: 'Student',
+                          border: OutlineInputBorder(),
+                          contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        ),
+                        items: uniqueStudents
+                            .map((s) => DropdownMenuItem<Student?>(
+                                  value: s,
+                                  child: Text('${s.name} (${s.admissionNumber})',
+                                      overflow: TextOverflow.ellipsis),
+                                ))
+                            .toList(),
+                        onChanged: (s) => setLocal(() => selectedStudent = s),
+                      );
+                    },
                   )
                 else
                   Text(
@@ -216,7 +241,9 @@ class _TeacherFeesScreenState extends State<TeacherFeesScreen> {
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
-                  initialValue: selectedMode,
+                  initialValue: ['Cash', 'UPI', 'Bank', 'Cheque'].contains(selectedMode)
+                      ? selectedMode
+                      : 'Cash',
                   decoration: const InputDecoration(
                     labelText: 'Payment Mode',
                     border: OutlineInputBorder(),
@@ -446,6 +473,14 @@ class _TeacherFeesScreenState extends State<TeacherFeesScreen> {
         child: CustomScrollView(
           physics: const BouncingScrollPhysics(),
           slivers: [
+            if (_feeTotals.isNotEmpty)
+              SliverToBoxAdapter(
+                child: FinanceTotalsCard(
+                  title: 'My Collection',
+                  periodTotals: _feeTotals,
+                  modeBreakdown: _modeBreakdown,
+                ),
+              ),
             // ── Header summary card ──────────────────────────────────────
             SliverToBoxAdapter(child: _buildHeaderCard()),
 
@@ -630,7 +665,7 @@ class _TeacherFeesScreenState extends State<TeacherFeesScreen> {
           const SizedBox(width: 8),
           // Mode dropdown
           DropdownButton<String>(
-            value: _modeFilter,
+            value: _modes.contains(_modeFilter) ? _modeFilter : _modes.first,
             underline: const SizedBox.shrink(),
             style: const TextStyle(
               fontSize: 12,
@@ -638,6 +673,7 @@ class _TeacherFeesScreenState extends State<TeacherFeesScreen> {
               color: AppColors.primaryTeal,
             ),
             items: _modes
+                .toSet()
                 .map((m) => DropdownMenuItem(value: m, child: Text(m)))
                 .toList(),
             onChanged: (v) {

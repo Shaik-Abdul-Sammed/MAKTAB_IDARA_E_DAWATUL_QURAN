@@ -19,7 +19,17 @@ class _SupportHelpScreenState extends State<SupportHelpScreen> {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Opening WhatsApp Support...')));
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('[SupportHelpScreen._openWhatsAppSupport] launch failed: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Could not open the app. Please try again.'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _emailSupport() async {
@@ -31,7 +41,17 @@ class _SupportHelpScreenState extends State<SupportHelpScreen> {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Opening Email app...')));
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('[SupportHelpScreen._emailSupport] launch failed: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Could not open the app. Please try again.'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
+    }
   }
 
   @override

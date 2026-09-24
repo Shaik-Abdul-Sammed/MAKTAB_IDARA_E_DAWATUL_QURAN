@@ -36,7 +36,9 @@ Future<bool> _isDeviceRooted() async {
   for (var path in paths) {
     try {
       if (await File(path).exists()) return true;
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('[RootCheck._isDeviceRooted] failed to check path $path: $e');
+    }
   }
   return false;
 }

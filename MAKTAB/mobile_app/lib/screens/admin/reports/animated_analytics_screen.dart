@@ -65,8 +65,13 @@ class _AnimatedAnalyticsScreenState extends State<AnimatedAnalyticsScreen> with 
           _leavesTaken = leaves > 0 ? (leaves / (students.isEmpty ? 1 : students.length)).ceil() : 0;
         });
       }
-    } catch (e) {
-      // Handle error
+    } catch (e, st) {
+      debugPrint('[AnimatedAnalyticsScreen._fetchData] load failed: $e\n$st');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not load data.')),
+        );
+      }
     }
   }
 
@@ -200,7 +205,7 @@ class _AnimatedAnalyticsScreenState extends State<AnimatedAnalyticsScreen> with 
                     const Text('Monthly Analysis', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.primaryTeal)),
                     DropdownButtonHideUnderline(
                       child: DropdownButton<int>(
-                        value: _selectedMonth,
+                        value: (_selectedMonth >= 1 && _selectedMonth <= 12) ? _selectedMonth : DateTime.now().month,
                         icon: const Icon(Icons.keyboard_arrow_down_rounded, color: AppColors.primaryTeal),
                         items: List.generate(12, (index) {
                           return DropdownMenuItem(

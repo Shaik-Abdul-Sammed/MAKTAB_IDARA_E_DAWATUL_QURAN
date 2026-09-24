@@ -501,22 +501,46 @@ class DatabaseHelper {
     }
     try {
       await db.execute('ALTER TABLE attendance ADD COLUMN is_synced INTEGER DEFAULT 1');
-    } catch (_) {}
+    // Intentionally tolerant: ALTER TABLE is idempotent — column may already exist.
+    // Logs the error and continues so migration does not abort.
+    } catch (e) {
+      debugPrint('[MIGRATION v14] attendance.is_synced already present or failed: $e');
+    }
     try {
       await db.execute('ALTER TABLE students ADD COLUMN is_synced INTEGER DEFAULT 1');
-    } catch (_) {}
+    // Intentionally tolerant: ALTER TABLE is idempotent — column may already exist.
+    // Logs the error and continues so migration does not abort.
+    } catch (e) {
+      debugPrint('[MIGRATION v14] students.is_synced already present or failed: $e');
+    }
     try {
       await db.execute('ALTER TABLE fee_payments ADD COLUMN is_synced INTEGER DEFAULT 1');
-    } catch (_) {}
+    // Intentionally tolerant: ALTER TABLE is idempotent — column may already exist.
+    // Logs the error and continues so migration does not abort.
+    } catch (e) {
+      debugPrint('[MIGRATION v14] fee_payments.is_synced already present or failed: $e');
+    }
     try {
       await db.execute('ALTER TABLE users ADD COLUMN monthly_salary INTEGER DEFAULT 0');
-    } catch (_) {}
+    // Intentionally tolerant: ALTER TABLE is idempotent — column may already exist.
+    // Logs the error and continues so migration does not abort.
+    } catch (e) {
+      debugPrint('[MIGRATION v14] users.monthly_salary already present or failed: $e');
+    }
     try {
       await db.execute('ALTER TABLE users ADD COLUMN upi_id TEXT');
-    } catch (_) {}
+    // Intentionally tolerant: ALTER TABLE is idempotent — column may already exist.
+    // Logs the error and continues so migration does not abort.
+    } catch (e) {
+      debugPrint('[MIGRATION v14] users.upi_id already present or failed: $e');
+    }
     try {
       await db.execute('ALTER TABLE users ADD COLUMN preferred_payment_mode TEXT');
-    } catch (_) {}
+    // Intentionally tolerant: ALTER TABLE is idempotent — column may already exist.
+    // Logs the error and continues so migration does not abort.
+    } catch (e) {
+      debugPrint('[MIGRATION v14] users.preferred_payment_mode already present or failed: $e');
+    }
     try {
       await db.execute('''
         CREATE TABLE IF NOT EXISTS salary_payments (
@@ -537,19 +561,37 @@ class DatabaseHelper {
         )
       ''');
       await db.execute('CREATE INDEX IF NOT EXISTS idx_sp_teacher_month ON salary_payments(teacher_id, salary_month)');
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('[MIGRATION v10] salary_payments setup failed: $e');
+    }
     try {
       await db.execute('ALTER TABLE students ADD COLUMN is_deleted INTEGER DEFAULT 0');
-    } catch (_) {}
+    // Intentionally tolerant: ALTER TABLE is idempotent — column may already exist.
+    // Logs the error and continues so migration does not abort.
+    } catch (e) {
+      debugPrint('[MIGRATION v10] students.is_deleted already present or failed: $e');
+    }
     try {
       await db.execute('ALTER TABLE students ADD COLUMN deleted_at TEXT');
-    } catch (_) {}
+    // Intentionally tolerant: ALTER TABLE is idempotent — column may already exist.
+    // Logs the error and continues so migration does not abort.
+    } catch (e) {
+      debugPrint('[MIGRATION v10] students.deleted_at already present or failed: $e');
+    }
     try {
       await db.execute('ALTER TABLE attendance ADD COLUMN time TEXT');
-    } catch (_) {}
+    // Intentionally tolerant: ALTER TABLE is idempotent — column may already exist.
+    // Logs the error and continues so migration does not abort.
+    } catch (e) {
+      debugPrint('[MIGRATION v10] attendance.time already present or failed: $e');
+    }
     try {
       await db.execute('ALTER TABLE teacher_attendance ADD COLUMN time TEXT');
-    } catch (_) {}
+    // Intentionally tolerant: ALTER TABLE is idempotent — column may already exist.
+    // Logs the error and continues so migration does not abort.
+    } catch (e) {
+      debugPrint('[MIGRATION v10] teacher_attendance.time already present or failed: $e');
+    }
     // v9: password vault table
     try {
       await db.execute('''
@@ -565,11 +607,17 @@ class DatabaseHelper {
           updated_at TEXT NOT NULL
         )
       ''');
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('[MIGRATION v9] password_vault setup failed: $e');
+    }
     if (oldVersion < 8) {
       try {
         await db.execute('ALTER TABLE fee_payments ADD COLUMN voice_note_path TEXT');
-      } catch (_) {}
+      // Intentionally tolerant: ALTER TABLE is idempotent — column may already exist.
+      // Logs the error and continues so migration does not abort.
+      } catch (e) {
+        debugPrint('[MIGRATION v8] fee_payments.voice_note_path already present or failed: $e');
+      }
     }
 
     // ── v6 → v7 ──────────────────────────────────────────────────────────────
@@ -586,30 +634,52 @@ class DatabaseHelper {
           FOREIGN KEY (student_id) REFERENCES students (id) ON DELETE CASCADE
         )
         ''');
-      } catch (_) {}
+      } catch (e) {
+        debugPrint('[MIGRATION v7] fee_payments setup failed: $e');
+      }
     }
 
     // ── v5 → v6 ──────────────────────────────────────────────────────────────
     if (oldVersion < 6) {
       try {
         await db.execute('ALTER TABLE students ADD COLUMN fees_amount INTEGER');
-      } catch (_) {}
+      // Intentionally tolerant: ALTER TABLE is idempotent — column may already exist.
+      // Logs the error and continues so migration does not abort.
+      } catch (e) {
+        debugPrint('[MIGRATION v6] students.fees_amount already present or failed: $e');
+      }
     }
 
     // ── v1 → v2 ──────────────────────────────────────────────────────────────
     if (oldVersion < 2) {
       try {
         await db.execute('ALTER TABLE users ADD COLUMN photo_path TEXT');
-      } catch (_) {}
+      // Intentionally tolerant: ALTER TABLE is idempotent — column may already exist.
+      // Logs the error and continues so migration does not abort.
+      } catch (e) {
+        debugPrint('[MIGRATION v2] users.photo_path already present or failed: $e');
+      }
       try {
         await db.execute('ALTER TABLE students ADD COLUMN photo_path TEXT');
-      } catch (_) {}
+      // Intentionally tolerant: ALTER TABLE is idempotent — column may already exist.
+      // Logs the error and continues so migration does not abort.
+      } catch (e) {
+        debugPrint('[MIGRATION v2] students.photo_path already present or failed: $e');
+      }
       try {
         await db.execute('ALTER TABLE students ADD COLUMN guardian_name TEXT');
-      } catch (_) {}
+      // Intentionally tolerant: ALTER TABLE is idempotent — column may already exist.
+      // Logs the error and continues so migration does not abort.
+      } catch (e) {
+        debugPrint('[MIGRATION v2] students.guardian_name already present or failed: $e');
+      }
       try {
         await db.execute('ALTER TABLE students ADD COLUMN guardian_phone TEXT');
-      } catch (_) {}
+      // Intentionally tolerant: ALTER TABLE is idempotent — column may already exist.
+      // Logs the error and continues so migration does not abort.
+      } catch (e) {
+        debugPrint('[MIGRATION v2] students.guardian_phone already present or failed: $e');
+      }
 
       const idType = 'INTEGER PRIMARY KEY AUTOINCREMENT';
       const textNullable = 'TEXT';
@@ -631,7 +701,9 @@ class DatabaseHelper {
         ''');
         await db.execute('CREATE INDEX idx_teach_att_date ON teacher_attendance(date)');
         await db.execute('CREATE INDEX idx_teach_att_teacher_date ON teacher_attendance(teacher_id, date)');
-      } catch (_) {}
+      } catch (e) {
+        debugPrint('[MIGRATION v4] teacher_attendance setup failed: $e');
+      }
     }
 
     // ── v2 → v3: teacher_notes for private remarks ────────────────────────────
@@ -639,7 +711,11 @@ class DatabaseHelper {
       try {
         await db.execute(
             'ALTER TABLE students ADD COLUMN teacher_notes TEXT');
-      } catch (_) {}
+      // Intentionally tolerant: ALTER TABLE is idempotent — column may already exist.
+      // Logs the error and continues so migration does not abort.
+      } catch (e) {
+        debugPrint('[MIGRATION v3] students.teacher_notes already present or failed: $e');
+      }
       
       try {
         await AuditRepository.createTable(db);
@@ -689,11 +765,15 @@ class DatabaseHelper {
             remarks TEXT
           )
         ''');
-      } catch (_) {}
+      } catch (e) {
+        debugPrint('[MIGRATION v13] checklist_submissions setup failed: $e');
+      }
       
       try {
         await QueueManager.createTable(db);
-      } catch (_) {}
+      } catch (e) {
+        debugPrint('[MIGRATION v13] QueueManager setup failed: $e');
+      }
       
       try {
         const idType = 'INTEGER PRIMARY KEY AUTOINCREMENT';
@@ -711,7 +791,9 @@ class DatabaseHelper {
             FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
           )
         ''');
-      } catch (_) {}
+      } catch (e) {
+        debugPrint('[MIGRATION v12] teacher_profiles setup failed: $e');
+      }
     }
 
     // ── v3 → v4: messages table ──────────────────────────────────────────────
@@ -737,23 +819,35 @@ class DatabaseHelper {
         ''');
         await db.execute('CREATE INDEX IF NOT EXISTS idx_msg_sender ON messages(sender_id)');
         await db.execute('CREATE INDEX IF NOT EXISTS idx_msg_receiver ON messages(receiver_id)');
-      } catch (_) {}
+      } catch (e) {
+        debugPrint('[MIGRATION v11] messages setup failed: $e');
+      }
     }
     
     if (oldVersion < 5) {
       try {
         await db.execute('ALTER TABLE users ADD COLUMN dob TEXT');
-      } catch (_) {}
+      // Intentionally tolerant: ALTER TABLE is idempotent — column may already exist.
+      // Logs the error and continues so migration does not abort.
+      } catch (e) {
+        debugPrint('[MIGRATION v5] users.dob already present or failed: $e');
+      }
     }
 
     if (oldVersion < 15) {
       // Remap teacher_attendance.teacher_id from local user id to canonical teacherId
       try {
         await db.execute('ALTER TABLE users ADD COLUMN teacher_id INTEGER');
-      } catch (_) {}
+      // Intentionally tolerant: ALTER TABLE is idempotent — column may already exist.
+      // Logs the error and continues so migration does not abort.
+      } catch (e) {
+        debugPrint('[MIGRATION v15] users.teacher_id already present or failed: $e');
+      }
       try {
         await db.execute('UPDATE users SET teacher_id = id WHERE teacher_id IS NULL');
-      } catch (_) {}
+      } catch (e, st) {
+        debugPrint('[DatabaseHelper._onUpgrade] Migration v15 users.teacher_id = id failed: $e\n$st');
+      }
       try {
         await db.execute('''
           UPDATE teacher_attendance

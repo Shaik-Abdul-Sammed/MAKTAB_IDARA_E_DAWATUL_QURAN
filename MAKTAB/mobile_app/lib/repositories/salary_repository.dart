@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:intl/intl.dart';
 import 'package:maktab_app/models/salary_payment.dart';
 import 'package:maktab_app/services/database_helper.dart';
 import 'package:maktab_app/services/cloud_sync_service.dart';
@@ -156,5 +157,44 @@ class SalaryRepository {
       orderBy: 'payment_date DESC, id DESC',
     );
     return maps.map((m) => SalaryPayment.fromMap(m)).toList();
+  }
+
+  /// Returns totals across all salary payments.
+  Future<Map<String, int>> getSalaryTotals() async {
+    final db = await _dbHelper.database;
+    final now = DateTime.now();
+    final monthStart = DateFormat('yyyy-MM').format(now);
+    final yearStart = DateFormat('yyyy').format(now);
+
+    Future<int> sumWhere(String dateFilter, List<Object?> args) async {
+      final result = await db.rawQuery(
+        'SELECT COALESCE(SUM(amount), 0) AS total '
+        'FROM salary_payments '
+        'WHERE substr(payment_date, 1, 7) $dateFilter',
+        args,
+      );
+      return (result.first['total'] as num?)?.toInt() ?? 0;
+    }
+
+    final monthPaidCountResult = await db.rawQuery(
+      'SELECT COUNT(DISTINCT teacher_id) AS cnt '
+      'FROM salary_payments '
+      'WHERE substr(payment_date, 1, 7) = ?',
+      [monthStart],
+    );
+    final monthPaidCount = (monthPaidCountResult.first['cnt'] as num?)?.toInt() ?? 0;
+
+    final totalTeachersResult = await db.rawQuery(
+      "SELECT COUNT(*) AS cnt FROM users WHERE role = 'teacher' AND (is_active = 1 OR is_active IS NULL)",
+    );
+    final totalTeachers = (totalTeachersResult.first['cnt'] as num?)?.toInt() ?? 0;
+
+    return {
+      'month': await sumWhere('= ?', [monthStart]),
+      'year': await sumWhere('LIKE ?', ['$yearStart%']),
+      'monthPaidCount': monthPaidCount,
+      'monthPendingCount': (totalTeachers - monthPaidCount).clamp(0, totalTeachers),
+      'totalTeachers': totalTeachers,
+    };
   }
 }

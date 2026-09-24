@@ -60,6 +60,8 @@ class AuthProvider with ChangeNotifier {
 
   Future<T> _withProvisionerLock<T>(Future<T> Function() action) {
     final completer = Completer<T>();
+    // Intentionally silent: previous queued task failed; swallow so the lock
+    // can be released and the next task proceeds.
     _provisionerLock = _provisionerLock.catchError((_) {}).then((_) async {
       try {
         final result = await action();
@@ -203,7 +205,9 @@ class AuthProvider with ChangeNotifier {
                 password: pinHash,
               ).timeout(const Duration(seconds: 5));
               recovered = true;
-            } catch (_) {}
+            } catch (e, st) {
+              debugPrint('[AuthProvider.provisionTeacherAuthAccount] Fallback sign-in failed: $e\n$st');
+            }
 
             if (!recovered && (e2.code == 'wrong-password' || e2.code == 'invalid-credential')) {
               debugPrint('[PROVISION PW-MISMATCH] $derivedEmail — password differs from expected hash. Manual reset required.');
@@ -701,7 +705,9 @@ class AuthProvider with ChangeNotifier {
                 derivedMaktabId = map.keys.first.toString();
               }
             }
-          } catch (_) {}
+          } catch (e) {
+            debugPrint('[AuthProvider.signIn] failed to derive maktabId: $e');
+          }
 
           final managerProfile = {
             'name': userEmail.split('@').first.toUpperCase(),
@@ -839,7 +845,10 @@ class AuthProvider with ChangeNotifier {
                       break;
                     }
                   }
-                } catch (_) {}
+                } catch (e, st) {
+                  debugPrint('[AuthProvider.loginTeacherWithPin] Local user write failed: $e\n$st');
+                  // Do not throw — teacher can still log in; profile will sync on next launch
+                }
               }
             }
             if (matchedUser != null) break;
@@ -885,7 +894,10 @@ class AuthProvider with ChangeNotifier {
             );
             try {
               await _userRepository.insertUser(matchedUser);
-            } catch (_) {}
+            } catch (e, st) {
+              debugPrint('[AuthProvider.loginTeacherWithPin] Local user write failed: $e\n$st');
+              // Do not throw — teacher can still log in; profile will sync on next launch
+            }
           }
         }
       } on fb_auth.FirebaseAuthException catch (e) {

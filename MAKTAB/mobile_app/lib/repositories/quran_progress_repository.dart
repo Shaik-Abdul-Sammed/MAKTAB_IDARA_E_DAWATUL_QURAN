@@ -17,14 +17,23 @@ class QuranProgressRepository {
 
   Future<int> updateQuranProgress(QuranProgress progress) async {
     final db = await _dbHelper.database;
-    final res = await db.update(
+    final map = progress.toMap();
+    map['is_synced'] = 0;
+    return await db.update(
       'quran_progress',
-      progress.toMap(),
+      map,
       where: 'id = ?',
       whereArgs: [progress.id],
     );
-    await CloudSyncService.instance.pushQuranProgress(progress);
-    return res;
+  }
+
+  Future<int> deleteQuranProgress(int id) async {
+    final db = await _dbHelper.database;
+    return await db.delete(
+      'quran_progress',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
   }
 
   // ── Read by Student ──────────────────────────────────────────────────────────

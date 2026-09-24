@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+import 'package:intl/intl.dart';
 import '../models/fee_payment.dart';
 import '../services/database_helper.dart';
 import '../services/cloud_sync_service.dart';
@@ -20,7 +22,8 @@ class FeePaymentRepository {
         where: 'id = ?',
         whereArgs: [id],
       );
-    } catch (_) {
+    } catch (e, st) {
+      debugPrint('[FeePaymentRepository.insertFeePayment] RTDB push failed: $e\n$st');
       // Push failed (likely offline). Record stays is_synced = 0 so the
       // retry queue (cloud_sync_service getPaymentsForStudent / syncNow) can
       // re-push it later.
@@ -86,7 +89,8 @@ class FeePaymentRepository {
           where: 'id = ?',
           whereArgs: [payment.id],
         );
-      } catch (_) {
+      } catch (e, st) {
+        debugPrint('[FeePaymentRepository.retryUnsyncedPayments] RTDB push failed: $e\n$st');
         // Still offline — leave is_synced = 0.
       }
     }
@@ -182,5 +186,88 @@ class FeePaymentRepository {
           (r['mode'] as String? ?? 'Unknown'): ((r['total'] as num?)?.toInt() ?? 0),
       },
     };
+  }
+
+  /// Returns {today, week, month, allTime} totals for the given scope.
+  /// If canonicalTeacherId is provided, restricts to that teacher's batches.
+  /// Otherwise, returns maktab-wide totals (for manager).
+  Future<Map<String, int>> getFeeTotals({
+    int? canonicalTeacherId,
+  }) async {
+    final db = await _dbHelper.database;
+    final now = DateTime.now();
+    final today = DateFormat('yyyy-MM-dd').format(now);
+    final weekStart = DateFormat('yyyy-MM-dd').format(
+      now.subtract(Duration(days: now.weekday - 1)),
+    );
+    final monthStart = DateFormat('yyyy-MM').format(now);
+
+    final teacherJoin = canonicalTeacherId != null
+        ? 'INNER JOIN students s ON fp.student_id = s.id '
+          'INNER JOIN batches b ON s.batch_id = b.id '
+        : 'INNER JOIN students s ON fp.student_id = s.id ';
+    final teacherWhere = canonicalTeacherId != null
+        ? 'AND b.teacher_id = ?'
+        : '';
+    final teacherArg = canonicalTeacherId != null ? [canonicalTeacherId] : <Object?>[];
+
+    Future<int> sumWhere(String dateFilter, List<Object?> extraArgs) async {
+      final result = await db.rawQuery(
+        'SELECT COALESCE(SUM(fp.amount), 0) AS total '
+        'FROM fee_payments fp '
+        '$teacherJoin '
+        'WHERE substr(fp.timestamp, 1, 10) $dateFilter '
+        '$teacherWhere',
+        [...extraArgs, ...teacherArg],
+      );
+      return (result.first['total'] as num?)?.toInt() ?? 0;
+    }
+
+    return {
+      'today': await sumWhere('= ?', [today]),
+      'week': await sumWhere('>= ?', [weekStart]),
+      'month': await sumWhere('LIKE ?', ['$monthStart%']),
+      'allTime': await sumWhere('IS NOT NULL', []),
+    };
+  }
+
+  /// Returns {Cash: X, UPI: Y, Bank Transfer: Z, Cheque: W} for the given scope.
+  Future<Map<String, int>> getFeeModeBreakdown({
+    int? canonicalTeacherId,
+    String? fromDate,
+    String? toDate,
+  }) async {
+    final db = await _dbHelper.database;
+    final where = <String>[];
+    final args = <Object?>[];
+
+    if (canonicalTeacherId != null) {
+      where.add('b.teacher_id = ?');
+      args.add(canonicalTeacherId);
+    }
+    if (fromDate != null) {
+      where.add('substr(fp.timestamp, 1, 10) >= ?');
+      args.add(fromDate);
+    }
+    if (toDate != null) {
+      where.add('substr(fp.timestamp, 1, 10) <= ?');
+      args.add(toDate);
+    }
+    final whereSql = where.isEmpty ? '' : 'WHERE ${where.join(' AND ')}';
+
+    final rows = await db.rawQuery('''
+      SELECT fp.mode, COALESCE(SUM(fp.amount), 0) AS total
+      FROM fee_payments fp
+      INNER JOIN students s ON fp.student_id = s.id
+      ${canonicalTeacherId != null ? 'INNER JOIN batches b ON s.batch_id = b.id' : ''}
+      $whereSql
+      GROUP BY fp.mode
+    ''', args);
+
+    final result = <String, int>{};
+    for (final r in rows) {
+      result[(r['mode'] as String?) ?? 'Unknown'] = ((r['total'] as num?)?.toInt() ?? 0);
+    }
+    return result;
   }
 }

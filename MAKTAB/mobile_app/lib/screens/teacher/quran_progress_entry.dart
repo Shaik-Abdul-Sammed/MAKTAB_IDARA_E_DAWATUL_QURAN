@@ -1,21 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
+import '../../models/quran_progress.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/quran_progress_provider.dart';
 import '../../repositories/quran_progress_repository.dart';
+import '../../services/cloud_sync_service.dart';
 import '../../widgets/molecules/custom_app_bar.dart';
 
 class QuranProgressEntryScreen extends StatefulWidget {
-  final int studentId;
-  final String studentName;
+  final int? studentId;
+  final String? studentName;
+  final QuranProgress? existing;
 
   const QuranProgressEntryScreen({
     super.key,
-    required this.studentId,
-    required this.studentName,
+    this.studentId,
+    this.studentName,
+    this.existing,
   });
 
   @override
@@ -52,12 +55,30 @@ class _QuranProgressEntryScreenState extends State<QuranProgressEntryScreen> {
   void initState() {
     super.initState();
     _provider = QuranProgressProvider(QuranProgressRepository());
-    _surahCtrl = TextEditingController(text: 'Surah Al-Baqarah (2)');
-    _ayahFromCtrl = TextEditingController(text: '1');
-    _ayahToCtrl = TextEditingController(text: '10');
-    _remarksCtrl = TextEditingController();
     _speech = stt.SpeechToText();
-    _provider.fetchProgress(widget.studentId);
+
+    if (widget.existing != null) {
+      final e = widget.existing!;
+      _surahCtrl = TextEditingController(text: e.surah);
+      _ayahFromCtrl = TextEditingController(text: e.ayahFrom.toString());
+      _ayahToCtrl = TextEditingController(text: e.ayahTo.toString());
+      _remarksCtrl = TextEditingController(text: e.remarks ?? '');
+      _grade = e.grade;
+      _recitationType = e.recitationType;
+      if (!_surahPresets.contains(e.surah) && e.surah.isNotEmpty) {
+        _surahPresets.insert(0, e.surah);
+      }
+    } else {
+      _surahCtrl = TextEditingController(text: 'Surah Al-Baqarah (2)');
+      _ayahFromCtrl = TextEditingController(text: '1');
+      _ayahToCtrl = TextEditingController(text: '10');
+      _remarksCtrl = TextEditingController();
+    }
+
+    final effStudentId = widget.existing?.studentId ?? widget.studentId ?? 0;
+    if (effStudentId > 0) {
+      _provider.fetchProgress(effStudentId);
+    }
   }
 
   @override
@@ -95,10 +116,34 @@ class _QuranProgressEntryScreenState extends State<QuranProgressEntryScreen> {
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     try {
+      if (widget.existing != null) {
+        final updated = widget.existing!.copyWith(
+          surah: _surahCtrl.text.trim(),
+          ayahFrom: int.tryParse(_ayahFromCtrl.text.trim()),
+          ayahTo: int.tryParse(_ayahToCtrl.text.trim()),
+          grade: _grade,
+          recitationType: _recitationType,
+          remarks: _remarksCtrl.text.trim(),
+        );
+        await QuranProgressRepository().updateQuranProgress(updated);
+        await CloudSyncService.instance.pushQuranProgress(updated);
+        CloudSyncService.instance.notifyDataChanged('quran_progress');
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Recitation progress updated successfully!'),
+            backgroundColor: Color(0xFF004D40),
+          ),
+        );
+        Navigator.pop(context, true);
+        return;
+      }
+
       final auth = Provider.of<AuthProvider>(context, listen: false);
       final currentTeacherId = auth.currentUser?.teacherId ?? auth.currentUser?.id;
+      final effStudentId = widget.studentId ?? 0;
       await _provider.addProgress(
-        studentId: widget.studentId,
+        studentId: effStudentId,
         teacherId: currentTeacherId,
         surah: _surahCtrl.text,
         ayahFrom: int.parse(_ayahFromCtrl.text),
@@ -114,7 +159,7 @@ class _QuranProgressEntryScreenState extends State<QuranProgressEntryScreen> {
           backgroundColor: Color(0xFF004D40),
         ),
       );
-      context.pop(true);
+      Navigator.pop(context, true);
     } catch (e, st) {
       debugPrint('[QURAN_PROGRESS] save error: $e\n$st');
       if (!mounted) return;
@@ -133,7 +178,11 @@ class _QuranProgressEntryScreenState extends State<QuranProgressEntryScreen> {
       value: _provider,
       child: Scaffold(
         backgroundColor: const Color(0xFFF9FBE7),
-        appBar: CustomAppBar(title: 'Log Progress: ${widget.studentName}'),
+        appBar: CustomAppBar(
+          title: widget.existing != null
+              ? 'Edit Quran Progress'
+              : (widget.studentName != null ? 'Log Progress: ${widget.studentName}' : 'Log Quran Progress'),
+        ),
         body: SafeArea(
           child: SingleChildScrollView(
             physics: const BouncingScrollPhysics(),
@@ -162,34 +211,40 @@ class _QuranProgressEntryScreenState extends State<QuranProgressEntryScreen> {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  DropdownButtonFormField<String>(
-                    initialValue: _surahCtrl.text.isNotEmpty ? _surahCtrl.text : _surahPresets.first,
-                    decoration: InputDecoration(
-                      labelText: 'Surah Name',
-                      prefixIcon: const Icon(Icons.menu_book_outlined, color: Color(0xFF004D40), size: 20),
-                      filled: true,
-                      fillColor: Colors.white,
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: Color(0xFFD8E8D5), width: 1.2),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: Color(0xFF004D40), width: 1.5),
-                      ),
-                    ),
-                    items: _surahPresets.map((preset) {
-                      return DropdownMenuItem<String>(
-                        value: preset,
-                        child: Text(preset, style: const TextStyle(fontSize: 14)),
+                  Builder(
+                    builder: (context) {
+                      final surahValue = _surahCtrl.text.isNotEmpty ? _surahCtrl.text : _surahPresets.first;
+                      final effectiveValue = _surahPresets.contains(surahValue) ? surahValue : _surahPresets.first;
+                      return DropdownButtonFormField<String>(
+                        initialValue: effectiveValue,
+                        decoration: InputDecoration(
+                          labelText: 'Surah Name',
+                          prefixIcon: const Icon(Icons.menu_book_outlined, color: Color(0xFF004D40), size: 20),
+                          filled: true,
+                          fillColor: Colors.white,
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(color: Color(0xFFD8E8D5), width: 1.2),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(color: Color(0xFF004D40), width: 1.5),
+                          ),
+                        ),
+                        items: _surahPresets.toSet().map((preset) {
+                          return DropdownMenuItem<String>(
+                            value: preset,
+                            child: Text(preset, style: const TextStyle(fontSize: 14)),
+                          );
+                        }).toList(),
+                        onChanged: (val) {
+                          if (val != null) {
+                            setState(() => _surahCtrl.text = val);
+                          }
+                        },
                       );
-                    }).toList(),
-                    onChanged: (val) {
-                      if (val != null) {
-                        setState(() => _surahCtrl.text = val);
-                      }
                     },
                   ),
                   const SizedBox(height: 20),

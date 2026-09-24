@@ -97,7 +97,15 @@ class _BulkFeeMessagingDialogState extends State<BulkFeeMessagingDialog> {
                 break;
               }
             }
-          } catch (_) {}
+          } catch (e, st) {
+            debugPrint('[BulkFeeMessagingDialog._loadStudentsAndFees] load failed: $e\n$st');
+            if (mounted) {
+              setState(() => _isLoading = false);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Could not load data.')),
+              );
+            }
+          }
         }
 
         final isOverdue = !paidThisMonth && DateTime.now().day > 10;
@@ -214,7 +222,14 @@ class _BulkFeeMessagingDialogState extends State<BulkFeeMessagingDialog> {
             if (continueNext != true) break;
           }
         }
-      } catch (_) {}
+      } catch (e, st) {
+        debugPrint('[BulkFeeMessagingDialog._startWhatsAppQueue] load failed: $e\n$st');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Could not load data.')),
+          );
+        }
+      }
     }
 
     if (mounted) {
@@ -324,57 +339,70 @@ class _BulkFeeMessagingDialogState extends State<BulkFeeMessagingDialog> {
             const Divider(),
 
             // Batch & Status Filter Row
-            Row(
-              children: [
-                Expanded(
-                  child: DropdownButtonFormField<int?>(
-                    initialValue: _selectedBatchId,
-                    isExpanded: true,
-                    decoration: InputDecoration(
-                      labelText: 'Class / Batch',
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                      fillColor: Colors.white,
-                      filled: true,
-                    ),
-                    items: [
-                      const DropdownMenuItem(value: null, child: Text('All Batches', style: TextStyle(fontSize: 12))),
-                      ...widget.batches.map(
-                        (b) => DropdownMenuItem(value: b.id, child: Text(b.name, style: const TextStyle(fontSize: 12))),
+            Builder(
+              builder: (context) {
+                final uniqueBatches = {
+                  for (final b in widget.batches)
+                    if (b.id != null) b.id: b
+                }.values.toList();
+                final hasMatch = _selectedBatchId == null ||
+                    uniqueBatches.any((b) => b.id == _selectedBatchId);
+                const validFilters = ['Pending/Overdue', 'Overdue Only', 'All'];
+                final effectiveFilter = validFilters.contains(_statusFilter) ? _statusFilter : 'Pending/Overdue';
+
+                return Row(
+                  children: [
+                    Expanded(
+                      child: DropdownButtonFormField<int?>(
+                        initialValue: hasMatch ? _selectedBatchId : null,
+                        isExpanded: true,
+                        decoration: InputDecoration(
+                          labelText: 'Class / Batch',
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                          fillColor: Colors.white,
+                          filled: true,
+                        ),
+                        items: [
+                          const DropdownMenuItem(value: null, child: Text('All Batches', style: TextStyle(fontSize: 12))),
+                          ...uniqueBatches.map(
+                            (b) => DropdownMenuItem(value: b.id, child: Text(b.name, style: const TextStyle(fontSize: 12))),
+                          ),
+                        ],
+                        onChanged: (val) {
+                          setState(() => _selectedBatchId = val);
+                          _loadStudentsAndFees();
+                        },
                       ),
-                    ],
-                    onChanged: (val) {
-                      setState(() => _selectedBatchId = val);
-                      _loadStudentsAndFees();
-                    },
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: DropdownButtonFormField<String>(
-                    initialValue: _statusFilter,
-                    isExpanded: true,
-                    decoration: InputDecoration(
-                      labelText: 'Status Filter',
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                      fillColor: Colors.white,
-                      filled: true,
                     ),
-                    items: const [
-                      DropdownMenuItem(value: 'Pending/Overdue', child: Text('Pending & Overdue', style: TextStyle(fontSize: 11))),
-                      DropdownMenuItem(value: 'Overdue Only', child: Text('Overdue Only', style: TextStyle(fontSize: 11))),
-                      DropdownMenuItem(value: 'All', child: Text('All Students', style: TextStyle(fontSize: 11))),
-                    ],
-                    onChanged: (val) {
-                      if (val != null) {
-                        setState(() => _statusFilter = val);
-                        _loadStudentsAndFees();
-                      }
-                    },
-                  ),
-                ),
-              ],
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: DropdownButtonFormField<String>(
+                        initialValue: effectiveFilter,
+                        isExpanded: true,
+                        decoration: InputDecoration(
+                          labelText: 'Status Filter',
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                          fillColor: Colors.white,
+                          filled: true,
+                        ),
+                        items: const [
+                          DropdownMenuItem(value: 'Pending/Overdue', child: Text('Pending & Overdue', style: TextStyle(fontSize: 11))),
+                          DropdownMenuItem(value: 'Overdue Only', child: Text('Overdue Only', style: TextStyle(fontSize: 11))),
+                          DropdownMenuItem(value: 'All', child: Text('All Students', style: TextStyle(fontSize: 11))),
+                        ],
+                        onChanged: (val) {
+                          if (val != null) {
+                            setState(() => _statusFilter = val);
+                            _loadStudentsAndFees();
+                          }
+                        },
+                      ),
+                    ),
+                  ],
+                );
+              },
             ),
             const SizedBox(height: 12),
 

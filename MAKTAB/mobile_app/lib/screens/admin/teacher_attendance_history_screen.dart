@@ -290,25 +290,39 @@ class _TeacherAttendanceHistoryScreenState
                       const SizedBox(width: 10),
                       Expanded(
                         child: DropdownButtonHideUnderline(
-                          child: DropdownButton<User>(
-                            value: _selectedTeacher,
-                            hint: const Text('Select a Teacher'),
-                            isExpanded: true,
-                            icon: const Icon(
-                                Icons.arrow_drop_down_circle_outlined,
-                                color: Color(0xFF004D40)),
-                            items: _teachers.map((User teacher) {
-                              return DropdownMenuItem<User>(
-                                value: teacher,
-                                child: Text(
-                                  teacher.name,
-                                  style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      color: Color(0xFF1A1A1A)),
-                                ),
+                          child: Builder(
+                            builder: (context) {
+                              final uniqueTeachers = {
+                                for (final t in _teachers)
+                                  if (t.id != null) t.id!: t
+                              }.values.toList();
+                              final matchedTeacher = _selectedTeacher == null
+                                  ? null
+                                  : uniqueTeachers.cast<User?>().firstWhere(
+                                      (t) => t?.id == _selectedTeacher?.id,
+                                      orElse: () => null,
+                                    );
+                              return DropdownButton<User>(
+                                value: matchedTeacher,
+                                hint: const Text('Select a Teacher'),
+                                isExpanded: true,
+                                icon: const Icon(
+                                    Icons.arrow_drop_down_circle_outlined,
+                                    color: Color(0xFF004D40)),
+                                items: uniqueTeachers.map((User teacher) {
+                                  return DropdownMenuItem<User>(
+                                    value: teacher,
+                                    child: Text(
+                                      teacher.name,
+                                      style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          color: Color(0xFF1A1A1A)),
+                                    ),
+                                  );
+                                }).toList(),
+                                onChanged: _onTeacherChanged,
                               );
-                            }).toList(),
-                            onChanged: _onTeacherChanged,
+                            },
                           ),
                         ),
                       ),

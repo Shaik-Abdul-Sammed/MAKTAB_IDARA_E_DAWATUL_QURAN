@@ -106,25 +106,35 @@ class _StudentManagementScreenState extends State<StudentManagementScreen> {
                       if (_batches.isEmpty)
                         const Text('Please create a batch first in Batch Management', style: TextStyle(color: Colors.red))
                       else
-                        DropdownButtonFormField<int>(
-                          initialValue: selectedBatchId,
-                          decoration: InputDecoration(
-                            labelText: 'Assign Batch',
-                            prefixIcon: const Icon(Icons.class_, color: Color(0xFF004D40)),
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                          ),
-                          items: _batches.map((batch) {
-                            return DropdownMenuItem<int>(
-                              value: batch.id,
-                              child: Text(batch.name),
+                        Builder(
+                          builder: (context) {
+                            final uniqueBatches = {
+                              for (final b in _batches)
+                                if (b.id != null) b.id: b
+                            }.values.toList();
+                            final hasMatch = selectedBatchId != null &&
+                                uniqueBatches.any((b) => b.id == selectedBatchId);
+                            return DropdownButtonFormField<int?>(
+                              initialValue: hasMatch ? selectedBatchId : null,
+                              decoration: InputDecoration(
+                                labelText: 'Assign Batch',
+                                prefixIcon: const Icon(Icons.class_, color: Color(0xFF004D40)),
+                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                              ),
+                              items: uniqueBatches.map((batch) {
+                                return DropdownMenuItem<int?>(
+                                  value: batch.id,
+                                  child: Text(batch.name),
+                                );
+                              }).toList(),
+                              onChanged: (val) {
+                                setDialogState(() {
+                                  selectedBatchId = val;
+                                });
+                              },
+                              validator: (val) => val == null ? 'Please select a batch' : null,
                             );
-                          }).toList(),
-                          onChanged: (val) {
-                            setDialogState(() {
-                              selectedBatchId = val;
-                            });
                           },
-                          validator: (val) => val == null ? 'Please select a batch' : null,
                         ),
                     ],
                   ),
@@ -226,25 +236,35 @@ class _StudentManagementScreenState extends State<StudentManagementScreen> {
                         keyboardType: TextInputType.phone,
                       ),
                       const SizedBox(height: 16),
-                      DropdownButtonFormField<int>(
-                        initialValue: selectedBatchId,
-                        decoration: InputDecoration(
-                          labelText: 'Assign Batch',
-                          prefixIcon: const Icon(Icons.class_, color: Color(0xFF004D40)),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                        ),
-                        items: _batches.map((batch) {
-                          return DropdownMenuItem<int>(
-                            value: batch.id,
-                            child: Text(batch.name),
+                      Builder(
+                        builder: (context) {
+                          final uniqueBatches = {
+                            for (final b in _batches)
+                              if (b.id != null) b.id: b
+                          }.values.toList();
+                          final hasMatch = selectedBatchId != null &&
+                              uniqueBatches.any((b) => b.id == selectedBatchId);
+                          return DropdownButtonFormField<int?>(
+                            initialValue: hasMatch ? selectedBatchId : null,
+                            decoration: InputDecoration(
+                              labelText: 'Assign Batch',
+                              prefixIcon: const Icon(Icons.class_, color: Color(0xFF004D40)),
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                            ),
+                            items: uniqueBatches.map((batch) {
+                              return DropdownMenuItem<int?>(
+                                value: batch.id,
+                                child: Text(batch.name),
+                              );
+                            }).toList(),
+                            onChanged: (val) {
+                              setDialogState(() {
+                                selectedBatchId = val;
+                              });
+                            },
+                            validator: (val) => val == null ? 'Please select a batch' : null,
                           );
-                        }).toList(),
-                        onChanged: (val) {
-                          setDialogState(() {
-                            selectedBatchId = val;
-                          });
                         },
-                        validator: (val) => val == null ? 'Please select a batch' : null,
                       ),
                     ],
                   ),

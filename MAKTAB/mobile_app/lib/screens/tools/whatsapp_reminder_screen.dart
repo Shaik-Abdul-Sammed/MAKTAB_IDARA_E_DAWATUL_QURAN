@@ -196,15 +196,22 @@ class _WhatsAppReminderScreenState extends State<WhatsAppReminderScreen> {
 
   Widget _buildStudentDropdown() {
     if (_isLoading) return const CircularProgressIndicator();
-    return DropdownButtonFormField<Student>(
-      initialValue: _selectedStudent,
+    final uniqueStudents = {
+      for (final s in _students)
+        if (s.id != null) s.id!: s
+    }.values.toList();
+    final hasMatch = _selectedStudent != null &&
+        uniqueStudents.any((s) => s.id == _selectedStudent?.id);
+
+    return DropdownButtonFormField<Student?>(
+      initialValue: hasMatch ? _selectedStudent : null,
       decoration: InputDecoration(
         filled: true,
         fillColor: Colors.white,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
       ),
-      items: _students.map((s) {
-        return DropdownMenuItem<Student>(
+      items: uniqueStudents.map((s) {
+        return DropdownMenuItem<Student?>(
           value: s,
           child: Text('${s.name} (${s.phone ?? 'No phone'})', style: const TextStyle(fontSize: 14)),
         );

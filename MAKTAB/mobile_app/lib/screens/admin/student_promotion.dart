@@ -166,13 +166,27 @@ class _StudentPromotionScreenState extends State<StudentPromotionScreen> {
                         border: Border.all(color: Colors.black26),
                       ),
                       child: DropdownButtonHideUnderline(
-                        child: DropdownButton<Batch>(
-                          hint: const Text('Select Batch...'),
-                          value: _sourceBatch,
-                          isExpanded: true,
-                          items: _batches.map((b) => DropdownMenuItem(value: b, child: Text(b.name))).toList(),
-                          onChanged: (val) {
-                            if (val != null) _loadStudentsForSourceBatch(val);
+                        child: Builder(
+                          builder: (context) {
+                            final uniqueBatches = {
+                              for (final b in _batches)
+                                if (b.id != null) b.id: b
+                            }.values.toList();
+                            final matchedSource = _sourceBatch == null
+                                ? null
+                                : uniqueBatches.cast<Batch?>().firstWhere(
+                                    (b) => b?.id == _sourceBatch?.id,
+                                    orElse: () => null,
+                                  );
+                            return DropdownButton<Batch>(
+                              hint: const Text('Select Batch...'),
+                              value: matchedSource,
+                              isExpanded: true,
+                              items: uniqueBatches.map((b) => DropdownMenuItem(value: b, child: Text(b.name))).toList(),
+                              onChanged: (val) {
+                                if (val != null) _loadStudentsForSourceBatch(val);
+                              },
+                            );
                           },
                         ),
                       ),
@@ -238,13 +252,27 @@ class _StudentPromotionScreenState extends State<StudentPromotionScreen> {
                           border: Border.all(color: Colors.black26),
                         ),
                         child: DropdownButtonHideUnderline(
-                          child: DropdownButton<Batch>(
-                            hint: const Text('Select Destination Batch...'),
-                            value: _targetBatch,
-                            isExpanded: true,
-                            items: _batches.where((b) => b.id != _sourceBatch?.id).map((b) => DropdownMenuItem(value: b, child: Text(b.name))).toList(),
-                            onChanged: (val) {
-                              setState(() => _targetBatch = val);
+                          child: Builder(
+                            builder: (context) {
+                              final availableBatches = {
+                                for (final b in _batches)
+                                  if (b.id != null && b.id != _sourceBatch?.id) b.id: b
+                              }.values.toList();
+                              final matchedTarget = _targetBatch == null
+                                  ? null
+                                  : availableBatches.cast<Batch?>().firstWhere(
+                                      (b) => b?.id == _targetBatch?.id,
+                                      orElse: () => null,
+                                    );
+                              return DropdownButton<Batch>(
+                                hint: const Text('Select Destination Batch...'),
+                                value: matchedTarget,
+                                isExpanded: true,
+                                items: availableBatches.map((b) => DropdownMenuItem(value: b, child: Text(b.name))).toList(),
+                                onChanged: (val) {
+                                  setState(() => _targetBatch = val);
+                                },
+                              );
                             },
                           ),
                         ),

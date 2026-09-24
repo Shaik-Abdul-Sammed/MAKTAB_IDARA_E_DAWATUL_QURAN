@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:maktab_app/config/app_colors.dart';
+import 'package:maktab_app/services/cloud_sync_service.dart';
+import 'package:maktab_app/screens/teacher/quran_progress_entry.dart';
 import '../../providers/auth_provider.dart';
 import '../../../models/quran_progress.dart';
 import '../../../repositories/quran_progress_repository.dart';
@@ -27,11 +29,11 @@ class _QuranProgressHistoryScreenState extends State<QuranProgressHistoryScreen>
     setState(() => _isLoading = true);
     try {
       final auth = Provider.of<AuthProvider>(context, listen: false);
-      final teacherId = auth.currentUser?.teacherId ?? auth.currentUser?.id;
+      final canonicalTeacherId = auth.currentUser?.teacherId ?? auth.currentUser?.id;
       final repo = QuranProgressRepository();
-      final records = teacherId != null
-          ? await repo.getProgressByTeacher(teacherId)
-          : await repo.getAllProgress();
+      final records = canonicalTeacherId != null
+          ? await repo.getProgressByTeacher(canonicalTeacherId)
+          : <QuranProgress>[];
       if (mounted) {
         setState(() {
           _items = records;
@@ -176,47 +178,94 @@ class _QuranProgressHistoryScreenState extends State<QuranProgressHistoryScreen>
                                 itemBuilder: (context, index) {
                                   final item = filteredItems[index];
                                   final badgeColor = _getRecitationColor(item.recitationType);
-                                  return Card(
-                                    color: Colors.white,
-                                    margin: const EdgeInsets.only(bottom: 12),
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                    elevation: 1,
-                                    child: ListTile(
-                                      leading: CircleAvatar(
-                                        backgroundColor: badgeColor,
-                                        foregroundColor: Colors.white,
-                                        child: const Icon(Icons.book, size: 18),
-                                      ),
-                                      title: Row(
-                                        children: [
-                                          Expanded(
-                                            child: Text(
-                                              'Surah: ${item.surah}',
-                                              style: const TextStyle(fontWeight: FontWeight.bold),
-                                              overflow: TextOverflow.ellipsis,
+                                  return Dismissible(
+                                    key: ValueKey('qp_${item.id}'),
+                                    direction: DismissDirection.endToStart,
+                                    background: Container(
+                                      alignment: Alignment.centerRight,
+                                      padding: const EdgeInsets.only(right: 24),
+                                      color: Colors.red.shade400,
+                                      child: const Icon(Icons.delete, color: Colors.white),
+                                    ),
+                                    confirmDismiss: (direction) async {
+                                      return await showDialog<bool>(
+                                        context: context,
+                                        builder: (ctx) => AlertDialog(
+                                          title: const Text('Delete Progress Entry'),
+                                          content: const Text('Delete this Quran progress entry? This cannot be undone.'),
+                                          actions: [
+                                            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+                                            ElevatedButton(
+                                              onPressed: () => Navigator.pop(ctx, true),
+                                              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                                              child: const Text('Delete'),
                                             ),
-                                          ),
-                                          Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                            decoration: BoxDecoration(
-                                              color: badgeColor.withValues(alpha: 0.12),
-                                              borderRadius: BorderRadius.circular(8),
-                                              border: Border.all(color: badgeColor, width: 1),
-                                            ),
-                                            child: Text(
-                                              item.recitationType,
-                                              style: TextStyle(
-                                                fontSize: 11,
-                                                fontWeight: FontWeight.bold,
-                                                color: badgeColor,
+                                          ],
+                                        ),
+                                      );
+                                    },
+                                    onDismissed: (direction) async {
+                                      await QuranProgressRepository().deleteQuranProgress(item.id!);
+                                      await CloudSyncService.instance.deleteQuranProgressCloud(item.id!);
+                                      if (mounted) {
+                                        setState(() {
+                                          _items.removeWhere((e) => e.id == item.id);
+                                        });
+                                      }
+                                    },
+                                    child: Card(
+                                      color: Colors.white,
+                                      margin: const EdgeInsets.only(bottom: 12),
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                      elevation: 1,
+                                      child: ListTile(
+                                        leading: CircleAvatar(
+                                          backgroundColor: badgeColor,
+                                          foregroundColor: Colors.white,
+                                          child: const Icon(Icons.book, size: 18),
+                                        ),
+                                        title: Row(
+                                          children: [
+                                            Expanded(
+                                              child: Text(
+                                                'Surah: ${item.surah}',
+                                                style: const TextStyle(fontWeight: FontWeight.bold),
+                                                overflow: TextOverflow.ellipsis,
                                               ),
                                             ),
-                                          ),
-                                        ],
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                              decoration: BoxDecoration(
+                                                color: badgeColor.withValues(alpha: 0.12),
+                                                borderRadius: BorderRadius.circular(8),
+                                                border: Border.all(color: badgeColor, width: 1),
+                                              ),
+                                              child: Text(
+                                                item.recitationType,
+                                                style: TextStyle(
+                                                  fontSize: 11,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: badgeColor,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        subtitle: Text('Date: ${item.date} | Ayah: ${item.ayahFrom}–${item.ayahTo} | Grade: ${item.grade}'),
+                                        trailing: const Icon(Icons.chevron_right),
+                                        onLongPress: () => _showDetailSheet(item),
+                                        onTap: () async {
+                                          final changed = await Navigator.push<bool>(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (_) => QuranProgressEntryScreen(existing: item),
+                                            ),
+                                          );
+                                          if (changed == true && mounted) {
+                                            _loadRecords();
+                                          }
+                                        },
                                       ),
-                                      subtitle: Text('Date: ${item.date} | Ayah: ${item.ayahFrom}–${item.ayahTo} | Grade: ${item.grade}'),
-                                      trailing: const Icon(Icons.chevron_right),
-                                      onTap: () => _showDetailSheet(item),
                                     ),
                                   );
                                 },

@@ -212,8 +212,15 @@ class _BatchEditScreenState extends State<BatchEditScreen> {
         child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
       );
     }
+    final uniqueTeachers = {
+      for (final t in _teachers)
+        if (t.id != null) t.id: t
+    }.values.toList();
+    final hasMatch = _selectedTeacherId == null ||
+        uniqueTeachers.any((t) => t.id == _selectedTeacherId);
+
     return DropdownButtonFormField<int?>(
-      initialValue: _selectedTeacherId,
+      initialValue: hasMatch ? _selectedTeacherId : null,
       decoration: InputDecoration(
         labelText: 'Assign Teacher',
         prefixIcon: const Icon(Icons.person_outline, color: Color(0xFF004D40), size: 20),
@@ -235,7 +242,7 @@ class _BatchEditScreenState extends State<BatchEditScreen> {
           value: null,
           child: Text('Unassigned', style: TextStyle(fontSize: 14, color: Colors.black45)),
         ),
-        ..._teachers.map((t) {
+        ...uniqueTeachers.map((t) {
           return DropdownMenuItem<int?>(
             value: t.id,
             child: Text(t.name, style: const TextStyle(fontSize: 14)),

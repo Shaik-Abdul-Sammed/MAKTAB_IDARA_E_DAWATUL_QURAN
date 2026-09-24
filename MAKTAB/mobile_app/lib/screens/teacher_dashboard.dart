@@ -801,6 +801,12 @@ class _TeacherDashboardState extends State<TeacherDashboard>
             ),
             _drawerTile(
               context,
+              icon: Icons.payments_rounded,
+              label: 'My Salary',
+              route: '/teacher/salary',
+            ),
+            _drawerTile(
+              context,
               icon: Icons.groups_rounded,
               label: 'My Batches',
               route: '/teacher/batches',

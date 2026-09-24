@@ -110,7 +110,9 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
           if (mounted) {
             _refreshBatchStats();
           }
-        }).catchError((_) => false);
+        }).catchError((error, stack) {
+          debugPrint('[AttendanceScreen] stream error: $error\n$stack');
+        });
       }
     } catch (e) {
       if (mounted) {

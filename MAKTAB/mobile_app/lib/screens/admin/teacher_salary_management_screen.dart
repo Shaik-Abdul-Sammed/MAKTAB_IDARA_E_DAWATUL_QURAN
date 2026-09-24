@@ -7,15 +7,18 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:printing/printing.dart';
 import 'package:maktab_app/models/user.dart';
 import 'package:maktab_app/models/salary_payment.dart';
+import 'package:maktab_app/models/app_message.dart';
 import 'package:maktab_app/providers/auth_provider.dart';
 import 'package:maktab_app/repositories/user_repository.dart';
 import 'package:maktab_app/repositories/salary_repository.dart';
+import 'package:maktab_app/repositories/message_repository.dart';
 import 'package:maktab_app/services/cloud_sync_service.dart';
 import 'package:maktab_app/utils/salary_pdf_generator.dart';
 import 'package:maktab_app/utils/whatsapp_utility.dart';
 import 'package:maktab_app/utils/receipt_templates.dart';
 import 'package:maktab_app/utils/receipt_pdf_generator.dart';
 import 'package:maktab_app/widgets/receipt_preview_dialog.dart';
+import 'package:maktab_app/widgets/finance/salary_totals_card.dart';
 
 class TeacherSalaryManagementScreen extends StatefulWidget {
   const TeacherSalaryManagementScreen({super.key});
@@ -33,6 +36,8 @@ class _TeacherSalaryManagementScreenState extends State<TeacherSalaryManagementS
   DateTime _selectedDate = DateTime.now();
   List<User> _teachers = [];
   Map<int, List<SalaryPayment>> _paymentsMap = {};
+  Map<int, List<SalaryPayment>> _allPaymentsMap = {};
+  Map<String, int> _salaryTotals = const {};
   bool _isLoading = true;
 
   String get _selectedMonthStr => DateFormat('yyyy-MM').format(_selectedDate);
@@ -60,17 +65,24 @@ class _TeacherSalaryManagementScreenState extends State<TeacherSalaryManagementS
     final teachers = await _userRepository.getAllTeachers();
 
     final Map<int, List<SalaryPayment>> map = {};
+    final Map<int, List<SalaryPayment>> allMap = {};
     for (var teacher in teachers) {
       if (teacher.id != null) {
         final payments = await _salaryRepository.getPaymentsForTeacherAndMonth(teacher.id!, _selectedMonthStr);
         map[teacher.id!] = payments;
+        final allPayments = await _salaryRepository.getPaymentsForTeacher(teacher.id!);
+        allMap[teacher.id!] = allPayments;
       }
     }
+
+    final salaryTotals = await _salaryRepository.getSalaryTotals();
 
     if (mounted) {
       setState(() {
         _teachers = teachers;
         _paymentsMap = map;
+        _allPaymentsMap = allMap;
+        _salaryTotals = salaryTotals;
         _isLoading = false;
       });
     }
@@ -117,7 +129,17 @@ class _TeacherSalaryManagementScreenState extends State<TeacherSalaryManagementS
       if (await canLaunchUrl(uri)) {
         launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('[TeacherSalaryManagementScreen._launchUpiPayment] launch failed: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Could not open the app. Please try again.'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
+    }
 
     if (!mounted) return;
 
@@ -222,12 +244,12 @@ class _TeacherSalaryManagementScreenState extends State<TeacherSalaryManagementS
                       ),
                       const SizedBox(height: 12),
                       DropdownButtonFormField<String>(
-                        initialValue: selectedMode,
+                        initialValue: ['UPI', 'Bank Transfer', 'Cash', 'Other'].contains(selectedMode) ? selectedMode : 'Cash',
                         decoration: const InputDecoration(labelText: 'Payment Mode', border: OutlineInputBorder()),
                         items: ['UPI', 'Bank Transfer', 'Cash', 'Other']
                             .map((m) => DropdownMenuItem(value: m, child: Text(m)))
                             .toList(),
-                        onChanged: (val) => setDialogState(() => selectedMode = val!),
+                        onChanged: (val) => setDialogState(() => selectedMode = val ?? 'Cash'),
                       ),
                       const SizedBox(height: 12),
                       TextFormField(
@@ -297,6 +319,25 @@ class _TeacherSalaryManagementScreenState extends State<TeacherSalaryManagementS
                       final id = await _salaryRepository.insertPayment(sp);
                       final fullSp = sp.copyWith(id: id);
                       await _cloudSyncService.pushSalaryPayment(fullSp);
+
+                      final managerId = auth.currentUser?.teacherId ?? auth.currentUser?.id;
+                      if (managerId != null) {
+                        try {
+                          await MessageRepository().insertMessage(
+                            AppMessage(
+                              senderId: managerId,
+                              receiverId: teacher.teacherId ?? teacher.id ?? 0,
+                              content:
+                                  'Your salary for ${fullSp.salaryMonth} of ₹${fullSp.amount} '
+                                  'has been paid via ${fullSp.paymentMode}.',
+                              timestamp: DateTime.now(),
+                            ),
+                          );
+                          CloudSyncService.instance.notifyDataChanged('messages');
+                        } catch (e) {
+                          debugPrint('[SalaryManagement] Error notifying teacher: $e');
+                        }
+                      }
 
                       if (context.mounted) {
                         Navigator.pop(dialogCtx);
@@ -445,12 +486,12 @@ class _TeacherSalaryManagementScreenState extends State<TeacherSalaryManagementS
             ),
             const SizedBox(height: 12),
             DropdownButtonFormField<String>(
-              initialValue: selectedMode,
+              initialValue: ['UPI', 'Bank Transfer', 'Cash', 'Other'].contains(selectedMode) ? selectedMode : 'Cash',
               decoration: const InputDecoration(labelText: 'Preferred Payment Mode', border: OutlineInputBorder()),
               items: ['UPI', 'Bank Transfer', 'Cash', 'Other']
                   .map((m) => DropdownMenuItem(value: m, child: Text(m)))
                   .toList(),
-              onChanged: (val) => selectedMode = val!,
+              onChanged: (val) => selectedMode = val ?? 'Cash',
             ),
           ],
         ),
@@ -479,69 +520,144 @@ class _TeacherSalaryManagementScreenState extends State<TeacherSalaryManagementS
     );
   }
 
-  // ── Show Payment History Dialog ─────────────────────────────────────────
+  // ── Edit Payment Dialog ──────────────────────────────────────────────────
 
-  void _showPaymentHistoryDialog(User teacher) async {
-    final payments = await _salaryRepository.getPaymentsForTeacher(teacher.id!);
+  void _showEditPaymentDialog(SalaryPayment payment, User teacher) {
+    final amountController = TextEditingController(text: payment.amount.toString());
+    final refController = TextEditingController(text: payment.transactionReference ?? '');
+    final notesController = TextEditingController(text: payment.notes ?? '');
+    String selectedMode = payment.paymentMode;
 
-    if (!mounted) return;
+    final formKey = GlobalKey<FormState>();
 
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text('Salary History — ${teacher.name}', style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF004D40))),
-        content: SizedBox(
-          width: double.maxFinite,
-          height: 350,
-          child: payments.isEmpty
-              ? const Center(child: Text('No payment history recorded yet.'))
-              : ListView.builder(
-                  shrinkWrap: true,
-                  itemCount: payments.length,
-                  itemBuilder: (context, index) {
-                    final p = payments[index];
-                    return Card(
-                      margin: const EdgeInsets.symmetric(vertical: 4),
-                      child: ListTile(
-                        title: Text('₹${p.amount} — ${p.salaryMonth}', style: const TextStyle(fontWeight: FontWeight.bold)),
-                        subtitle: Text('${p.paymentDate} • ${p.paymentMode} ${p.transactionReference != null ? "• Ref: ${p.transactionReference}" : ""}'),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            if (p.receiptSent == 0)
-                              OutlinedButton.icon(
-                                icon: const Icon(Icons.send_rounded, size: 14),
-                                label: const Text('Send Receipt', style: TextStyle(fontSize: 11)),
-                                style: OutlinedButton.styleFrom(
-                                  foregroundColor: const Color(0xFF004D40),
-                                  side: const BorderSide(color: Color(0xFF004D40)),
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                ),
-                                onPressed: () {
-                                  Navigator.pop(ctx);
-                                  _shareReceipt(p, teacher);
-                                },
-                              ),
-                            IconButton(
-                              icon: const Icon(Icons.share, color: Color(0xFF004D40)),
-                              onPressed: () {
-                                Navigator.pop(ctx);
-                                _shareReceipt(p, teacher);
-                              },
-                            ),
-                          ],
+      builder: (dialogCtx) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              title: Text(
+                'Edit Salary Payment — ${teacher.name}',
+                style: const TextStyle(fontSize: 18, color: Color(0xFF004D40), fontWeight: FontWeight.bold),
+              ),
+              content: SingleChildScrollView(
+                child: Form(
+                  key: formKey,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      TextFormField(
+                        controller: amountController,
+                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(
+                          labelText: 'Payment Amount (₹)',
+                          prefixIcon: Icon(Icons.currency_rupee, color: Color(0xFF004D40)),
+                          border: OutlineInputBorder(),
+                        ),
+                        validator: (val) {
+                          if (val == null || val.trim().isEmpty) return 'Enter payment amount';
+                          final amt = int.tryParse(val.trim());
+                          if (amt == null || amt <= 0) return 'Enter a valid amount > 0';
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 12),
+                      DropdownButtonFormField<String>(
+                        initialValue: ['UPI', 'Bank Transfer', 'Cash', 'Other'].contains(selectedMode) ? selectedMode : 'Cash',
+                        decoration: const InputDecoration(labelText: 'Payment Mode', border: OutlineInputBorder()),
+                        items: ['UPI', 'Bank Transfer', 'Cash', 'Other']
+                            .map((m) => DropdownMenuItem(value: m, child: Text(m)))
+                            .toList(),
+                        onChanged: (val) => setDialogState(() => selectedMode = val ?? 'Cash'),
+                      ),
+                      const SizedBox(height: 12),
+                      TextFormField(
+                        controller: refController,
+                        decoration: const InputDecoration(
+                          labelText: 'Reference / Txn ID (Optional)',
+                          prefixIcon: Icon(Icons.numbers, color: Color(0xFF004D40)),
+                          border: OutlineInputBorder(),
                         ),
                       ),
-                    );
-                  },
+                      const SizedBox(height: 12),
+                      TextFormField(
+                        controller: notesController,
+                        decoration: const InputDecoration(
+                          labelText: 'Notes (Optional)',
+                          prefixIcon: Icon(Icons.note_alt_outlined, color: Color(0xFF004D40)),
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-        ),
+              ),
+              actions: [
+                TextButton(onPressed: () => Navigator.pop(dialogCtx), child: const Text('Cancel')),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF004D40),
+                    foregroundColor: Colors.white,
+                  ),
+                  onPressed: () async {
+                    if (formKey.currentState!.validate()) {
+                      final amount = int.parse(amountController.text.trim());
+                      final updated = payment.copyWith(
+                        amount: amount,
+                        paymentMode: selectedMode,
+                        transactionReference: refController.text.trim().isNotEmpty ? refController.text.trim() : null,
+                        notes: notesController.text.trim().isNotEmpty ? notesController.text.trim() : null,
+                        updatedAt: DateTime.now().toIso8601String(),
+                      );
+                      await _salaryRepository.updatePayment(updated);
+                      if (context.mounted) {
+                        Navigator.pop(dialogCtx);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Payment updated successfully')),
+                        );
+                        _loadSalaryData();
+                      }
+                    }
+                  },
+                  child: const Text('Save Changes'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  // ── Delete Payment ────────────────────────────────────────────────────────
+
+  Future<void> _deletePayment(SalaryPayment payment) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete Salary Payment'),
+        content: Text('Delete this salary payment of ₹${payment.amount} for ${payment.salaryMonth}? This cannot be undone.'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Close')),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Delete'),
+          ),
         ],
       ),
     );
+
+    if (confirmed == true && payment.id != null) {
+      await _salaryRepository.deletePayment(payment.id!);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Payment deleted successfully')),
+        );
+        _loadSalaryData();
+      }
+    }
   }
 
   // ── PDF Salary Report ───────────────────────────────────────────────────
@@ -629,6 +745,10 @@ class _TeacherSalaryManagementScreenState extends State<TeacherSalaryManagementS
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    if (_salaryTotals.isNotEmpty) ...[
+                      SalaryTotalsCard(totals: _salaryTotals),
+                      const SizedBox(height: 16),
+                    ],
                     // Month Navigation Header
                     Card(
                       elevation: 2,
@@ -726,54 +846,63 @@ class _TeacherSalaryManagementScreenState extends State<TeacherSalaryManagementS
                                 statusIcon = Icons.cancel;
                               }
 
+                              final allTeacherPayments = _allPaymentsMap[teacher.id] ?? [];
+                              final currentYearStr = DateTime.now().year.toString();
+                              final totalPaidThisYear = allTeacherPayments
+                                  .where((p) => p.salaryMonth.startsWith(currentYearStr))
+                                  .fold(0, (sum, p) => sum + p.amount);
+                              final totalPaidAllTime = allTeacherPayments.fold(0, (sum, p) => sum + p.amount);
+
                               return Card(
                                 margin: const EdgeInsets.only(bottom: 12),
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                                 elevation: 2,
-                                child: Padding(
-                                  padding: const EdgeInsets.all(14),
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                child: Theme(
+                                  data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                                  child: ExpansionTile(
+                                    tilePadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                                    childrenPadding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
+                                    title: Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                teacher.name,
+                                                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF004D40)),
+                                              ),
+                                              const SizedBox(height: 2),
+                                              Text(
+                                                'This Month: ₹$paid / ₹$salary',
+                                                style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                          decoration: BoxDecoration(
+                                            color: statusColor.withValues(alpha: 0.15),
+                                            borderRadius: BorderRadius.circular(20),
+                                            border: Border.all(color: statusColor),
+                                          ),
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Icon(statusIcon, size: 14, color: statusColor),
+                                              const SizedBox(width: 4),
+                                              Text(
+                                                status,
+                                                style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: statusColor),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                     children: [
-                                      Row(
-                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          Expanded(
-                                            child: Column(
-                                              crossAxisAlignment: CrossAxisAlignment.start,
-                                              children: [
-                                                Text(
-                                                  teacher.name,
-                                                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF004D40)),
-                                                ),
-                                                Text(
-                                                  'ID/Mobile: ${teacher.mobile ?? teacher.id.toString()}',
-                                                  style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                          Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                            decoration: BoxDecoration(
-                                              color: statusColor.withValues(alpha: 0.15),
-                                              borderRadius: BorderRadius.circular(20),
-                                              border: Border.all(color: statusColor),
-                                            ),
-                                            child: Row(
-                                              mainAxisSize: MainAxisSize.min,
-                                              children: [
-                                                Icon(statusIcon, size: 14, color: statusColor),
-                                                const SizedBox(width: 4),
-                                                Text(
-                                                  status,
-                                                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: statusColor),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                        ],
-                                      ),
                                       const Divider(height: 20),
                                       Row(
                                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -813,17 +942,99 @@ class _TeacherSalaryManagementScreenState extends State<TeacherSalaryManagementS
                                               onPressed: () => _launchUpiPayment(teacher, remaining),
                                             ),
                                           IconButton(
-                                            icon: const Icon(Icons.history, color: Color(0xFF004D40)),
-                                            tooltip: 'Payment History',
-                                            onPressed: () => _showPaymentHistoryDialog(teacher),
-                                          ),
-                                          IconButton(
                                             icon: const Icon(Icons.settings, color: Colors.grey),
                                             tooltip: 'Edit Salary Config',
                                             onPressed: () => _showEditSalaryConfigDialog(teacher),
                                           ),
                                         ],
                                       ),
+                                      const Divider(height: 24),
+
+                                      // Expanded Header: Total paid this year & all time
+                                      Container(
+                                        padding: const EdgeInsets.all(12),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFFE0F2F1),
+                                          borderRadius: BorderRadius.circular(10),
+                                        ),
+                                        child: Row(
+                                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                          children: [
+                                            Column(
+                                              children: [
+                                                const Text('Paid This Year', style: TextStyle(fontSize: 11, color: Colors.black54)),
+                                                const SizedBox(height: 2),
+                                                Text('₹$totalPaidThisYear', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF004D40))),
+                                              ],
+                                            ),
+                                            Container(width: 1, height: 30, color: Colors.black26),
+                                            Column(
+                                              children: [
+                                                const Text('Paid All Time', style: TextStyle(fontSize: 11, color: Colors.black54)),
+                                                const SizedBox(height: 2),
+                                                Text('₹$totalPaidAllTime', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF004D40))),
+                                              ],
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      const SizedBox(height: 12),
+
+                                      // Payment History Body
+                                      Align(
+                                        alignment: Alignment.centerLeft,
+                                        child: Text(
+                                          'Payment History (${allTeacherPayments.length})',
+                                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF004D40)),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 6),
+                                      if (allTeacherPayments.isEmpty)
+                                        const Padding(
+                                          padding: EdgeInsets.symmetric(vertical: 8),
+                                          child: Text('No salary payments recorded yet.', style: TextStyle(fontSize: 12, color: Colors.black45)),
+                                        )
+                                      else
+                                        ListView.separated(
+                                          shrinkWrap: true,
+                                          physics: const NeverScrollableScrollPhysics(),
+                                          itemCount: allTeacherPayments.length,
+                                          separatorBuilder: (context, index) => const Divider(height: 1),
+                                          itemBuilder: (context, pIndex) {
+                                            final p = allTeacherPayments[pIndex];
+                                            return ListTile(
+                                              dense: true,
+                                              contentPadding: EdgeInsets.zero,
+                                              leading: Icon(
+                                                p.receiptSent == 1 ? Icons.check_circle_rounded : Icons.access_time_rounded,
+                                                color: p.receiptSent == 1 ? Colors.green : Colors.amber.shade800,
+                                                size: 20,
+                                              ),
+                                              title: Text('₹${p.amount} — ${p.salaryMonth}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                                              subtitle: Text('${p.paymentDate} • ${p.paymentMode}${p.transactionReference != null && p.transactionReference!.isNotEmpty ? " • Ref: ${p.transactionReference}" : ""}'),
+                                              trailing: Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  IconButton(
+                                                    icon: const Icon(Icons.share, size: 18, color: Color(0xFF004D40)),
+                                                    tooltip: 'Share Receipt',
+                                                    onPressed: () => _shareReceipt(p, teacher),
+                                                  ),
+                                                  IconButton(
+                                                    icon: const Icon(Icons.edit_outlined, size: 18, color: Colors.blueGrey),
+                                                    tooltip: 'Edit Payment',
+                                                    onPressed: () => _showEditPaymentDialog(p, teacher),
+                                                  ),
+                                                  IconButton(
+                                                    icon: const Icon(Icons.delete_outline, size: 18, color: Colors.red),
+                                                    tooltip: 'Delete Payment',
+                                                    onPressed: () => _deletePayment(p),
+                                                  ),
+                                                ],
+                                              ),
+                                            );
+                                          },
+                                        ),
                                     ],
                                   ),
                                 ),
