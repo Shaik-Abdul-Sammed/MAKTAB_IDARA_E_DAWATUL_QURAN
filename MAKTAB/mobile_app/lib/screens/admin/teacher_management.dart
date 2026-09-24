@@ -10,6 +10,7 @@ import 'package:maktab_app/repositories/batch_repository.dart';
 import 'package:maktab_app/repositories/user_repository.dart';
 import 'package:maktab_app/widgets/shimmer_loader.dart';
 import 'package:maktab_app/utils/whatsapp_utility.dart';
+import 'package:maktab_app/utils/language_resolver.dart';
 import 'package:provider/provider.dart';
 import 'package:maktab_app/providers/auth_provider.dart';
 import 'package:crypto/crypto.dart';
@@ -251,6 +252,7 @@ class _TeacherManagementScreenState extends State<TeacherManagementScreen> {
                                   teacherPin,
                                   teacherId: newTeacherId,
                                   mobile: teacherMobile,
+                                  languageCode: LanguageResolver.forUser(newUser),
                                   senderName: sender,
                                 );
                             },
@@ -493,6 +495,7 @@ class _TeacherManagementScreenState extends State<TeacherManagementScreen> {
                                    pinController.text,
                                    teacherId: teacher.id ?? 0,
                                    mobile: teacher.mobile!,
+                                   languageCode: LanguageResolver.forUser(teacher),
                                    senderName: sender,
                                  );
                                },

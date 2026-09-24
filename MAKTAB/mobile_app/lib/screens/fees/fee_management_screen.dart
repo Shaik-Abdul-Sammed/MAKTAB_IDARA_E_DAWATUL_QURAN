@@ -17,6 +17,7 @@ import '../../services/notification_service.dart';
 import '../../services/database_helper.dart';
 import '../../models/batch.dart';
 import '../../utils/whatsapp_utility.dart';
+import '../../utils/language_resolver.dart';
 import 'package:record/record.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:path_provider/path_provider.dart';
@@ -448,6 +449,7 @@ class _FeeManagementScreenState extends State<FeeManagementScreen> {
       paymentMode: lastPayment.mode,
       dateTime: formattedTime,
       collectorName: collectorName,
+      languageCode: LanguageResolver.forStudent(item.student),
       senderName: collectorName,
     );
   }
@@ -576,6 +578,7 @@ class _FeeManagementScreenState extends State<FeeManagementScreen> {
                             paymentMode: selectedMode,
                             dateTime: formattedTime,
                             collectorName: collectorName,
+                            languageCode: LanguageResolver.forStudent(item.student),
                             senderName: collectorName,
                           );
                         },

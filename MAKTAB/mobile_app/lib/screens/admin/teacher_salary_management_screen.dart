@@ -17,6 +17,7 @@ import 'package:maktab_app/utils/salary_pdf_generator.dart';
 import 'package:maktab_app/utils/whatsapp_utility.dart';
 import 'package:maktab_app/utils/receipt_templates.dart';
 import 'package:maktab_app/utils/receipt_pdf_generator.dart';
+import 'package:maktab_app/utils/language_resolver.dart';
 import 'package:maktab_app/widgets/receipt_preview_dialog.dart';
 import 'package:maktab_app/widgets/finance/salary_totals_card.dart';
 
@@ -360,6 +361,7 @@ class _TeacherSalaryManagementScreenState extends State<TeacherSalaryManagementS
                               Navigator.pop(previewCtx);
                               if (teacher.mobile != null && teacher.mobile!.isNotEmpty) {
                                 final sender = context.read<AuthProvider>().currentUser?.name ?? 'Maktab Management';
+                                final teacherLang = LanguageResolver.forUser(teacher);
                                 await WhatsAppUtility.sendSalarySlip(
                                   context,
                                   teacher.mobile!,
@@ -369,7 +371,7 @@ class _TeacherSalaryManagementScreenState extends State<TeacherSalaryManagementS
                                   fullSp.salaryMonth,
                                   paymentMode: fullSp.paymentMode,
                                   upiId: teacher.upiId,
-                                  languageCode: 'en',
+                                  languageCode: teacherLang,
                                   senderName: sender,
                                 );
                                 await _salaryRepository.markReceiptSent(id);
@@ -377,7 +379,8 @@ class _TeacherSalaryManagementScreenState extends State<TeacherSalaryManagementS
                               }
                             },
                             onBuildPdf: () async {
-                              final labels = ReceiptTemplates.get('en');
+                              final teacherLang = LanguageResolver.forUser(teacher);
+                              final labels = ReceiptTemplates.get(teacherLang);
                               final sender = context.read<AuthProvider>().currentUser?.name ?? 'Maktab Management';
                               return ReceiptPdfGenerator.buildSalaryReceiptPdf(
                                 maktabName: 'MAKTAB IDARA E DAWATUL QURAN',
@@ -428,6 +431,7 @@ class _TeacherSalaryManagementScreenState extends State<TeacherSalaryManagementS
           Navigator.pop(previewCtx);
           if (teacher.mobile != null && teacher.mobile!.isNotEmpty) {
             final sender = context.read<AuthProvider>().currentUser?.name ?? 'Maktab Management';
+            final teacherLang = LanguageResolver.forUser(teacher);
             await WhatsAppUtility.sendSalarySlip(
               context,
               teacher.mobile!,
@@ -437,7 +441,7 @@ class _TeacherSalaryManagementScreenState extends State<TeacherSalaryManagementS
               payment.salaryMonth,
               paymentMode: payment.paymentMode,
               upiId: teacher.upiId,
-              languageCode: 'en',
+              languageCode: teacherLang,
               senderName: sender,
             );
             if (payment.id != null) {
@@ -447,7 +451,8 @@ class _TeacherSalaryManagementScreenState extends State<TeacherSalaryManagementS
           }
         },
         onBuildPdf: () async {
-          final labels = ReceiptTemplates.get('en');
+          final teacherLang = LanguageResolver.forUser(teacher);
+          final labels = ReceiptTemplates.get(teacherLang);
           final sender = context.read<AuthProvider>().currentUser?.name ?? 'Maktab Management';
           return ReceiptPdfGenerator.buildSalaryReceiptPdf(
             maktabName: 'MAKTAB IDARA E DAWATUL QURAN',

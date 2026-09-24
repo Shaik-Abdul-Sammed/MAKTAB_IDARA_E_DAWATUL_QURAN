@@ -9,6 +9,8 @@ import '../../../models/student.dart';
 import '../../../repositories/quran_progress_repository.dart';
 import '../../../repositories/student_repository.dart';
 import '../../../utils/whatsapp_utility.dart';
+import '../../../utils/receipt_templates.dart';
+import '../../../utils/language_resolver.dart';
 
 class QuranProgressHistoryScreen extends StatefulWidget {
   const QuranProgressHistoryScreen({super.key});
@@ -67,44 +69,25 @@ class _QuranProgressHistoryScreenState extends State<QuranProgressHistoryScreen>
 
     final senderName = auth.currentUser?.name ?? 'Maktab Management';
     const maktabName = 'MAKTAB IDARA E DAWATUL QURAN';
-    final remarks = (entry.remarks ?? '').trim();
-
-    final msg = '''
-بسم الله الرحمن الرحيم
-
-السلام عليكم ورحمة الله وبركاته
-
-Respected Parent/Guardian,
-
-We are pleased to share today's Sabaq progress for your child, *${student.name}* (Adm. No. ${student.admissionNumber}).
-
-━━━━━━━━━━━━━━━━━━━━
-📖 *Sabaq Details*
-━━━━━━━━━━━━━━━━━━━━
-• *Surah:* ${entry.surah}
-• *Ayah:* ${entry.ayahFrom}–${entry.ayahTo}
-• *Type:* ${entry.recitationType}
-• *Grade:* ${entry.grade}
-• *Date:* ${entry.date}
-
-━━━━━━━━━━━━━━━━━━━━
-📝 *Teacher's Note*
-━━━━━━━━━━━━━━━━━━━━
-${remarks.isEmpty ? 'Alhamdulillah, the recitation was completed with focus and care.' : remarks}
-
-We encourage you to review this portion with your child at home and continue the daily revision practice.
-
-May Allah bless your child with steadfastness in learning the Qur'an.
-
-جزاك الله خيرًا
-
-Warm regards,
-*$senderName*
-$maktabName
-''';
+    final lang = LanguageResolver.forStudent(student);
 
     if (!mounted) return;
-    await WhatsAppUtility.launchWhatsApp(phone, msg, context: context);
+    await WhatsAppUtility.sendSabaqUpdate(
+      context,
+      phone: phone,
+      studentName: student.name,
+      admissionNumber: student.admissionNumber,
+      surah: entry.surah,
+      ayahFrom: entry.ayahFrom.toString(),
+      ayahTo: entry.ayahTo.toString(),
+      recitationType: entry.recitationType,
+      grade: entry.grade,
+      date: entry.date,
+      remarks: entry.remarks,
+      languageCode: lang,
+      senderName: senderName,
+      maktabName: maktabName,
+    );
   }
 
   Future<void> _sendDailyProgressToParents() async {
@@ -155,49 +138,53 @@ $maktabName
       final phone = group.key;
       final items = group.value;
 
+      final firstStudent = items.first['student'] as Student;
+      final lang = LanguageResolver.forStudent(firstStudent);
+      final t = ReceiptTemplates.get(lang);
+
       final sections = <String>[];
       for (final item in items) {
         final student = item['student'] as Student;
         final p = item['entry'] as QuranProgress;
         final remarks = (p.remarks ?? '').trim();
         final note = remarks.isEmpty
-            ? 'Alhamdulillah, the recitation was completed with focus and care.'
+            ? (t['sabaqDefaultNote'] ?? 'Alhamdulillah, the recitation was completed with focus and care.')
             : remarks;
 
-        sections.add('''Child: *${student.name}* (Adm. No. ${student.admissionNumber})
+        sections.add('''${t['student'] ?? 'Student'}: *${student.name}* (Adm. No. ${student.admissionNumber})
 ━━━━━━━━━━━━━━━━━━━━
-📖 *Sabaq Details*
+📖 *${t['sabaqDetailsHeader'] ?? 'Sabaq Details'}*
 ━━━━━━━━━━━━━━━━━━━━
-• *Surah:* ${p.surah}
-• *Ayah:* ${p.ayahFrom}–${p.ayahTo}
-• *Type:* ${p.recitationType}
-• *Grade:* ${p.grade}
-• *Date:* ${p.date}
+• *${t['sabaqSurahLabel'] ?? 'Surah'}:* ${p.surah}
+• *${t['sabaqAyahLabel'] ?? 'Ayah'}:* ${p.ayahFrom}–${p.ayahTo}
+• *${t['sabaqTypeLabel'] ?? 'Type'}:* ${p.recitationType}
+• *${t['sabaqGradeLabel'] ?? 'Grade'}:* ${p.grade}
+• *${t['sabaqDateLabel'] ?? 'Date'}:* ${p.date}
 
 ━━━━━━━━━━━━━━━━━━━━
-📝 *Teacher's Note*
+📝 *${t['sabaqNoteHeader'] ?? "Teacher's Note"}*
 ━━━━━━━━━━━━━━━━━━━━
 $note''');
       }
 
       final msg = '''
-بسم الله الرحمن الرحيم
+${t['sabaqBismillah'] ?? 'بسم الله الرحمن الرحيم'}
 
-السلام عليكم ورحمة الله وبركاته
+${t['sabaqSalam'] ?? 'السلام عليكم ورحمة الله وبركاته'}
 
-Respected Parent/Guardian,
+${t['sabaqGreeting'] ?? 'Respected Parent/Guardian,'}
 
-We are pleased to share today's Sabaq progress for your child${items.length > 1 ? 'ren' : ''}:
+${t['sabaqIntro'] ?? "We are pleased to share today's Sabaq progress for your child"}${items.length > 1 ? 'ren' : ''}:
 
 ${sections.join('\n\n')}
 
-We encourage you to review this portion with your child at home and continue the daily revision practice.
+${t['sabaqEncouragement'] ?? 'We encourage you to review this portion with your child at home and continue the daily revision practice.'}
 
-May Allah bless your child with steadfastness in learning the Qur'an.
+${t['sabaqDua'] ?? "May Allah bless your child with steadfastness in learning the Qur'an."}
 
-جزاك الله خيرًا
+${t['sabaqJazak'] ?? 'جزاك الله خيرًا'}
 
-Warm regards,
+${t['sabaqRegards'] ?? 'Warm regards,'}
 *$senderName*
 $maktabName
 ''';

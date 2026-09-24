@@ -11,6 +11,7 @@ import '../../widgets/shimmer_loader.dart';
 import '../../widgets/molecules/confirm_dialog.dart';
 import '../../widgets/molecules/custom_app_bar.dart';
 import '../../utils/whatsapp_utility.dart';
+import '../../utils/language_resolver.dart';
 import '../../providers/auth_provider.dart';
 
 class TeacherDetailsScreen extends StatefulWidget {
@@ -165,6 +166,7 @@ class _TeacherDetailsScreenState extends State<TeacherDetailsScreen> {
                                   pinController.text,
                                   teacherId: teacher.id ?? 0,
                                   mobile: teacher.mobile!,
+                                  languageCode: LanguageResolver.forUser(teacher),
                                   senderName: sender,
                                 );
                               },

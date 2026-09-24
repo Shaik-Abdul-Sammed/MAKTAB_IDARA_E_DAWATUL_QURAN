@@ -12,6 +12,7 @@ import '../../widgets/shimmer_loader.dart';
 import '../../widgets/molecules/confirm_dialog.dart';
 import '../../widgets/molecules/custom_app_bar.dart';
 import '../../utils/whatsapp_utility.dart';
+import '../../utils/language_resolver.dart';
 import '../../widgets/language_picker_dialog.dart';
 import '../../providers/auth_provider.dart';
 
@@ -82,21 +83,17 @@ class _BatchDetailsScreenState extends State<BatchDetailsScreen> {
     if (students.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No students in batch.')));
       return;
-    }
-
-    final lang = await LanguagePickerDialog.show(context);
-    if (lang == null || !mounted) return;
-
     final sender = context.read<AuthProvider>().currentUser?.name ?? 'Maktab Management';
     for (final s in students) {
       final phone = s.phone ?? s.guardianPhone ?? '';
+      final studentLang = LanguageResolver.forStudent(s);
       if (phone.isNotEmpty && mounted) {
         await WhatsAppUtility.sendBatchNotice(
           context,
           batchName: batch.name,
           timing: batch.timing,
           phone: phone,
-          languageCode: lang,
+          languageCode: studentLang,
           senderName: sender,
         );
         await Future.delayed(const Duration(milliseconds: 500));

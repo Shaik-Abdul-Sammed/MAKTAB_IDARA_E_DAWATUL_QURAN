@@ -72,6 +72,8 @@ class UserRepository {
     return null;
   }
 
+  Future<User?> getManager() async => getAdminUser();
+
   /// Updates a user's PIN hash. The [newPinHash] must already be hashed
   /// by the caller (e.g. AuthProvider._hashPin). Storing as-is prevents double-hashing.
   Future<int> updateUserPin(int userId, String newPinHash) async {

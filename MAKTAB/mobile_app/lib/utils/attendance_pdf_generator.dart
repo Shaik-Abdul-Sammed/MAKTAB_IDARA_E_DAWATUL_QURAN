@@ -6,6 +6,7 @@ import 'package:pdf/widgets.dart' as pw;
 import '../models/batch.dart';
 import '../models/student.dart';
 import '../models/user.dart';
+import 'pdf_font_helper.dart';
 
 class AttendancePdfGenerator {
   static final DateFormat _df = DateFormat('dd MMM yyyy');
@@ -86,8 +87,10 @@ class AttendancePdfGenerator {
     required List<Batch> batches,
     required Map<int, Map<String, int>> dataByBatch,
     required String senderName,
+    String languageCode = 'en',
   }) async {
-    final doc = pw.Document();
+    final theme = await PdfFontHelper.getTheme(languageCode: languageCode);
+    final doc = pw.Document(theme: theme);
 
     doc.addPage(
       pw.MultiPage(
@@ -198,8 +201,10 @@ class AttendancePdfGenerator {
     required DateTime toDate,
     required List<Map<String, dynamic>> rows,
     required String senderName,
+    String languageCode = 'en',
   }) async {
-    final doc = pw.Document();
+    final theme = await PdfFontHelper.getTheme(languageCode: languageCode);
+    final doc = pw.Document(theme: theme);
 
     doc.addPage(
       pw.MultiPage(
@@ -304,8 +309,10 @@ class AttendancePdfGenerator {
     required DateTime toDate,
     required List<Map<String, dynamic>> dailyRows,
     required String senderName,
+    String languageCode = 'en',
   }) async {
-    final doc = pw.Document();
+    final theme = await PdfFontHelper.getTheme(languageCode: languageCode);
+    final doc = pw.Document(theme: theme);
 
     doc.addPage(
       pw.MultiPage(
@@ -431,8 +438,10 @@ class AttendancePdfGenerator {
     required DateTime toDate,
     required List<Map<String, dynamic>> dailyRows,
     required String senderName,
+    String languageCode = 'en',
   }) async {
-    final doc = pw.Document();
+    final theme = await PdfFontHelper.getTheme(languageCode: languageCode);
+    final doc = pw.Document(theme: theme);
 
     doc.addPage(
       pw.MultiPage(

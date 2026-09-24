@@ -13,6 +13,7 @@ import '../../repositories/student_repository.dart';
 import '../../utils/whatsapp_utility.dart';
 import '../../utils/receipt_templates.dart';
 import '../../utils/receipt_pdf_generator.dart';
+import '../../utils/language_resolver.dart';
 import '../../widgets/receipt_preview_dialog.dart';
 
 class PaymentTransaction {
@@ -252,7 +253,7 @@ class _StudentPaymentHistoryScreenState extends State<StudentPaymentHistoryScree
               paymentMode: tx.payment.mode,
               dateTime: formattedTime,
               collectorName: collectorName,
-              languageCode: primaryStudent.preferredLanguage,
+              languageCode: LanguageResolver.forStudent(primaryStudent),
               senderName: collectorName,
             );
             if (tx.payment.id != null) {
@@ -265,7 +266,7 @@ class _StudentPaymentHistoryScreenState extends State<StudentPaymentHistoryScree
               children: includedChildren,
               dateTime: formattedTime,
               collectorName: collectorName,
-              languageCode: primaryStudent.preferredLanguage,
+              languageCode: LanguageResolver.forStudent(primaryStudent),
               senderName: collectorName,
             );
             for (final pid in includedPaymentIds) {
@@ -277,7 +278,8 @@ class _StudentPaymentHistoryScreenState extends State<StudentPaymentHistoryScree
           }
         },
         onBuildPdf: () async {
-          final labels = ReceiptTemplates.get(primaryStudent.preferredLanguage);
+          final studentLang = LanguageResolver.forStudent(primaryStudent);
+          final labels = ReceiptTemplates.get(studentLang);
           final recAt = DateTime.tryParse(tx.payment.timestamp) ?? DateTime.now();
           return ReceiptPdfGenerator.buildFeeReceiptPdf(
             maktabName: 'MAKTAB IDARA E DAWATUL QURAN',
@@ -405,7 +407,7 @@ class _StudentPaymentHistoryScreenState extends State<StudentPaymentHistoryScree
                                       paymentMode: tx.payment.mode,
                                       dateTime: formattedTime,
                                       collectorName: collectorName,
-                                      languageCode: tx.student.preferredLanguage,
+                                      languageCode: LanguageResolver.forStudent(tx.student),
                                       senderName: collectorName,
                                     );
                                   },

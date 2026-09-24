@@ -2,6 +2,8 @@ import 'dart:typed_data';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:intl/intl.dart';
+import 'receipt_templates.dart';
+import 'pdf_font_helper.dart';
 
 class ReceiptPdfGenerator {
   /// Builds a single PDF for a fee receipt (single or combined siblings).
@@ -11,10 +13,13 @@ class ReceiptPdfGenerator {
     required String collectorName,
     required DateTime recordedAt,
     required List<Map<String, dynamic>> children, // {name, admissionNumber, amount, mode, notes}
-    required Map<String, String> labels,           // from ReceiptTemplates.get(languageCode)
+    Map<String, String>? labels,
+    String languageCode = 'en',
     required String senderName,
   }) async {
-    final doc = pw.Document();
+    final effectiveLabels = labels ?? ReceiptTemplates.get(languageCode);
+    final theme = await PdfFontHelper.getTheme(languageCode: languageCode);
+    final doc = pw.Document(theme: theme);
     final whenStr = DateFormat('dd MMM yyyy, hh:mm a').format(recordedAt);
 
     doc.addPage(
@@ -39,23 +44,23 @@ class ReceiptPdfGenerator {
               ),
               pw.SizedBox(height: 4),
               pw.Text(
-                labels['header'] ?? 'Payment Receipt',
+                effectiveLabels['feeHeader'] ?? effectiveLabels['header'] ?? 'Payment Receipt',
                 style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold),
               ),
               pw.Divider(),
-              pw.Text('${labels['date'] ?? 'Date'}: $whenStr'),
-              pw.Text('${labels['receivedBy'] ?? 'Received by'}: $collectorName'),
+              pw.Text('${effectiveLabels['date'] ?? 'Date'}: $whenStr'),
+              pw.Text('${effectiveLabels['feeReceivedBy'] ?? effectiveLabels['receivedBy'] ?? 'Received by'}: $collectorName'),
               pw.SizedBox(height: 12),
               pw.TableHelper.fromTextArray(
                 headers: [
-                  labels['student'] ?? 'Student',
-                  labels['amount'] ?? 'Amount',
-                  labels['mode'] ?? 'Mode',
+                  effectiveLabels['student'] ?? 'Student',
+                  effectiveLabels['feeAmount'] ?? effectiveLabels['amount'] ?? 'Amount',
+                  effectiveLabels['feeMode'] ?? effectiveLabels['mode'] ?? 'Mode',
                 ],
                 data: children
                     .map((c) => [
                           '${c['name']} (${c['admissionNumber']})',
-                          'Rs. ${(c['amount'] as num).toInt()}',
+                          '₹${(c['amount'] as num).toInt()}',
                           c['mode'] ?? '',
                         ])
                     .toList(),
@@ -67,7 +72,7 @@ class ReceiptPdfGenerator {
                 pw.Align(
                   alignment: pw.Alignment.centerRight,
                   child: pw.Text(
-                    '${labels['total'] ?? 'Total'}: Rs. $total',
+                    '${effectiveLabels['feeSiblingTotal'] ?? effectiveLabels['total'] ?? 'Total'}: ₹$total',
                     style: pw.TextStyle(
                       fontSize: 13,
                       fontWeight: pw.FontWeight.bold,
@@ -78,12 +83,12 @@ class ReceiptPdfGenerator {
               pw.Spacer(),
               pw.Divider(),
               pw.Text(
-                labels['footer'] ?? 'Jazak Allah Khair.',
+                effectiveLabels['feeThankYou'] ?? effectiveLabels['footer'] ?? 'Jazak Allah Khair.',
                 style: const pw.TextStyle(fontSize: 11),
               ),
               pw.SizedBox(height: 6),
               pw.Text(
-                'Regards,\n$senderName',
+                '${effectiveLabels['commonRegards'] ?? 'Regards,'}\n$senderName',
                 style: const pw.TextStyle(fontSize: 10),
               ),
             ],
@@ -104,12 +109,15 @@ class ReceiptPdfGenerator {
     required String paymentMode,
     required DateTime paymentDate,
     required String issuedBy,
-    required Map<String, String> labels,
+    Map<String, String>? labels,
+    String languageCode = 'en',
     required String senderName,
     String? notes,
     String? transactionReference,
   }) async {
-    final doc = pw.Document();
+    final effectiveLabels = labels ?? ReceiptTemplates.get(languageCode);
+    final theme = await PdfFontHelper.getTheme(languageCode: languageCode);
+    final doc = pw.Document(theme: theme);
     final whenStr = DateFormat('dd MMM yyyy, hh:mm a').format(paymentDate);
 
     doc.addPage(
@@ -129,34 +137,34 @@ class ReceiptPdfGenerator {
               ),
               pw.SizedBox(height: 4),
               pw.Text(
-                labels['salaryHeader'] ?? 'Salary Receipt',
+                effectiveLabels['salaryHeader'] ?? 'Salary Receipt',
                 style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold),
               ),
               pw.Divider(),
-              pw.Text('${labels['date'] ?? 'Date'}: $whenStr'),
-              pw.Text('${labels['salaryMonth'] ?? 'Month'}: $salaryMonth'),
-              pw.Text('${labels['salaryPaidTo'] ?? 'Paid to'}: $teacherName'),
+              pw.Text('${effectiveLabels['date'] ?? 'Date'}: $whenStr'),
+              pw.Text('${effectiveLabels['salaryMonth'] ?? 'Month'}: $salaryMonth'),
+              pw.Text('${effectiveLabels['salaryPaidTo'] ?? 'Paid to'}: $teacherName'),
               pw.SizedBox(height: 12),
               pw.Text(
-                '${labels['amount'] ?? 'Amount'}: Rs. $amount',
+                '${effectiveLabels['salaryAmount'] ?? effectiveLabels['amount'] ?? 'Amount'}: ₹$amount',
                 style: pw.TextStyle(fontSize: 13, fontWeight: pw.FontWeight.bold),
               ),
-              pw.Text('${labels['mode'] ?? 'Mode'}: $paymentMode'),
+              pw.Text('${effectiveLabels['salaryMode'] ?? effectiveLabels['mode'] ?? 'Mode'}: $paymentMode'),
               if (notes != null && notes.isNotEmpty)
-                pw.Text('${labels['notes'] ?? 'Notes'}: $notes'),
+                pw.Text('${effectiveLabels['notes'] ?? 'Notes'}: $notes'),
               if (transactionReference != null && transactionReference.isNotEmpty)
                 pw.Text('Ref: $transactionReference'),
               pw.SizedBox(height: 12),
-              pw.Text('${labels['salaryIssuedBy'] ?? 'Issued by'}: $issuedBy'),
+              pw.Text('${effectiveLabels['salaryIssuedBy'] ?? 'Issued by'}: $issuedBy'),
               pw.Spacer(),
               pw.Divider(),
               pw.Text(
-                labels['footer'] ?? 'Jazak Allah Khair.',
+                effectiveLabels['salaryThankYou'] ?? effectiveLabels['footer'] ?? 'Jazak Allah Khair.',
                 style: const pw.TextStyle(fontSize: 11),
               ),
               pw.SizedBox(height: 6),
               pw.Text(
-                'Regards,\n$senderName',
+                '${effectiveLabels['commonRegards'] ?? 'Regards,'}\n$senderName',
                 style: const pw.TextStyle(fontSize: 10),
               ),
             ],
@@ -178,10 +186,13 @@ class ReceiptPdfGenerator {
     required List<String> absent,
     List<String>? late,
     List<String>? leave,
-    required Map<String, String> labels,
+    Map<String, String>? labels,
+    String languageCode = 'en',
     required String senderName,
   }) async {
-    final doc = pw.Document();
+    final effectiveLabels = labels ?? ReceiptTemplates.get(languageCode);
+    final theme = await PdfFontHelper.getTheme(languageCode: languageCode);
+    final doc = pw.Document(theme: theme);
 
     doc.addPage(
       pw.MultiPage(
@@ -194,27 +205,101 @@ class ReceiptPdfGenerator {
           ),
           pw.SizedBox(height: 4),
           pw.Text(
-            labels['attendanceHeader'] ?? 'Attendance Summary',
+            effectiveLabels['attHeader'] ?? effectiveLabels['attendanceHeader'] ?? 'Attendance Summary',
             style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold),
           ),
           pw.Divider(),
-          pw.Text('${labels['batch'] ?? 'Batch'}: $batch'),
-          pw.Text('${labels['date'] ?? 'Date'}: $date'),
-          pw.Text('${labels['markedBy'] ?? 'Marked by'}: $markedBy'),
+          pw.Text('${effectiveLabels['attBatch'] ?? effectiveLabels['batch'] ?? 'Batch'}: $batch'),
+          pw.Text('${effectiveLabels['date'] ?? 'Date'}: $date'),
+          pw.Text('${effectiveLabels['attMarkedBy'] ?? effectiveLabels['markedBy'] ?? 'Marked by'}: $markedBy'),
           pw.SizedBox(height: 16),
-          _studentSection(labels['present'] ?? 'Present', present),
-          _studentSection(labels['absent'] ?? 'Absent', absent),
+          _studentSection(effectiveLabels['attPresent'] ?? effectiveLabels['present'] ?? 'Present', present),
+          _studentSection(effectiveLabels['attAbsent'] ?? effectiveLabels['absent'] ?? 'Absent', absent),
           if (late != null && late.isNotEmpty)
-            _studentSection(labels['late'] ?? 'Late', late),
+            _studentSection(effectiveLabels['attLate'] ?? effectiveLabels['late'] ?? 'Late', late),
           if (leave != null && leave.isNotEmpty)
-            _studentSection(labels['leave'] ?? 'Leave', leave),
+            _studentSection(effectiveLabels['attLeave'] ?? effectiveLabels['leave'] ?? 'Leave', leave),
           pw.SizedBox(height: 16),
           pw.Divider(),
           pw.Text(
-            'Regards,\n$senderName',
+            '${effectiveLabels['commonRegards'] ?? 'Regards,'}\n$senderName',
             style: const pw.TextStyle(fontSize: 10),
           ),
         ],
+      ),
+    );
+
+    return doc.save();
+  }
+
+  /// Builds a single PDF for a Sabaq report.
+  static Future<Uint8List> buildSabaqReceiptPdf({
+    required String maktabName,
+    required String studentName,
+    required String admissionNumber,
+    required String surah,
+    required String ayahFrom,
+    required String ayahTo,
+    required String recitationType,
+    required String grade,
+    required String date,
+    String? remarks,
+    Map<String, String>? labels,
+    String languageCode = 'en',
+    required String senderName,
+  }) async {
+    final effectiveLabels = labels ?? ReceiptTemplates.get(languageCode);
+    final theme = await PdfFontHelper.getTheme(languageCode: languageCode);
+    final doc = pw.Document(theme: theme);
+    final note = (remarks != null && remarks.trim().isNotEmpty)
+        ? remarks.trim()
+        : (effectiveLabels['sabaqDefaultNote'] ?? 'Alhamdulillah, completed with care.');
+
+    doc.addPage(
+      pw.Page(
+        pageFormat: PdfPageFormat.a5,
+        margin: const pw.EdgeInsets.all(24),
+        build: (ctx) {
+          return pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              pw.Text(
+                maktabName,
+                style: pw.TextStyle(
+                  fontSize: 16,
+                  fontWeight: pw.FontWeight.bold,
+                ),
+              ),
+              pw.SizedBox(height: 4),
+              pw.Text(
+                effectiveLabels['sabaqDetailsHeader'] ?? 'Sabaq Details',
+                style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold),
+              ),
+              pw.Divider(),
+              pw.Text('${effectiveLabels['student'] ?? 'Student'}: $studentName ($admissionNumber)'),
+              pw.Text('${effectiveLabels['sabaqDateLabel'] ?? 'Date'}: $date'),
+              pw.SizedBox(height: 12),
+              pw.Text('${effectiveLabels['sabaqSurahLabel'] ?? 'Surah'}: $surah'),
+              pw.Text('${effectiveLabels['sabaqAyahLabel'] ?? 'Ayah'}: $ayahFrom–$ayahTo'),
+              pw.Text('${effectiveLabels['sabaqTypeLabel'] ?? 'Type'}: $recitationType'),
+              pw.Text('${effectiveLabels['sabaqGradeLabel'] ?? 'Grade'}: $grade'),
+              pw.SizedBox(height: 12),
+              pw.Text('${effectiveLabels['sabaqNoteHeader'] ?? "Teacher's Note"}:'),
+              pw.Text(note, style: const pw.TextStyle(fontSize: 11)),
+              pw.Spacer(),
+              pw.Divider(),
+              pw.Text(
+                effectiveLabels['sabaqJazak'] ?? 'Jazak Allah Khair.',
+                style: const pw.TextStyle(fontSize: 11),
+              ),
+              pw.SizedBox(height: 6),
+              pw.Text(
+                '${effectiveLabels['sabaqRegards'] ?? 'Warm regards,'}\n$senderName',
+                style: const pw.TextStyle(fontSize: 10),
+              ),
+            ],
+          );
+        },
       ),
     );
 

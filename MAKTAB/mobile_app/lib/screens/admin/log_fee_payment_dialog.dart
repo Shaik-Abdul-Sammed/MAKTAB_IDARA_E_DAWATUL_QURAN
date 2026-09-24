@@ -8,6 +8,7 @@ import '../../providers/auth_provider.dart';
 import '../../utils/whatsapp_utility.dart';
 import '../../utils/receipt_templates.dart';
 import '../../utils/receipt_pdf_generator.dart';
+import '../../utils/language_resolver.dart';
 import '../../repositories/student_repository.dart';
 import '../../repositories/fee_payment_repository.dart';
 import '../../widgets/receipt_preview_dialog.dart';
@@ -151,7 +152,8 @@ class _LogFeePaymentDialogState extends State<LogFeePaymentDialog> {
             receiptText: receiptText,
             recipientPhone: parentPhone,
             onBuildPdf: () async {
-              final labels = ReceiptTemplates.get(widget.student.preferredLanguage);
+              final studentLang = LanguageResolver.forStudent(widget.student);
+              final labels = ReceiptTemplates.get(studentLang);
               return ReceiptPdfGenerator.buildFeeReceiptPdf(
                 maktabName: 'MAKTAB IDARA E DAWATUL QURAN',
                 collectorName: collectorName,
@@ -173,6 +175,7 @@ class _LogFeePaymentDialogState extends State<LogFeePaymentDialog> {
             },
             onSend: () async {
               Navigator.pop(dialogCtx);
+              final studentLang = LanguageResolver.forStudent(widget.student);
               if (!isCombined) {
                 await WhatsAppUtility.sendFeeReceipt(
                   context,
@@ -183,7 +186,7 @@ class _LogFeePaymentDialogState extends State<LogFeePaymentDialog> {
                   paymentMode: _selectedMode,
                   dateTime: formattedTime,
                   collectorName: collectorName,
-                  languageCode: widget.student.preferredLanguage,
+                  languageCode: studentLang,
                   senderName: collectorName,
                 );
                 await FeePaymentRepository().markReceiptSent(insertedId);
@@ -195,7 +198,7 @@ class _LogFeePaymentDialogState extends State<LogFeePaymentDialog> {
                   maktabName: 'MAKTAB IDARA E DAWATUL QURAN',
                   collectorName: collectorName,
                   recordedAt: now,
-                  languageCode: widget.student.preferredLanguage,
+                  languageCode: studentLang,
                   senderName: collectorName,
                 );
                 for (final pid in includedPaymentIds) {

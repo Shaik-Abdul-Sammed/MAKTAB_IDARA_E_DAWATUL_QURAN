@@ -45,11 +45,12 @@ class WhatsAppUtility {
     }
   }
 
-  static String _formatSignature(String? senderName) {
+  static String _formatSignature(String? senderName, {String languageCode = 'en'}) {
+    final t = ReceiptTemplates.get(languageCode);
     final sender = (senderName != null && senderName.trim().isNotEmpty)
         ? senderName.trim()
         : 'Maktab Management';
-    return '\n\n—\nRegards,\n$sender';
+    return '\n\n${t['commonRegards'] ?? 'Regards,'}\n*$sender*';
   }
 
   static Future<void> sendTeacherCredentials(
@@ -59,8 +60,10 @@ class WhatsAppUtility {
     String pin, {
     required int teacherId,
     required String mobile,
+    required String languageCode,
     String? senderName,
   }) async {
+    final t = ReceiptTemplates.get(languageCode);
     final msg = '''
 Assalamu Alaikum $name,
 
@@ -71,9 +74,9 @@ Your Maktab Teacher Portal login:
 
 You can log in using either the Teacher ID or the mobile number, with the PIN above.
 
-Jazak Allah Khair.
+${t['commonThanks'] ?? 'Jazak Allah Khair.'}
 ''';
-    await launchWhatsApp(phone, msg + _formatSignature(senderName), context: context);
+    await launchWhatsApp(phone, msg + _formatSignature(senderName, languageCode: languageCode), context: context);
   }
 
   static Future<void> sendFeeReceipt(
@@ -86,7 +89,7 @@ Jazak Allah Khair.
     String? dateTime,
     String? collectorName,
     String? notes,
-    String languageCode = 'en',
+    required String languageCode,
     String? senderName,
   }) async {
     final t = ReceiptTemplates.get(languageCode);
@@ -97,19 +100,19 @@ Jazak Allah Khair.
     final collector = (collectorName != null && collectorName.isNotEmpty) ? collectorName : 'Management';
 
     final buf = StringBuffer();
-    buf.writeln('*${t['header']}*');
+    buf.writeln('*${t['feeHeader'] ?? t['header']}*');
     buf.writeln('${t['date']}: $timeText');
-    buf.writeln('${t['receivedBy']}: $collector');
+    buf.writeln('${t['feeReceivedBy'] ?? t['receivedBy']}: $collector');
     buf.writeln();
     buf.writeln('*${t['student']}:* $studentName');
-    buf.writeln('${t['amount']}: ₹${amount.toInt() == amount ? amount.toInt() : amount}');
-    buf.writeln('${t['mode']}: $modeText');
+    buf.writeln('${t['feeAmount'] ?? t['amount']}: ₹${amount.toInt() == amount ? amount.toInt() : amount}');
+    buf.writeln('${t['feeMode'] ?? t['mode']}: $modeText');
     if (notes != null && notes.trim().isNotEmpty) {
       buf.writeln('${t['notes']}: $notes');
     }
     buf.writeln();
-    buf.writeln(t['footer']);
-    buf.write(_formatSignature(senderName));
+    buf.writeln(t['feeThankYou'] ?? t['footer']);
+    buf.write(_formatSignature(senderName, languageCode: languageCode));
 
     await launchWhatsApp(phone, buf.toString(), context: context);
   }
@@ -122,25 +125,25 @@ Jazak Allah Khair.
     required String collectorName,
     DateTime? recordedAt,
     String? dateTime,
-    String languageCode = 'en',
+    required String languageCode,
     String? senderName,
   }) async {
     final t = ReceiptTemplates.get(languageCode);
     final when = recordedAt ?? DateTime.now();
     final timeStr = dateTime ?? DateFormat('dd MMM yyyy, hh:mm a').format(when);
-    final headerTitle = maktabName ?? t['header']!;
+    final headerTitle = maktabName ?? t['feeCombinedHeader'] ?? t['header']!;
 
     final buf = StringBuffer();
     buf.writeln('*$headerTitle*');
     buf.writeln('${t['date']}: $timeStr');
-    buf.writeln('${t['receivedBy']}: $collectorName');
+    buf.writeln('${t['feeReceivedBy'] ?? t['receivedBy']}: $collectorName');
     buf.writeln();
 
     int grandTotal = 0;
     for (final c in children) {
       final amt = (c['amount'] as num).toInt();
       grandTotal += amt;
-      buf.writeln('*${c['name']}* (${c['admissionNumber']}) — ₹$amt ${t['mode']}: ${c['mode']}');
+      buf.writeln('*${c['name']}* (${c['admissionNumber']}) — ₹$amt ${t['feeMode'] ?? t['mode']}: ${c['mode']}');
       final notes = c['notes'] as String?;
       if (notes != null && notes.trim().isNotEmpty) {
         buf.writeln('  _${t['notes']}: ${notes}_');
@@ -149,12 +152,12 @@ Jazak Allah Khair.
 
     if (children.length > 1) {
       buf.writeln();
-      buf.writeln('*${t['total']}: ₹$grandTotal*');
+      buf.writeln('*${t['feeSiblingTotal'] ?? t['total']}: ₹$grandTotal*');
     }
 
     buf.writeln();
-    buf.writeln(t['footer']);
-    buf.write(_formatSignature(senderName));
+    buf.writeln(t['feeThankYou'] ?? t['footer']);
+    buf.write(_formatSignature(senderName, languageCode: languageCode));
 
     await launchWhatsApp(parentPhone, buf.toString(), context: context);
   }
@@ -171,7 +174,7 @@ Jazak Allah Khair.
     String? upiId,
     String? issuedBy,
     String? dateTime,
-    String languageCode = 'en',
+    required String languageCode,
     String? senderName,
   }) async {
     final t = ReceiptTemplates.get(languageCode);
@@ -186,15 +189,15 @@ Jazak Allah Khair.
     buf.writeln('${t['date']}: $timeText');
     buf.writeln('${t['salaryMonth']}: $month');
     buf.writeln('${t['salaryPaidTo']}: $teacherName');
-    buf.writeln('${t['amount']}: ₹${paidAmount.toInt() == paidAmount ? paidAmount.toInt() : paidAmount}');
-    buf.writeln('${t['mode']}: $modeText');
+    buf.writeln('${t['salaryAmount'] ?? t['amount']}: ₹${paidAmount.toInt() == paidAmount ? paidAmount.toInt() : paidAmount}');
+    buf.writeln('${t['salaryMode'] ?? t['mode']}: $modeText');
     buf.writeln('${t['salaryIssuedBy']}: $issuer');
     if (upiId != null && upiId.isNotEmpty) {
       buf.writeln('UPI ID: $upiId');
     }
     buf.writeln();
-    buf.writeln(t['footer']);
-    buf.write(_formatSignature(senderName));
+    buf.writeln(t['salaryThankYou'] ?? t['footer']);
+    buf.write(_formatSignature(senderName, languageCode: languageCode));
 
     await launchWhatsApp(phone, buf.toString(), context: context);
   }
@@ -205,23 +208,23 @@ Jazak Allah Khair.
     String phone,
     String studentName, {
     String? date,
-    String languageCode = 'en',
+    required String languageCode,
     String? senderName,
   }) async {
     final t = ReceiptTemplates.get(languageCode);
     final dateStr = date ?? DateFormat('dd MMM yyyy').format(DateTime.now());
 
     final buf = StringBuffer();
-    buf.writeln(t['absentHeader']);
+    buf.writeln(t['attAbsentNotice'] ?? t['absentHeader']);
     buf.writeln();
     buf.writeln('${t['student']}: $studentName');
     buf.writeln('${t['date']}: $dateStr');
     buf.writeln();
-    buf.writeln(t['absentBody']);
-    buf.writeln(t['pleaseContact']);
+    buf.writeln(t['attAbsentBody'] ?? t['absentBody']);
+    buf.writeln(t['attPleaseContact'] ?? t['pleaseContact']);
     buf.writeln();
-    buf.writeln(t['footer']);
-    buf.write(_formatSignature(senderName));
+    buf.writeln(t['commonThanks'] ?? t['footer']);
+    buf.write(_formatSignature(senderName, languageCode: languageCode));
 
     await launchWhatsApp(phone, buf.toString(), context: context);
   }
@@ -232,7 +235,7 @@ Jazak Allah Khair.
     required String batchName,
     required String timing,
     String? phone,
-    String languageCode = 'en',
+    required String languageCode,
     String? senderName,
   }) async {
     final t = ReceiptTemplates.get(languageCode);
@@ -240,11 +243,11 @@ Jazak Allah Khair.
     final buf = StringBuffer();
     buf.writeln(t['batchNoticeHeader']);
     buf.writeln();
-    buf.writeln('${t['batch']}: $batchName');
+    buf.writeln('${t['attBatch'] ?? t['batch']}: $batchName');
     buf.writeln('${t['timing']}: $timing');
     buf.writeln();
-    buf.writeln(t['footer']);
-    buf.write(_formatSignature(senderName));
+    buf.writeln(t['commonThanks'] ?? t['footer']);
+    buf.write(_formatSignature(senderName, languageCode: languageCode));
 
     await launchWhatsApp(phone ?? '', buf.toString(), context: context);
   }
@@ -256,7 +259,7 @@ Jazak Allah Khair.
     required String content,
     String? recipientPhone,
     String? targetName,
-    String languageCode = 'en',
+    required String languageCode,
     String? senderName,
   }) async {
     final t = ReceiptTemplates.get(languageCode);
@@ -267,13 +270,13 @@ Jazak Allah Khair.
     buf.writeln('📢 $title');
     buf.writeln(content);
     buf.writeln();
-    buf.writeln(t['footer']);
-    buf.write(_formatSignature(senderName));
+    buf.writeln(t['commonThanks'] ?? t['footer']);
+    buf.write(_formatSignature(senderName, languageCode: languageCode));
 
     await launchWhatsApp(recipientPhone ?? '', buf.toString(), context: context);
   }
 
-  /// Build and share a plain-text attendance report (no language selection needed).
+  /// Build and share a plain-text attendance report.
   static String buildAttendanceReportText({
     required String date,
     required List<String> present,
@@ -282,45 +285,103 @@ Jazak Allah Khair.
     List<String>? leave,
     String? batch,
     String? markedBy,
-    String languageCode = 'en',
+    required String languageCode,
   }) {
     final t = ReceiptTemplates.get(languageCode);
     final buffer = StringBuffer();
-    buffer.writeln('*${t['attendanceHeader']}*');
+    buffer.writeln('*${t['attHeader'] ?? t['attendanceHeader']}*');
     if (batch != null && batch.isNotEmpty) {
-      buffer.writeln('${t['batch']}: $batch');
+      buffer.writeln('${t['attBatch'] ?? t['batch']}: $batch');
     }
     buffer.writeln('${t['date']}: $date');
     if (markedBy != null && markedBy.isNotEmpty) {
-      buffer.writeln('${t['markedBy']}: $markedBy');
+      buffer.writeln('${t['attMarkedBy'] ?? t['markedBy']}: $markedBy');
     }
     buffer.writeln('─────────────────────────');
-    buffer.writeln('✅ ${t['present']} (${present.length}):');
+    buffer.writeln('✅ ${t['attPresent'] ?? t['present']} (${present.length}):');
     for (final name in present) {
       buffer.writeln('  • $name');
     }
     buffer.writeln();
-    buffer.writeln('❌ ${t['absent']} (${absent.length}):');
+    buffer.writeln('❌ ${t['attAbsent'] ?? t['absent']} (${absent.length}):');
     for (final name in absent) {
       buffer.writeln('  • $name');
     }
     if (late != null && late.isNotEmpty) {
       buffer.writeln();
-      buffer.writeln('🟡 ${t['late']} (${late.length}):');
+      buffer.writeln('🟡 ${t['attLate'] ?? t['late']} (${late.length}):');
       for (final name in late) {
         buffer.writeln('  • $name');
       }
     }
     if (leave != null && leave.isNotEmpty) {
       buffer.writeln();
-      buffer.writeln('🔵 ${t['leave']} (${leave.length}):');
+      buffer.writeln('🔵 ${t['attLeave'] ?? t['leave']} (${leave.length}):');
       for (final name in leave) {
         buffer.writeln('  • $name');
       }
     }
     buffer.writeln();
-    buffer.writeln(t['footer']);
+    buffer.writeln(t['commonThanks'] ?? t['footer']);
     return buffer.toString();
+  }
+
+  /// Send official Sabaq Progress update via WhatsApp in selected language.
+  static Future<void> sendSabaqUpdate(
+    BuildContext context, {
+    required String phone,
+    required String studentName,
+    required String admissionNumber,
+    required String surah,
+    required String ayahFrom,
+    required String ayahTo,
+    required String recitationType,
+    required String grade,
+    required String date,
+    String? remarks,
+    required String languageCode,
+    String? senderName,
+    String? maktabName,
+  }) async {
+    final t = ReceiptTemplates.get(languageCode);
+    final sender = (senderName != null && senderName.trim().isNotEmpty) ? senderName.trim() : 'Maktab Management';
+    final institution = (maktabName != null && maktabName.trim().isNotEmpty) ? maktabName.trim() : 'MAKTAB IDARA E DAWATUL QURAN';
+    final note = (remarks != null && remarks.trim().isNotEmpty) ? remarks.trim() : t['sabaqDefaultNote'];
+
+    final buf = StringBuffer();
+    buf.writeln(t['sabaqBismillah']);
+    buf.writeln();
+    buf.writeln(t['sabaqSalam']);
+    buf.writeln();
+    buf.writeln(t['sabaqGreeting']);
+    buf.writeln();
+    buf.writeln("${t['sabaqIntro']} *$studentName* (Adm. No. $admissionNumber).");
+    buf.writeln();
+    buf.writeln('━━━━━━━━━━━━━━━━━━━━');
+    buf.writeln('📖 *${t['sabaqDetailsHeader']}*');
+    buf.writeln('━━━━━━━━━━━━━━━━━━━━');
+    buf.writeln('• *${t['sabaqSurahLabel']}:* $surah');
+    buf.writeln('• *${t['sabaqAyahLabel']}:* $ayahFrom–$ayahTo');
+    buf.writeln('• *${t['sabaqTypeLabel']}:* $recitationType');
+    buf.writeln('• *${t['sabaqGradeLabel']}:* $grade');
+    buf.writeln('• *${t['sabaqDateLabel']}:* $date');
+    buf.writeln();
+    buf.writeln('━━━━━━━━━━━━━━━━━━━━');
+    buf.writeln('📝 *${t['sabaqNoteHeader']}*');
+    buf.writeln('━━━━━━━━━━━━━━━━━━━━');
+    buf.writeln(note);
+    buf.writeln();
+    buf.writeln(t['sabaqEncouragement']);
+    buf.writeln();
+    buf.writeln(t['sabaqDua']);
+    buf.writeln();
+    buf.writeln(t['sabaqJazak']);
+    buf.writeln();
+    buf.writeln(t['sabaqRegards']);
+    buf.writeln('*$sender*');
+    buf.writeln(institution);
+
+    await launchWhatsApp(phone, buf.toString(), context: context);
   }
 
   static Future<Language?> promptLanguageSelection(BuildContext context) async {

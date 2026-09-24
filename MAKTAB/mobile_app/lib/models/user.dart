@@ -12,6 +12,7 @@ class User {
   final int? monthlySalary;
   final String? upiId;
   final String? preferredPaymentMode;
+  final String preferredLanguage;
 
   User({
     this.id,
@@ -27,6 +28,7 @@ class User {
     this.monthlySalary,
     this.upiId,
     this.preferredPaymentMode,
+    this.preferredLanguage = 'en',
   });
 
   Map<String, dynamic> toMap() {
@@ -44,6 +46,7 @@ class User {
       'monthly_salary': monthlySalary ?? 0,
       'upi_id': upiId,
       'preferred_payment_mode': preferredPaymentMode,
+      'preferred_language': preferredLanguage,
     };
   }
 
@@ -83,6 +86,7 @@ class User {
       monthlySalary: map['monthly_salary'] != null ? int.tryParse(map['monthly_salary'].toString()) : (map['monthlySalary'] != null ? int.tryParse(map['monthlySalary'].toString()) : 0),
       upiId: (map['upi_id'] ?? map['upiId'])?.toString(),
       preferredPaymentMode: (map['preferred_payment_mode'] ?? map['preferredPaymentMode'])?.toString(),
+      preferredLanguage: (map['preferred_language'] ?? map['preferredLanguage'] ?? 'en').toString(),
     );
   }
 
@@ -100,6 +104,7 @@ class User {
     int? monthlySalary,
     String? upiId,
     String? preferredPaymentMode,
+    String? preferredLanguage,
   }) {
     return User(
       id: id ?? this.id,
@@ -115,6 +120,7 @@ class User {
       monthlySalary: monthlySalary ?? this.monthlySalary,
       upiId: upiId ?? this.upiId,
       preferredPaymentMode: preferredPaymentMode ?? this.preferredPaymentMode,
+      preferredLanguage: preferredLanguage ?? this.preferredLanguage,
     );
   }
 }

@@ -11,6 +11,7 @@ class UserDTO {
   final int? monthlySalary;
   final String? upiId;
   final String? preferredPaymentMode;
+  final String preferredLanguage;
 
   UserDTO({
     this.id,
@@ -25,6 +26,7 @@ class UserDTO {
     this.monthlySalary,
     this.upiId,
     this.preferredPaymentMode,
+    this.preferredLanguage = 'en',
   });
 
   Map<String, dynamic> toMap() => {
@@ -40,6 +42,7 @@ class UserDTO {
     'monthly_salary': monthlySalary ?? 0,
     'upi_id': upiId,
     'preferred_payment_mode': preferredPaymentMode,
+    'preferred_language': preferredLanguage,
   };
 
   factory UserDTO.fromMap(Map<String, dynamic> map) => UserDTO(
@@ -55,5 +58,6 @@ class UserDTO {
     monthlySalary: map['monthly_salary'] as int? ?? 0,
     upiId: map['upi_id'] as String?,
     preferredPaymentMode: map['preferred_payment_mode'] as String?,
+    preferredLanguage: (map['preferred_language'] ?? map['preferredLanguage'] ?? 'en').toString(),
   );
 }

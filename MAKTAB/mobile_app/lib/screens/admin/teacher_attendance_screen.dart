@@ -14,6 +14,7 @@ import 'package:maktab_app/services/cloud_sync_service.dart';
 import 'package:provider/provider.dart';
 import 'package:maktab_app/providers/auth_provider.dart';
 import 'package:maktab_app/utils/whatsapp_utility.dart';
+import 'package:maktab_app/utils/language_resolver.dart';
 import 'package:maktab_app/widgets/voice_attendance_dialog.dart';
 
 /// Admin screen: Mark attendance for ALL teachers for a given date.
@@ -1081,7 +1082,14 @@ class _SummaryTeacherTile extends StatelessWidget {
             tooltip: 'WhatsApp Teacher',
             onPressed: () async {
               final sender = context.read<AuthProvider>().currentUser?.name ?? 'Maktab Management';
-              await WhatsAppUtility.sendAttendanceAlert(context, phone, teacher.name, date: dateStr, senderName: sender);
+              await WhatsAppUtility.sendAttendanceAlert(
+                context,
+                phone,
+                teacher.name,
+                date: dateStr,
+                languageCode: LanguageResolver.forUser(teacher),
+                senderName: sender,
+              );
             },
           ),
         ],

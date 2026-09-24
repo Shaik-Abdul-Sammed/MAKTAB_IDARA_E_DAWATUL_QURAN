@@ -42,7 +42,7 @@ class DatabaseHelper {
       return await ffi.databaseFactoryFfi.openDatabase(
         path,
         options: ffi.OpenDatabaseOptions(
-          version: 25,
+          version: 26,
           onConfigure: (db) async {
             await db.execute('PRAGMA foreign_keys = ON');
           },
@@ -59,7 +59,7 @@ class DatabaseHelper {
     return await openDatabase(
       path,
       password: key,
-      version: 25,
+      version: 26,
       onConfigure: (db) async {
         await db.execute('PRAGMA foreign_keys = ON');
       },
@@ -122,6 +122,7 @@ class DatabaseHelper {
         monthly_salary INTEGER DEFAULT 0,
         upi_id TEXT,
         preferred_payment_mode TEXT,
+        preferred_language TEXT DEFAULT 'en',
         is_active $boolType DEFAULT 1,
         created_at $textType,
         is_synced INTEGER DEFAULT 1
@@ -1063,6 +1064,37 @@ class DatabaseHelper {
         debugPrint('[MIGRATION v25] Removed legacy test teachers (4, 2019, 2020)');
       } catch (e) {
         debugPrint('[MIGRATION v25] Remove test teachers failed: $e');
+      }
+    }
+
+    if (oldVersion < 26) {
+      try {
+        await db.execute("ALTER TABLE users ADD COLUMN preferred_language TEXT DEFAULT 'en'");
+        debugPrint('[MIGRATION v26] Added preferred_language to users');
+      } catch (e) {
+        debugPrint('[MIGRATION v26] users.preferred_language: $e');
+      }
+
+      try {
+        await db.update(
+          'batches',
+          {'teacher_id': null},
+          where: 'teacher_id IN (3, 4, 2019, 2020, 20263)',
+        );
+        debugPrint('[MIGRATION v26] Cleared stale teacher_id on batches');
+      } catch (e) {
+        debugPrint('[MIGRATION v26] Clear stale batch.teacher_id: $e');
+      }
+
+      try {
+        await db.rawUpdate('''
+          UPDATE batches SET teacher_id = NULL
+          WHERE teacher_id IS NOT NULL
+            AND teacher_id NOT IN (SELECT teacher_id FROM users WHERE teacher_id IS NOT NULL)
+        ''');
+        debugPrint('[MIGRATION v26] Cleared orphaned batch.teacher_id values');
+      } catch (e) {
+        debugPrint('[MIGRATION v26] Clear orphaned teacher_id: $e');
       }
     }
   }

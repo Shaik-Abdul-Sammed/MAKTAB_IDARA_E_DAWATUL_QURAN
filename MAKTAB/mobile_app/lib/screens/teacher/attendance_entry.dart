@@ -19,6 +19,7 @@ import '../../utils/attendance_report_generator.dart';
 import '../../utils/whatsapp_utility.dart';
 import '../../utils/receipt_templates.dart';
 import '../../utils/receipt_pdf_generator.dart';
+import '../../utils/language_resolver.dart';
 import '../../widgets/molecules/custom_app_bar.dart';
 import '../../widgets/shimmer_loader.dart';
 import '../../widgets/voice_attendance_dialog.dart';
@@ -288,17 +289,16 @@ class _AttendanceEntryScreenState extends State<AttendanceEntryScreen>
 
   // ── #14: Bulk notify absent parents
   Future<void> _bulkNotifyAbsent(BuildContext ctx, List<Student> students) async {
-    final lang = await LanguagePickerDialog.show(ctx);
-    if (lang == null) return;
     for (final s in students) {
       final phone = s.phone ?? s.guardianPhone ?? '';
+      final studentLang = LanguageResolver.forStudent(s);
       if (phone.isNotEmpty && ctx.mounted) {
         await WhatsAppUtility.sendAttendanceAlert(
           ctx,
           phone,
           s.name,
           date: widget.date,
-          languageCode: lang,
+          languageCode: studentLang,
           senderName: _teacherName.isNotEmpty ? _teacherName : 'Maktab Management',
         );
         await Future.delayed(const Duration(milliseconds: 500));
@@ -309,7 +309,7 @@ class _AttendanceEntryScreenState extends State<AttendanceEntryScreen>
   // ── #15: Share report
   void _shareAttendanceReport(List<Student> present, List<Student> absent) {
     final batchLang = _provider.students.isNotEmpty
-        ? _provider.students.first.preferredLanguage
+        ? LanguageResolver.forStudent(_provider.students.first)
         : 'en';
 
     showDialog(
@@ -998,7 +998,7 @@ class _SummaryTile extends StatelessWidget {
                 parentMobile,
                 student.name,
                 date: date,
-                languageCode: student.preferredLanguage,
+                languageCode: LanguageResolver.forStudent(student),
                 senderName: sender,
               );
             },

@@ -11,6 +11,7 @@ import 'package:maktab_app/screens/settings/diagnostics_screen.dart';
 
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:maktab_app/providers/locale_provider.dart';
+import 'package:maktab_app/repositories/user_repository.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -148,6 +149,47 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             subtitle: Text(currentUrl),
                             trailing: const Icon(Icons.edit_rounded),
                             onTap: () => _showServerConfigDialog(currentUrl),
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 20),
+                      _buildSectionHeader('Preferences'),
+                      Consumer<AuthProvider>(
+                        builder: (context, auth, _) {
+                          final user = auth.currentUser;
+                          final currentCode = user?.preferredLanguage ?? 'en';
+                          const languages = {
+                            'en': 'English',
+                            'ur': 'اردو (Urdu)',
+                            'te': 'తెలుగు (Telugu)',
+                            'hi': 'हिन्दी (Hindi)',
+                          };
+                          return ListTile(
+                            leading: const Icon(Icons.language_rounded, color: Color(0xFF004D40)),
+                            title: const Text('Preferred Language'),
+                            subtitle: Text(languages[currentCode] ?? 'English'),
+                            trailing: DropdownButton<String>(
+                              value: languages.containsKey(currentCode) ? currentCode : 'en',
+                              underline: const SizedBox(),
+                              items: languages.entries.map((e) {
+                                return DropdownMenuItem<String>(
+                                  value: e.key,
+                                  child: Text(e.value),
+                                );
+                              }).toList(),
+                              onChanged: (val) async {
+                                if (val != null && user != null) {
+                                  final updated = user.copyWith(preferredLanguage: val);
+                                  await UserRepository().updateUser(updated);
+                                  auth.setUser(updated);
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(content: Text('Preferred language updated.')),
+                                    );
+                                  }
+                                }
+                              },
+                            ),
                           );
                         },
                       ),

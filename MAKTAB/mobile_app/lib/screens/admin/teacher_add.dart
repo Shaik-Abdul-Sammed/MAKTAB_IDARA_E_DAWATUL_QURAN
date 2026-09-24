@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:maktab_app/utils/whatsapp_utility.dart';
+import '../../utils/language_resolver.dart';
 import 'package:provider/provider.dart';
 import '../../providers/teacher_form_provider.dart';
 import '../../providers/auth_provider.dart';
@@ -28,6 +29,7 @@ class _TeacherAddScreenState extends State<TeacherAddScreen> {
   late final TextEditingController _upiCtrl;
   bool _pinObscured = true;
   bool _confirmPinObscured = true;
+  String _selectedLanguage = 'en';
 
   @override
   void initState() {
@@ -112,6 +114,7 @@ class _TeacherAddScreenState extends State<TeacherAddScreen> {
       pin: pinText,
       monthlySalary: salaryVal,
       upiId: upiVal.isNotEmpty ? upiVal : null,
+      preferredLanguage: _selectedLanguage,
     );
 
     if (!mounted) return;
@@ -152,6 +155,7 @@ class _TeacherAddScreenState extends State<TeacherAddScreen> {
                       pinText,
                       teacherId: newTeacherId,
                       mobile: mobileText,
+                      languageCode: LanguageResolver.isSupported(_selectedLanguage) ? _selectedLanguage : 'en',
                       senderName: sender,
                     );
                   }
@@ -233,6 +237,26 @@ class _TeacherAddScreenState extends State<TeacherAddScreen> {
                       if (v == null || v.isEmpty) return 'Mobile number is required.';
                       if (v.length != 10) return 'Must be exactly 10 digits.';
                       return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  DropdownButtonFormField<String>(
+                    value: _selectedLanguage,
+                    decoration: InputDecoration(
+                      labelText: 'Preferred Language',
+                      prefixIcon: const Icon(Icons.language_rounded, color: Color(0xFF004D40)),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      filled: true,
+                      fillColor: Colors.white,
+                    ),
+                    items: const [
+                      DropdownMenuItem(value: 'en', child: Text('English')),
+                      DropdownMenuItem(value: 'ur', child: Text('اردو (Urdu)')),
+                      DropdownMenuItem(value: 'hi', child: Text('हिन्दी (Hindi)')),
+                      DropdownMenuItem(value: 'te', child: Text('తెలుగు (Telugu)')),
+                    ],
+                    onChanged: (val) {
+                      if (val != null) setState(() => _selectedLanguage = val);
                     },
                   ),
                   const SizedBox(height: 24),

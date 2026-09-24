@@ -38,6 +38,7 @@ class TeacherFormProvider extends ChangeNotifier {
     String? photoPath,
     int? monthlySalary,
     String? upiId,
+    String preferredLanguage = 'en',
   }) async {
     _status = TeacherFormStatus.loading;
     _errorMessage = '';
@@ -53,6 +54,7 @@ class TeacherFormProvider extends ChangeNotifier {
         photoPath: photoPath,
         monthlySalary: monthlySalary ?? 0,
         upiId: upiId?.trim(),
+        preferredLanguage: preferredLanguage,
       );
       final id = await _repo.insertUser(dto);
       try {
@@ -85,6 +87,7 @@ class TeacherFormProvider extends ChangeNotifier {
     String? photoPath,
     int? monthlySalary,
     String? upiId,
+    String? preferredLanguage,
     AuthProvider? authProvider,
   }) async {
     _status = TeacherFormStatus.loading;
@@ -105,6 +108,7 @@ class TeacherFormProvider extends ChangeNotifier {
         photoPath: photoPath ?? existing.photoPath,
         monthlySalary: monthlySalary ?? existing.monthlySalary,
         upiId: upiId ?? existing.upiId,
+        preferredLanguage: preferredLanguage ?? existing.preferredLanguage,
       );
 
       bool authOk = true;

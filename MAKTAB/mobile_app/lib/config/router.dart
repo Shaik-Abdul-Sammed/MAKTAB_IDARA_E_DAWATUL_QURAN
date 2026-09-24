@@ -59,6 +59,7 @@ import 'package:maktab_app/screens/fees/student_payment_history_screen.dart';
 import 'package:maktab_app/screens/admin/teacher_salary_management_screen.dart';
 import 'package:maktab_app/screens/admin/payments_hub.dart';
 import 'package:maktab_app/screens/tools/whatsapp_reminder_screen.dart';
+import 'package:maktab_app/screens/tools/quick_send_screen.dart';
 import 'package:maktab_app/screens/tools/calendar_sync_screen.dart';
 import 'package:maktab_app/screens/tools/contact_sync_screen.dart';
 import 'package:maktab_app/screens/admin/teacher_attendance_screen.dart';
@@ -325,6 +326,10 @@ class AppRouter {
             ],
           ),
           GoRoute(
+            path: 'quick-send',
+            builder: (context, state) => const QuickSendScreen(),
+          ),
+          GoRoute(
             path: 'attendance',
             builder: (context, state) => const AttendanceScreen(),
             routes: [
@@ -501,6 +506,10 @@ class AppRouter {
           GoRoute(
             path: 'students',
             builder: (context, state) => const StudentListScreen(),
+          ),
+          GoRoute(
+            path: 'quick-send',
+            builder: (context, state) => const QuickSendScreen(),
           ),
           GoRoute(
             path: 'announcements',

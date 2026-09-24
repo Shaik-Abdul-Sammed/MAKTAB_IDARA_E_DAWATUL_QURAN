@@ -5,6 +5,7 @@ import '../../models/student.dart';
 import '../../repositories/student_repository.dart';
 import '../../repositories/batch_repository.dart';
 import '../../utils/whatsapp_utility.dart';
+import '../../utils/language_resolver.dart';
 import '../../widgets/bulk_fee_messaging_dialog.dart';
 import '../../widgets/molecules/custom_app_bar.dart';
 
@@ -77,6 +78,7 @@ class _WhatsAppReminderScreenState extends State<WhatsAppReminderScreen> {
       content: content,
       recipientPhone: phone,
       targetName: _selectedStudent!.name,
+      languageCode: LanguageResolver.forStudent(_selectedStudent!),
       senderName: sender,
     );
   }

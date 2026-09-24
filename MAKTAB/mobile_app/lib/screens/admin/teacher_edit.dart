@@ -24,6 +24,7 @@ class _TeacherEditScreenState extends State<TeacherEditScreen> {
   late final TextEditingController _pinCtrl;
   bool _pinObscured = true;
   bool _changePin = false;
+  late String _selectedLanguage;
 
   @override
   void initState() {
@@ -32,6 +33,7 @@ class _TeacherEditScreenState extends State<TeacherEditScreen> {
     _nameCtrl = TextEditingController(text: widget.teacher.name);
     _mobileCtrl = TextEditingController(text: widget.teacher.mobile ?? '');
     _pinCtrl = TextEditingController();
+    _selectedLanguage = widget.teacher.preferredLanguage;
   }
 
   @override
@@ -50,6 +52,7 @@ class _TeacherEditScreenState extends State<TeacherEditScreen> {
       name: _nameCtrl.text,
       mobile: _mobileCtrl.text,
       newPin: _changePin ? _pinCtrl.text : null,
+      preferredLanguage: _selectedLanguage,
       authProvider: context.read<AuthProvider>(),
     );
     if (!mounted) return;
@@ -134,6 +137,26 @@ class _TeacherEditScreenState extends State<TeacherEditScreen> {
                       if (v == null || v.isEmpty) return 'Mobile is required.';
                       if (v.length != 10) return 'Must be exactly 10 digits.';
                       return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  DropdownButtonFormField<String>(
+                    value: _selectedLanguage,
+                    decoration: InputDecoration(
+                      labelText: 'Preferred Language',
+                      prefixIcon: const Icon(Icons.language_rounded, color: Color(0xFF004D40)),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      filled: true,
+                      fillColor: Colors.white,
+                    ),
+                    items: const [
+                      DropdownMenuItem(value: 'en', child: Text('English')),
+                      DropdownMenuItem(value: 'ur', child: Text('اردو (Urdu)')),
+                      DropdownMenuItem(value: 'hi', child: Text('हिन्दी (Hindi)')),
+                      DropdownMenuItem(value: 'te', child: Text('తెలుగు (Telugu)')),
+                    ],
+                    onChanged: (val) {
+                      if (val != null) setState(() => _selectedLanguage = val);
                     },
                   ),
                   const SizedBox(height: 24),
