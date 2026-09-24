@@ -661,7 +661,8 @@ class _QuickSendScreenState extends State<QuickSendScreen> {
             const SizedBox(height: 12),
             if (_recipientRole == RecipientRole.student) ...[
               DropdownButtonFormField<Student>(
-                value: _selectedStudent,
+                key: ValueKey('student_${_selectedStudent?.id}'),
+                initialValue: _selectedStudent,
                 isExpanded: true,
                 decoration: const InputDecoration(
                   labelText: 'Select Student',
@@ -677,7 +678,8 @@ class _QuickSendScreenState extends State<QuickSendScreen> {
               ),
             ] else if (_recipientRole == RecipientRole.teacher) ...[
               DropdownButtonFormField<User>(
-                value: _selectedTeacher,
+                key: ValueKey('teacher_${_selectedTeacher?.id}'),
+                initialValue: _selectedTeacher,
                 isExpanded: true,
                 decoration: const InputDecoration(
                   labelText: 'Select Teacher',
@@ -753,7 +755,7 @@ class _QuickSendScreenState extends State<QuickSendScreen> {
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
-                value: _feePaymentMode,
+                initialValue: _feePaymentMode,
                 decoration: const InputDecoration(labelText: 'Payment Mode', prefixIcon: Icon(Icons.payment), border: OutlineInputBorder()),
                 items: const [
                   DropdownMenuItem(value: 'Cash', child: Text('Cash')),
@@ -780,7 +782,7 @@ class _QuickSendScreenState extends State<QuickSendScreen> {
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
-                value: _salaryPaymentMode,
+                initialValue: _salaryPaymentMode,
                 decoration: const InputDecoration(labelText: 'Payment Mode', prefixIcon: Icon(Icons.payment), border: OutlineInputBorder()),
                 items: const [
                   DropdownMenuItem(value: 'Cash', child: Text('Cash')),
@@ -844,7 +846,7 @@ class _QuickSendScreenState extends State<QuickSendScreen> {
                 children: [
                   Expanded(
                     child: DropdownButtonFormField<String>(
-                      value: _recitationType,
+                      initialValue: _recitationType,
                       decoration: const InputDecoration(labelText: 'Type', border: OutlineInputBorder()),
                       items: const [
                         DropdownMenuItem(value: 'Nazra', child: Text('Nazra')),
@@ -858,7 +860,7 @@ class _QuickSendScreenState extends State<QuickSendScreen> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: DropdownButtonFormField<String>(
-                      value: _sabaqGrade,
+                      initialValue: _sabaqGrade,
                       decoration: const InputDecoration(labelText: 'Grade', border: OutlineInputBorder()),
                       items: const [
                         DropdownMenuItem(value: 'A+', child: Text('A+ (Mumtaz)')),
@@ -908,7 +910,8 @@ class _QuickSendScreenState extends State<QuickSendScreen> {
             ),
             const SizedBox(height: 8),
             DropdownButtonFormField<String>(
-              value: _selectedLanguage,
+              key: ValueKey('lang_$_selectedLanguage'),
+              initialValue: _selectedLanguage,
               decoration: const InputDecoration(
                 prefixIcon: Icon(Icons.translate, color: Color(0xFF004D40)),
                 border: OutlineInputBorder(),

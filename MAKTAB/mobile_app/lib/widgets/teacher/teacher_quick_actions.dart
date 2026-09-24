@@ -88,6 +88,12 @@ class TeacherQuickActions extends StatelessWidget {
         color: const Color(0xFF00897B),
         onTap: () => context.push('/teacher/quick-send'),
       ),
+      _ActionItem(
+        icon: Icons.phone_in_talk_rounded,
+        label: 'Call\nParents',
+        color: const Color(0xFF00796B),
+        onTap: () => _showParentContactSheet(context),
+      ),
     ];
   }
 

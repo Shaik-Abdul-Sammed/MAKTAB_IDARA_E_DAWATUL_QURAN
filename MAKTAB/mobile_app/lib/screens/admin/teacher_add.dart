@@ -241,7 +241,7 @@ class _TeacherAddScreenState extends State<TeacherAddScreen> {
                   ),
                   const SizedBox(height: 16),
                   DropdownButtonFormField<String>(
-                    value: _selectedLanguage,
+                    initialValue: _selectedLanguage,
                     decoration: InputDecoration(
                       labelText: 'Preferred Language',
                       prefixIcon: const Icon(Icons.language_rounded, color: Color(0xFF004D40)),
