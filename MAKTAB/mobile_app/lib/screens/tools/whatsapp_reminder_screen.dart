@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:maktab_app/providers/auth_provider.dart';
 import '../../models/student.dart';
 import '../../repositories/student_repository.dart';
 import '../../repositories/batch_repository.dart';
@@ -68,12 +70,14 @@ class _WhatsAppReminderScreenState extends State<WhatsAppReminderScreen> {
     final phone = _selectedStudent!.phone ?? '';
     final content = _msgCtrl.text.replaceAll('{StudentName}', _selectedStudent!.name);
 
+    final sender = context.read<AuthProvider>().currentUser?.name ?? 'Maktab Management';
     await WhatsAppUtility.sendNoticeMessage(
       context,
       title: 'Maktab Reminder',
       content: content,
       recipientPhone: phone,
       targetName: _selectedStudent!.name,
+      senderName: sender,
     );
   }
 

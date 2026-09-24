@@ -11,6 +11,7 @@ import '../../widgets/shimmer_loader.dart';
 import '../../widgets/molecules/confirm_dialog.dart';
 import '../../widgets/molecules/custom_app_bar.dart';
 import '../../utils/whatsapp_utility.dart';
+import '../../providers/auth_provider.dart';
 
 class TeacherDetailsScreen extends StatefulWidget {
   final int teacherId;
@@ -156,7 +157,16 @@ class _TeacherDetailsScreenState extends State<TeacherDetailsScreen> {
                             ElevatedButton(
                               onPressed: () {
                                 Navigator.pop(ctx);
-                                WhatsAppUtility.sendTeacherCredentials(context, teacher.mobile!, teacher.name, pinController.text);
+                                final sender = context.read<AuthProvider>().currentUser?.name ?? 'Maktab Management';
+                                WhatsAppUtility.sendTeacherCredentials(
+                                  context,
+                                  teacher.mobile!,
+                                  teacher.name,
+                                  pinController.text,
+                                  teacherId: teacher.id ?? 0,
+                                  mobile: teacher.mobile!,
+                                  senderName: sender,
+                                );
                               },
                               child: const Text('Yes, Send'),
                             ),

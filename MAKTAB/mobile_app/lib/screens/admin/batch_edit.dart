@@ -192,13 +192,25 @@ class _BatchEditScreenState extends State<BatchEditScreen> {
             ),
           ),
           const SizedBox(width: 16),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(b.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF004D40))),
-              const SizedBox(height: 4),
-              Text('Timing: ${b.timing}', style: const TextStyle(fontSize: 12, color: Colors.black45)),
-            ],
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  b.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF004D40)),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Timing: ${b.timing}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontSize: 12, color: Colors.black45),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -220,6 +232,7 @@ class _BatchEditScreenState extends State<BatchEditScreen> {
         uniqueTeachers.any((t) => t.id == _selectedTeacherId);
 
     return DropdownButtonFormField<int?>(
+      isExpanded: true,
       initialValue: hasMatch ? _selectedTeacherId : null,
       decoration: InputDecoration(
         labelText: 'Assign Teacher',

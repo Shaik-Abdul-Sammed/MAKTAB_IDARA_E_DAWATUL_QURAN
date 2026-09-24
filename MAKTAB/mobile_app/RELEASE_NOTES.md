@@ -17,6 +17,7 @@
 - Firebase Auth accounts of deleted teachers are orphaned (require manual deletion in Firebase Console, or a future Cloud Function).
 - Voice attendance supports en_IN locale. Other locales fall back to device default.
 - Offline mode queues writes; sync resumes on reconnect.
+- Push notifications (OS-level) not yet implemented. In-app bell notifications work; system tray alerts require FCM integration.
 
 ## Sync architecture
 - Cloud Firestore/RTDB: Firebase Realtime Database

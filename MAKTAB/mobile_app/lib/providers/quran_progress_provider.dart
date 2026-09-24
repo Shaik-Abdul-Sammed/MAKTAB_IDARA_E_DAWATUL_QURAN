@@ -30,7 +30,7 @@ class QuranProgressProvider extends ChangeNotifier {
       _status = QuranProgressStatus.success;
     } catch (e) {
       _status = QuranProgressStatus.error;
-      _errorMessage = 'Failed to load Quran progress history.';
+      _errorMessage = 'Failed to load Sabaq history.';
     }
     notifyListeners();
   }

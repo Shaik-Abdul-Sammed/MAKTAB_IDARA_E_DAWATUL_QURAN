@@ -139,9 +139,16 @@ class _MessageBoxScreenState extends State<MessageBoxScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('Announcement Details',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF004D40))),
+                const Expanded(
+                  child: Text(
+                    'Announcement Details',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF004D40)),
+                  ),
+                ),
                 Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     IconButton(
                       icon: const Icon(Icons.edit, color: Colors.blue),
@@ -173,7 +180,7 @@ class _MessageBoxScreenState extends State<MessageBoxScreen> {
             Text('Date: ${item.date} | Batch ID: ${item.batchId}',
                 style: const TextStyle(fontSize: 12, color: Colors.black54)),
             const SizedBox(height: 12),
-            Expanded(
+            Flexible(
               child: SingleChildScrollView(
                 child: Text(item.content, style: const TextStyle(fontSize: 14)),
               ),
@@ -191,11 +198,13 @@ class _MessageBoxScreenState extends State<MessageBoxScreen> {
                       Navigator.pop(ctx);
                       final lang = await LanguagePickerDialog.show(context);
                       if (lang == null || !mounted) return;
+                      final sender = context.read<AuthProvider>().currentUser?.name ?? 'Maktab Management';
                       await WhatsAppUtility.sendNoticeMessage(
                         context,
                         title: item.title,
                         content: item.content,
                         languageCode: lang,
+                        senderName: sender,
                       );
                     },
                   ),
@@ -393,10 +402,19 @@ class _MessageBoxScreenState extends State<MessageBoxScreen> {
           backgroundColor: const Color(0xFF004D40).withValues(alpha: 0.1),
           child: Icon(icon, color: const Color(0xFF004D40), size: 28),
         ),
-        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(
+          title,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
         subtitle: Padding(
           padding: const EdgeInsets.only(top: 8.0),
-          child: Text(subtitle),
+          child: Text(
+            subtitle,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
         ),
         trailing: unreadCount > 0
             ? CircleAvatar(

@@ -203,7 +203,7 @@ class AuthProvider with ChangeNotifier {
               cred = await secondaryAuth.signInWithEmailAndPassword(
                 email: derivedEmail,
                 password: pinHash,
-              ).timeout(const Duration(seconds: 5));
+              ).timeout(const Duration(seconds: 8));
               recovered = true;
             } catch (e, st) {
               debugPrint('[AuthProvider.provisionTeacherAuthAccount] Fallback sign-in failed: $e\n$st');
@@ -239,12 +239,12 @@ class AuthProvider with ChangeNotifier {
             'mobile': mobile ?? '',
             'pinHash': pinHash,
             'active': true,
-          }).timeout(const Duration(seconds: 6));
+          }).timeout(const Duration(seconds: 8));
 
           final verify = await secondaryDb
               .ref('users/$teacherUid')
               .get()
-              .timeout(const Duration(seconds: 3));
+              .timeout(const Duration(seconds: 8));
 
           if (!verify.exists || verify.value == null) {
             debugPrint('[PROVISION FAIL] write not confirmed teacherId=$teacherId uid=$teacherUid');
@@ -376,7 +376,27 @@ class AuthProvider with ChangeNotifier {
         }
       }
 
-      final teachers = await _userRepository.getAllTeachers();
+      // Restore teacher 20262 if missing
+      final allLocalTeachers = await _userRepository.getAllTeachers();
+      if (!allLocalTeachers.any((t) => (t.id == 20262 || t.teacherId == 20262))) {
+        final yaqoob = User(
+          id: 20262,
+          teacherId: 20262,
+          name: 'MOULANA YAQOOB BAIG',
+          mobile: '6309987430',
+          pinHash: _hashPin('123456'),
+          role: 'teacher',
+          isActive: true,
+          createdAt: DateTime.now().toIso8601String(),
+        );
+        await _userRepository.insertUser(yaqoob);
+        debugPrint('[BACKFILL] Restored missing teacher 20262 (MOULANA YAQOOB BAIG)');
+      }
+
+      const legacyIds = {3, 4, 2019, 2020, 20263};
+      final teachers = (await _userRepository.getAllTeachers())
+          .where((t) => t.id != null && !legacyIds.contains(t.id))
+          .toList();
       for (var t in teachers) {
         if (t.id != null) {
           final result = await provisionTeacherAuthAccount(
@@ -410,7 +430,10 @@ class AuthProvider with ChangeNotifier {
   Future<void> _backfillMissingTeacherProfiles() async {
     try {
       if (_db == null) return;
-      final teachers = await _userRepository.getAllTeachers();
+      const legacyIds = {3, 4, 2019, 2020, 20263};
+      final teachers = (await _userRepository.getAllTeachers())
+          .where((t) => t.id != null && !legacyIds.contains(t.id))
+          .toList();
       final missing = <String>[];
 
       final maktabId = await CloudSyncService.instance.getMaktabId();

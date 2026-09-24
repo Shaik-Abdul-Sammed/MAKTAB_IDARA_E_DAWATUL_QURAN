@@ -12,6 +12,7 @@ class ReceiptPdfGenerator {
     required DateTime recordedAt,
     required List<Map<String, dynamic>> children, // {name, admissionNumber, amount, mode, notes}
     required Map<String, String> labels,           // from ReceiptTemplates.get(languageCode)
+    required String senderName,
   }) async {
     final doc = pw.Document();
     final whenStr = DateFormat('dd MMM yyyy, hh:mm a').format(recordedAt);
@@ -80,6 +81,11 @@ class ReceiptPdfGenerator {
                 labels['footer'] ?? 'Jazak Allah Khair.',
                 style: const pw.TextStyle(fontSize: 11),
               ),
+              pw.SizedBox(height: 6),
+              pw.Text(
+                'Regards,\n$senderName',
+                style: const pw.TextStyle(fontSize: 10),
+              ),
             ],
           );
         },
@@ -99,6 +105,7 @@ class ReceiptPdfGenerator {
     required DateTime paymentDate,
     required String issuedBy,
     required Map<String, String> labels,
+    required String senderName,
     String? notes,
     String? transactionReference,
   }) async {
@@ -147,6 +154,11 @@ class ReceiptPdfGenerator {
                 labels['footer'] ?? 'Jazak Allah Khair.',
                 style: const pw.TextStyle(fontSize: 11),
               ),
+              pw.SizedBox(height: 6),
+              pw.Text(
+                'Regards,\n$senderName',
+                style: const pw.TextStyle(fontSize: 10),
+              ),
             ],
           );
         },
@@ -167,6 +179,7 @@ class ReceiptPdfGenerator {
     List<String>? late,
     List<String>? leave,
     required Map<String, String> labels,
+    required String senderName,
   }) async {
     final doc = pw.Document();
 
@@ -195,6 +208,12 @@ class ReceiptPdfGenerator {
             _studentSection(labels['late'] ?? 'Late', late),
           if (leave != null && leave.isNotEmpty)
             _studentSection(labels['leave'] ?? 'Leave', leave),
+          pw.SizedBox(height: 16),
+          pw.Divider(),
+          pw.Text(
+            'Regards,\n$senderName',
+            style: const pw.TextStyle(fontSize: 10),
+          ),
         ],
       ),
     );

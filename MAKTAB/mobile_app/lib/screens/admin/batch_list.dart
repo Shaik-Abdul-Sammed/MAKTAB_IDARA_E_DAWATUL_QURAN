@@ -163,11 +163,11 @@ class _BatchListScreenState extends State<BatchListScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
         child: Row(
           children: [
-            _Chip(label: '${p.totalCount} Batches', color: const Color(0xFF004D40)),
+            Flexible(child: _Chip(label: '${p.totalCount} Batches', color: const Color(0xFF004D40))),
             const SizedBox(width: 8),
-            _Chip(label: '${p.assignedCount} Assigned', color: Colors.green.shade700),
+            Flexible(child: _Chip(label: '${p.assignedCount} Assigned', color: Colors.green.shade700)),
             const SizedBox(width: 8),
-            _Chip(label: '${p.unassignedCount} Unassigned', color: Colors.orange.shade700),
+            Flexible(child: _Chip(label: '${p.unassignedCount} Unassigned', color: Colors.orange.shade700)),
           ],
         ),
       ),
@@ -237,7 +237,12 @@ class _Chip extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: color.withValues(alpha: 0.4)),
       ),
-      child: Text(label, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: color)),
+      child: Text(
+        label,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: color),
+      ),
     );
   }
 }

@@ -93,7 +93,7 @@ class _BatchProgressReportScreenState extends State<BatchProgressReportScreen> {
       backgroundColor: const Color(0xFFF9FBE7), // Cream background
       appBar: AppBar(
         title: const Text(
-          'View Batch Quran Progress Sheet',
+          'View Batch Sabaq Sheet',
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18, overflow: TextOverflow.ellipsis),
         ),
                 flexibleSpace: Container(

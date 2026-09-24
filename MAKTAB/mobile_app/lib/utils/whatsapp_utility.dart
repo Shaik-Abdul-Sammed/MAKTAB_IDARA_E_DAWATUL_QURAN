@@ -6,8 +6,6 @@ import 'receipt_templates.dart';
 enum Language { english, urdu, hindi, telugu }
 
 class WhatsAppUtility {
-  static const String _signature = "\n\nFrom: MAKTAB IDARA E DAWATUL QURAN";
-
   static Future<void> launchWhatsApp(String phone, String message, {BuildContext? context}) async {
     // Remove all non-numeric characters from phone
     String cleanPhone = phone.replaceAll(RegExp(r'\D'), '');
@@ -47,29 +45,35 @@ class WhatsAppUtility {
     }
   }
 
+  static String _formatSignature(String? senderName) {
+    final sender = (senderName != null && senderName.trim().isNotEmpty)
+        ? senderName.trim()
+        : 'Maktab Management';
+    return '\n\n—\nRegards,\n$sender';
+  }
+
   static Future<void> sendTeacherCredentials(
-      BuildContext context, String phone, String name, String pin) async {
-    if (!context.mounted) return;
-    final lang = await _promptLanguageSelection(context);
-    if (lang == null || !context.mounted) return;
+    BuildContext context,
+    String phone,
+    String name,
+    String pin, {
+    required int teacherId,
+    required String mobile,
+    String? senderName,
+  }) async {
+    final msg = '''
+Assalamu Alaikum $name,
 
-    String msg = '';
-    switch (lang) {
-      case Language.english:
-        msg = "Assalamu Alaikum,\nDear Teacher $name,\nYour Maktab App login PIN is: *$pin*\nPlease keep it confidential and do not share it with anyone.";
-        break;
-      case Language.urdu:
-        msg = "السلام علیکم،\nمحترم استاد $name،\nآپ کے مکتب ایپ کا لاگ ان پن ہے: *$pin*\nبراہ کرم اسے خفیہ رکھیں اور کسی کے ساتھ شیئر نہ کریں۔";
-        break;
-      case Language.hindi:
-        msg = "अस्सलामु अलैकुम,\nप्रिय शिक्षक $name,\nआपके मकतब ऐप का लॉगिन पिन है: *$pin*\nकृपया इसे गोपनीय रखें और किसी के साथ साझा न करें।";
-        break;
-      case Language.telugu:
-        msg = "అస్సలాము అలైకుమ్,\nగౌరవనీయ ఉపాధ్యాయులు $name,\nమీ మక్తబ్ యాప్ లాగిన్ పిన్: *$pin*\nదయచేసి దీనిని రహస్యంగా ఉంచండి మరియు ఎవరితోనూ పంచుకోకండి.";
-        break;
-    }
+Your Maktab Teacher Portal login:
+• Teacher ID: $teacherId
+• Mobile: $mobile
+• PIN: $pin
 
-    await launchWhatsApp(phone, msg + _signature, context: context);
+You can log in using either the Teacher ID or the mobile number, with the PIN above.
+
+Jazak Allah Khair.
+''';
+    await launchWhatsApp(phone, msg + _formatSignature(senderName), context: context);
   }
 
   static Future<void> sendFeeReceipt(
@@ -83,6 +87,7 @@ class WhatsAppUtility {
     String? collectorName,
     String? notes,
     String languageCode = 'en',
+    String? senderName,
   }) async {
     final t = ReceiptTemplates.get(languageCode);
     final modeText = (paymentMode != null && paymentMode.isNotEmpty) ? paymentMode : 'Cash';
@@ -104,6 +109,7 @@ class WhatsAppUtility {
     }
     buf.writeln();
     buf.writeln(t['footer']);
+    buf.write(_formatSignature(senderName));
 
     await launchWhatsApp(phone, buf.toString(), context: context);
   }
@@ -117,6 +123,7 @@ class WhatsAppUtility {
     DateTime? recordedAt,
     String? dateTime,
     String languageCode = 'en',
+    String? senderName,
   }) async {
     final t = ReceiptTemplates.get(languageCode);
     final when = recordedAt ?? DateTime.now();
@@ -147,6 +154,7 @@ class WhatsAppUtility {
 
     buf.writeln();
     buf.writeln(t['footer']);
+    buf.write(_formatSignature(senderName));
 
     await launchWhatsApp(parentPhone, buf.toString(), context: context);
   }
@@ -164,6 +172,7 @@ class WhatsAppUtility {
     String? issuedBy,
     String? dateTime,
     String languageCode = 'en',
+    String? senderName,
   }) async {
     final t = ReceiptTemplates.get(languageCode);
     final modeText = (paymentMode != null && paymentMode.isNotEmpty) ? paymentMode : 'Cash';
@@ -185,6 +194,7 @@ class WhatsAppUtility {
     }
     buf.writeln();
     buf.writeln(t['footer']);
+    buf.write(_formatSignature(senderName));
 
     await launchWhatsApp(phone, buf.toString(), context: context);
   }
@@ -196,6 +206,7 @@ class WhatsAppUtility {
     String studentName, {
     String? date,
     String languageCode = 'en',
+    String? senderName,
   }) async {
     final t = ReceiptTemplates.get(languageCode);
     final dateStr = date ?? DateFormat('dd MMM yyyy').format(DateTime.now());
@@ -210,6 +221,7 @@ class WhatsAppUtility {
     buf.writeln(t['pleaseContact']);
     buf.writeln();
     buf.writeln(t['footer']);
+    buf.write(_formatSignature(senderName));
 
     await launchWhatsApp(phone, buf.toString(), context: context);
   }
@@ -221,6 +233,7 @@ class WhatsAppUtility {
     required String timing,
     String? phone,
     String languageCode = 'en',
+    String? senderName,
   }) async {
     final t = ReceiptTemplates.get(languageCode);
 
@@ -231,6 +244,7 @@ class WhatsAppUtility {
     buf.writeln('${t['timing']}: $timing');
     buf.writeln();
     buf.writeln(t['footer']);
+    buf.write(_formatSignature(senderName));
 
     await launchWhatsApp(phone ?? '', buf.toString(), context: context);
   }
@@ -243,6 +257,7 @@ class WhatsAppUtility {
     String? recipientPhone,
     String? targetName,
     String languageCode = 'en',
+    String? senderName,
   }) async {
     final t = ReceiptTemplates.get(languageCode);
 
@@ -253,6 +268,7 @@ class WhatsAppUtility {
     buf.writeln(content);
     buf.writeln();
     buf.writeln(t['footer']);
+    buf.write(_formatSignature(senderName));
 
     await launchWhatsApp(recipientPhone ?? '', buf.toString(), context: context);
   }
@@ -333,8 +349,6 @@ class WhatsAppUtility {
       },
     );
   }
-
-  static Future<Language?> _promptLanguageSelection(BuildContext context) => promptLanguageSelection(context);
 }
 
 class _LanguageTile extends StatelessWidget {

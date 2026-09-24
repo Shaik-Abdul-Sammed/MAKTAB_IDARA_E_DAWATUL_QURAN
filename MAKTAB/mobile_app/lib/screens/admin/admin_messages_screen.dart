@@ -88,7 +88,14 @@ class _AdminMessagesScreenState extends State<AdminMessagesScreen> {
           children: [
             Icon(Icons.chat_rounded, color: Color(0xFF25D366)),
             SizedBox(width: 10),
-            Text('WhatsApp Announcement', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            Expanded(
+              child: Text(
+                'WhatsApp Announcement',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+            ),
           ],
         ),
         content: Column(
@@ -120,11 +127,13 @@ class _AdminMessagesScreenState extends State<AdminMessagesScreen> {
               Navigator.pop(ctx);
               final lang = await LanguagePickerDialog.show(context);
               if (lang == null || !mounted) return;
+              final sender = context.read<AuthProvider>().currentUser?.name ?? 'Maktab Management';
               await WhatsAppUtility.sendNoticeMessage(
                 context,
                 title: titleCtrl.text,
                 content: contentCtrl.text,
                 languageCode: lang,
+                senderName: sender,
               );
             },
           ),

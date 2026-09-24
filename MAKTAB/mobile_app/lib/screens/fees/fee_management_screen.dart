@@ -448,6 +448,7 @@ class _FeeManagementScreenState extends State<FeeManagementScreen> {
       paymentMode: lastPayment.mode,
       dateTime: formattedTime,
       collectorName: collectorName,
+      senderName: collectorName,
     );
   }
 
@@ -575,6 +576,7 @@ class _FeeManagementScreenState extends State<FeeManagementScreen> {
                             paymentMode: selectedMode,
                             dateTime: formattedTime,
                             collectorName: collectorName,
+                            senderName: collectorName,
                           );
                         },
                       ),
@@ -614,21 +616,35 @@ class _FeeManagementScreenState extends State<FeeManagementScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Row(
-            children: [
-              const Icon(AppIcons.fees, color: AppIcons.gold, size: 40),
-              const SizedBox(width: 16),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('Total Pending Monthly Fees', style: TextStyle(color: Colors.white70, fontSize: 12)),
-                  const SizedBox(height: 4),
-                  Text('₹${totalPending.toInt()}',
-                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 22)),
-                ],
-              ),
-            ],
+          Expanded(
+            child: Row(
+              children: [
+                const Icon(AppIcons.fees, color: AppIcons.gold, size: 40),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Total Pending Monthly Fees',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(color: Colors.white70, fontSize: 12),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '₹${totalPending.toInt()}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 22),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
+          const SizedBox(width: 8),
           ElevatedButton.icon(
             onPressed: _openBulkMessagingDialog,
             icon: const Icon(Icons.send_rounded, size: 16),
@@ -697,9 +713,18 @@ class _FeeCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(s.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                    Text('ADM: ${s.admissionNumber} · ${s.phone ?? 'No phone'}',
-                        style: const TextStyle(fontSize: 12, color: Colors.black45)),
+                    Text(
+                      s.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                    ),
+                    Text(
+                      'ADM: ${s.admissionNumber} · ${s.phone ?? 'No phone'}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontSize: 12, color: Colors.black45),
+                    ),
                   ],
                 ),
               ),

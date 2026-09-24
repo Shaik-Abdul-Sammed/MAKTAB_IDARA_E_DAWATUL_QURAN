@@ -42,7 +42,7 @@ class DatabaseHelper {
       return await ffi.databaseFactoryFfi.openDatabase(
         path,
         options: ffi.OpenDatabaseOptions(
-          version: 24,
+          version: 25,
           onConfigure: (db) async {
             await db.execute('PRAGMA foreign_keys = ON');
           },
@@ -59,7 +59,7 @@ class DatabaseHelper {
     return await openDatabase(
       path,
       password: key,
-      version: 24,
+      version: 25,
       onConfigure: (db) async {
         await db.execute('PRAGMA foreign_keys = ON');
       },
@@ -1054,6 +1054,15 @@ class DatabaseHelper {
         debugPrint('[MIGRATION v24] Added preferred_language to students');
       } catch (e) {
         debugPrint('[MIGRATION v24] students.preferred_language: $e');
+      }
+    }
+
+    if (oldVersion < 25) {
+      try {
+        await db.delete('users', where: 'id IN (4, 2019, 2020)');
+        debugPrint('[MIGRATION v25] Removed legacy test teachers (4, 2019, 2020)');
+      } catch (e) {
+        debugPrint('[MIGRATION v25] Remove test teachers failed: $e');
       }
     }
   }

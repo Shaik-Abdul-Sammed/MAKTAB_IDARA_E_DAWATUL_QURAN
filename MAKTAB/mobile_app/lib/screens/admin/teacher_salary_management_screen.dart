@@ -359,6 +359,7 @@ class _TeacherSalaryManagementScreenState extends State<TeacherSalaryManagementS
                             onSend: () async {
                               Navigator.pop(previewCtx);
                               if (teacher.mobile != null && teacher.mobile!.isNotEmpty) {
+                                final sender = context.read<AuthProvider>().currentUser?.name ?? 'Maktab Management';
                                 await WhatsAppUtility.sendSalarySlip(
                                   context,
                                   teacher.mobile!,
@@ -369,6 +370,7 @@ class _TeacherSalaryManagementScreenState extends State<TeacherSalaryManagementS
                                   paymentMode: fullSp.paymentMode,
                                   upiId: teacher.upiId,
                                   languageCode: 'en',
+                                  senderName: sender,
                                 );
                                 await _salaryRepository.markReceiptSent(id);
                                 _loadSalaryData();
@@ -376,6 +378,7 @@ class _TeacherSalaryManagementScreenState extends State<TeacherSalaryManagementS
                             },
                             onBuildPdf: () async {
                               final labels = ReceiptTemplates.get('en');
+                              final sender = context.read<AuthProvider>().currentUser?.name ?? 'Maktab Management';
                               return ReceiptPdfGenerator.buildSalaryReceiptPdf(
                                 maktabName: 'MAKTAB IDARA E DAWATUL QURAN',
                                 teacherName: teacher.name,
@@ -385,6 +388,7 @@ class _TeacherSalaryManagementScreenState extends State<TeacherSalaryManagementS
                                 paymentDate: DateTime.tryParse(fullSp.paymentDate) ?? DateTime.now(),
                                 issuedBy: 'Management',
                                 labels: labels,
+                                senderName: sender,
                                 notes: fullSp.notes,
                                 transactionReference: fullSp.transactionReference,
                               );
@@ -423,6 +427,7 @@ class _TeacherSalaryManagementScreenState extends State<TeacherSalaryManagementS
         onSend: () async {
           Navigator.pop(previewCtx);
           if (teacher.mobile != null && teacher.mobile!.isNotEmpty) {
+            final sender = context.read<AuthProvider>().currentUser?.name ?? 'Maktab Management';
             await WhatsAppUtility.sendSalarySlip(
               context,
               teacher.mobile!,
@@ -433,6 +438,7 @@ class _TeacherSalaryManagementScreenState extends State<TeacherSalaryManagementS
               paymentMode: payment.paymentMode,
               upiId: teacher.upiId,
               languageCode: 'en',
+              senderName: sender,
             );
             if (payment.id != null) {
               await _salaryRepository.markReceiptSent(payment.id!);
@@ -442,6 +448,7 @@ class _TeacherSalaryManagementScreenState extends State<TeacherSalaryManagementS
         },
         onBuildPdf: () async {
           final labels = ReceiptTemplates.get('en');
+          final sender = context.read<AuthProvider>().currentUser?.name ?? 'Maktab Management';
           return ReceiptPdfGenerator.buildSalaryReceiptPdf(
             maktabName: 'MAKTAB IDARA E DAWATUL QURAN',
             teacherName: teacher.name,
@@ -451,6 +458,7 @@ class _TeacherSalaryManagementScreenState extends State<TeacherSalaryManagementS
             paymentDate: DateTime.tryParse(payment.paymentDate) ?? DateTime.now(),
             issuedBy: 'Management',
             labels: labels,
+            senderName: sender,
             notes: payment.notes,
             transactionReference: payment.transactionReference,
           );

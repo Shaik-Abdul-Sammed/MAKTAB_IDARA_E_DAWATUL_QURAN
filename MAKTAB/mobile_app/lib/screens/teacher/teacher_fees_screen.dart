@@ -424,6 +424,7 @@ class _TeacherFeesScreenState extends State<TeacherFeesScreen> {
             dateTime: formattedTime,
             collectorName: _teacherName,
             languageCode: lang,
+            senderName: _teacherName.isNotEmpty ? _teacherName : 'Maktab Management',
           );
         },
         onBuildPdf: () => ReceiptPdfGenerator.buildFeeReceiptPdf(
@@ -440,6 +441,7 @@ class _TeacherFeesScreenState extends State<TeacherFeesScreen> {
             },
           ],
           labels: labels,
+          senderName: _teacherName.isNotEmpty ? _teacherName : 'Maktab Management',
         ),
       ),
     );

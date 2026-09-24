@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:maktab_app/config/app_colors.dart';
+import 'package:maktab_app/providers/auth_provider.dart';
 import '../../../models/announcement.dart';
 import '../../../repositories/announcement_repository.dart';
 import '../../../utils/whatsapp_utility.dart';
@@ -150,11 +152,13 @@ class _ClassAnnouncementsScreenState extends State<ClassAnnouncementsScreen> {
                       Navigator.pop(context);
                       final lang = await LanguagePickerDialog.show(context);
                       if (lang == null || !context.mounted) return;
+                      final sender = context.read<AuthProvider>().currentUser?.name ?? 'Maktab Management';
                       await WhatsAppUtility.sendNoticeMessage(
                         context,
                         title: item.title,
                         content: item.content,
                         languageCode: lang,
+                        senderName: sender,
                       );
                     },
                   ),

@@ -42,15 +42,6 @@ class _QuranProgressEntryScreenState extends State<QuranProgressEntryScreen> {
   int _tajweedMistakes = 0;
   int _memorizationMistakes = 0;
 
-  final List<String> _surahPresets = [
-    'Surah Al-Fatiha (1)',
-    'Surah Al-Baqarah (2)',
-    'Surah Yasin (36)',
-    'Surah Al-Mulk (67)',
-    'Surah An-Naba (78)',
-    'Surah An-Nas (114)',
-  ];
-
   @override
   void initState() {
     super.initState();
@@ -65,11 +56,8 @@ class _QuranProgressEntryScreenState extends State<QuranProgressEntryScreen> {
       _remarksCtrl = TextEditingController(text: e.remarks ?? '');
       _grade = e.grade;
       _recitationType = e.recitationType;
-      if (!_surahPresets.contains(e.surah) && e.surah.isNotEmpty) {
-        _surahPresets.insert(0, e.surah);
-      }
     } else {
-      _surahCtrl = TextEditingController(text: 'Surah Al-Baqarah (2)');
+      _surahCtrl = TextEditingController(text: 'Al-Baqarah');
       _ayahFromCtrl = TextEditingController(text: '1');
       _ayahToCtrl = TextEditingController(text: '10');
       _remarksCtrl = TextEditingController();
@@ -91,26 +79,37 @@ class _QuranProgressEntryScreenState extends State<QuranProgressEntryScreen> {
     super.dispose();
   }
 
-  Future<void> _toggleListen() async {
-    if (!_isListening) {
-      bool available = await _speech.initialize(
-        onStatus: (val) => debugPrint('onStatus: $val'),
-        onError: (val) => debugPrint('onError: $val'),
-      );
-      if (available) {
-        setState(() => _isListening = true);
-        _speech.listen(
-          onResult: (val) {
-            setState(() {
-              _remarksCtrl.text = val.recognizedWords;
-            });
-          },
+  Future<void> _toggleVoiceInput() async {
+    if (_isListening) {
+      await _speech.stop();
+      setState(() => _isListening = false);
+      return;
+    }
+    final available = await _speech.initialize();
+    if (!available) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Microphone unavailable.')),
         );
       }
-    } else {
-      setState(() => _isListening = false);
-      _speech.stop();
+      return;
     }
+    setState(() => _isListening = true);
+    await _speech.listen(
+      onResult: (result) {
+        if (!result.finalResult) return;
+        final spoken = result.recognizedWords.trim();
+        final parts = spoken.split(RegExp(r'[,،.]'));
+        if (parts.isNotEmpty) _surahCtrl.text = parts.first.trim();
+        if (parts.length > 1) {
+          _remarksCtrl.text = parts.sublist(1).join(' ').trim();
+        }
+        setState(() => _isListening = false);
+      },
+      localeId: 'en_IN',
+      listenFor: const Duration(seconds: 30),
+      pauseFor: const Duration(seconds: 4),
+    );
   }
 
   Future<void> _submit() async {

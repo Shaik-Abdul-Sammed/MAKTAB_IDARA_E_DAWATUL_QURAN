@@ -144,7 +144,16 @@ class _TeacherAddScreenState extends State<TeacherAddScreen> {
                 onPressed: () async {
                   Navigator.pop(ctx);
                   if (mounted) {
-                    await WhatsAppUtility.sendTeacherCredentials(context, mobileText, nameText, pinText);
+                    final sender = context.read<AuthProvider>().currentUser?.name ?? 'Maktab Management';
+                    await WhatsAppUtility.sendTeacherCredentials(
+                      context,
+                      mobileText,
+                      nameText,
+                      pinText,
+                      teacherId: newTeacherId,
+                      mobile: mobileText,
+                      senderName: sender,
+                    );
                   }
                 },
                 child: const Text('Yes, Send'),

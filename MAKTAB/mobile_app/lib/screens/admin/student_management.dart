@@ -312,7 +312,7 @@ class _StudentManagementScreenState extends State<StudentManagementScreen> {
       builder: (context) {
         return AlertDialog(
           title: const Text('Confirm Delete'),
-          content: Text('Are you sure you want to delete ${student.name}? This will permanently wipe their attendance and Quran progress logs.'),
+          content: Text('Are you sure you want to delete ${student.name}? This will permanently wipe their attendance and Sabaq logs.'),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context, false),

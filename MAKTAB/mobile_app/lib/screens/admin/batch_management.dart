@@ -98,6 +98,7 @@ class _BatchManagementScreenState extends State<BatchManagementScreen> {
                           final hasMatch = selectedTeacherId == null ||
                               uniqueTeachers.any((t) => t.id == selectedTeacherId);
                           return DropdownButtonFormField<int?>(
+                            isExpanded: true,
                             decoration: InputDecoration(
                               labelText: 'Assign Teacher',
                               prefixIcon: const Icon(Icons.person, color: Color(0xFF004D40)),
@@ -481,14 +482,24 @@ class _BatchManagementScreenState extends State<BatchManagementScreen> {
                           ),
                           title: Text(
                             batch.name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Color(0xFF004D40)),
                           ),
                           subtitle: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               const SizedBox(height: 5),
-                              Text('Timing: ${batch.timing}'),
-                              Text('Teacher: ${_getTeacherName(batch.teacherId)}'),
+                              Text(
+                                'Timing: ${batch.timing}',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              Text(
+                                'Teacher: ${_getTeacherName(batch.teacherId)}',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             ],
                           ),
                           trailing: PopupMenuButton<String>(

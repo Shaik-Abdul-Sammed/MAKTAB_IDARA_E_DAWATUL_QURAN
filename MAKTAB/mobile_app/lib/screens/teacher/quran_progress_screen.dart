@@ -117,16 +117,16 @@ class _QuranProgressScreenState extends State<QuranProgressScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF9FBE7),
       appBar: CustomAppBar(
-        title: loc?.translate('quran_progress') ?? 'Daily Quran Recitation Progress',
+        title: loc?.translate('quran_progress') ?? 'Daily Sabaq Progress',
         actions: [
           IconButton(
             icon: const Icon(Icons.history_rounded, color: Colors.white),
-            tooltip: loc?.translate('view_history') ?? 'Review Progress History',
+            tooltip: loc?.translate('view_history') ?? 'Sabaq History',
             onPressed: () => context.push('/teacher/quran_progress/history'),
           ),
           IconButton(
             icon: const Icon(Icons.bar_chart_rounded, color: Colors.white),
-            tooltip: loc?.translate('summary_report') ?? 'Quran Progress Summary',
+            tooltip: loc?.translate('summary_report') ?? 'Sabaq Summary',
             onPressed: () => context.push('/teacher/quran_progress/summary'),
           ),
         ],
@@ -219,7 +219,7 @@ class _QuranProgressScreenState extends State<QuranProgressScreen> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(loc?.translate('quran_progress') ?? 'Quran Progress Tracker', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18, overflow: TextOverflow.ellipsis)),
+              Text(loc?.translate('quran_progress') ?? 'Sabaq Tracker', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18, overflow: TextOverflow.ellipsis)),
               const SizedBox(height: 4),
               Text(loc?.translate('recitation_type') ?? 'Record Sabaq, Sabaqi, and Manzil daily', style: const TextStyle(color: Colors.white70, fontSize: 12)),
             ],

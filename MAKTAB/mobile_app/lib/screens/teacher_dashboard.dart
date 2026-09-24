@@ -10,8 +10,10 @@ import 'package:maktab_app/repositories/message_repository.dart';
 import 'package:maktab_app/repositories/teacher_attendance_repository.dart';
 import 'package:maktab_app/repositories/announcement_repository.dart';
 import 'package:maktab_app/repositories/batch_repository.dart';
+import 'package:maktab_app/repositories/salary_repository.dart';
 import 'package:maktab_app/services/cloud_sync_service.dart';
 import 'package:maktab_app/providers/auth_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:maktab_app/config/app_colors.dart';
@@ -43,7 +45,9 @@ class _TeacherDashboardState extends State<TeacherDashboard>
   // Notifications state
   int _unreadMessagesCount = 0;
   int _unreadAttendanceCount = 0;
-  int get _totalUnreadNotifications => _unreadMessagesCount + _unreadAttendanceCount;
+  int _unreadSalaryCount = 0;
+  int get _totalUnreadNotifications =>
+      _unreadMessagesCount + _unreadAttendanceCount + _unreadSalaryCount;
 
   List<AppMessage> _recentMessages = [];
   List<TeacherAttendance> _recentAttendance = [];
@@ -117,24 +121,54 @@ class _TeacherDashboardState extends State<TeacherDashboard>
   Future<void> _loadNotifications() async {
     try {
       final auth = Provider.of<AuthProvider>(context, listen: false);
-      final canonicalTeacherId = auth.currentUser?.teacherId ?? auth.currentUser?.id ?? 0;
-      final today = DateTime.now().toIso8601String().substring(0, 10);
+      final canonicalTeacherId =
+          auth.currentUser?.teacherId ?? auth.currentUser?.id ?? 0;
 
-      final unreadMsg = await MessageRepository().getUnreadCountForReceiver(canonicalTeacherId, isAdmin: false);
-      final unreadAtt = await TeacherAttendanceRepository().getUnreadCountForDate(today);
+      final prefs = await SharedPreferences.getInstance();
+      final lastBellSeenStr =
+          prefs.getString('teacher_bell_last_seen_$canonicalTeacherId');
+      final lastBellSeen =
+          lastBellSeenStr != null ? DateTime.tryParse(lastBellSeenStr) : null;
 
-      final msgs = await MessageRepository().getMessagesForUser(canonicalTeacherId);
-      final atts = await TeacherAttendanceRepository().getAttendanceByTeacher(canonicalTeacherId);
+      final unreadMsg = await MessageRepository()
+          .getUnreadCountForReceiver(canonicalTeacherId, isAdmin: false);
+
+      final atts = await TeacherAttendanceRepository()
+          .getAttendanceByTeacher(canonicalTeacherId);
+      final unreadAtt = lastBellSeen == null
+          ? (atts.isNotEmpty ? 1 : 0)
+          : atts.where((a) {
+              final d = DateTime.tryParse(a.date);
+              return d != null && d.isAfter(lastBellSeen);
+            }).length;
+
+      final salaryPayments =
+          await SalaryRepository().getPaymentsForTeacher(canonicalTeacherId);
+      final unreadSalary = lastBellSeen == null
+          ? (salaryPayments.isNotEmpty ? 1 : 0)
+          : salaryPayments.where((p) {
+              final d = DateTime.tryParse(p.createdAt) ??
+                  DateTime.tryParse(p.paymentDate);
+              return d != null && d.isAfter(lastBellSeen);
+            }).length;
+
+      final msgs =
+          await MessageRepository().getMessagesForUser(canonicalTeacherId);
       final anns = await AnnouncementRepository().getRecent(limit: 20);
 
-      final batches = await BatchRepository().fetchTeacherBatches(canonicalTeacherId);
+      final batches =
+          await BatchRepository().fetchTeacherBatches(canonicalTeacherId);
       final batchIds = batches.map((b) => b.id).whereType<int>().toSet();
-      final filteredAnns = anns.where((a) => batchIds.isEmpty || batchIds.contains(a.batchId)).take(20).toList();
+      final filteredAnns = anns
+          .where((a) => batchIds.isEmpty || batchIds.contains(a.batchId))
+          .take(20)
+          .toList();
 
       if (!mounted) return;
       setState(() {
         _unreadMessagesCount = unreadMsg;
         _unreadAttendanceCount = unreadAtt;
+        _unreadSalaryCount = unreadSalary;
         _recentMessages = msgs.take(20).toList();
         _recentAttendance = atts.take(20).toList();
         _recentAnnouncements = filteredAnns;
@@ -593,6 +627,11 @@ class _TeacherDashboardState extends State<TeacherDashboard>
         elevation: 0,
         foregroundColor: Colors.white,
         actions: [
+          // TODO(push): Integrate FCM for OS-level notifications.
+          // Requires: (1) FCM project setup, (2) Cloud Function trigger,
+          // (3) FCM token registration in AuthProvider,
+          // (4) permission prompt on Android 13+ / iOS.
+          // See RELEASE_NOTES.md "Known limitations" section.
           // Bell notifications icon with badge
           Stack(
             alignment: Alignment.center,
@@ -602,7 +641,10 @@ class _TeacherDashboardState extends State<TeacherDashboard>
                 tooltip: 'Notifications',
                 constraints: const BoxConstraints(minWidth: 34, minHeight: 34),
                 padding: EdgeInsets.zero,
-                onPressed: _showNotificationsSheet,
+                onPressed: () async {
+                  await context.push('/teacher/notifications');
+                  if (mounted) _loadNotifications();
+                },
               ),
               if (_totalUnreadNotifications > 0)
                 Positioned(
@@ -790,7 +832,7 @@ class _TeacherDashboardState extends State<TeacherDashboard>
             _drawerTile(
               context,
               icon: CupertinoIcons.book_fill,
-              label: 'Quran Progress',
+              label: 'Sabaq',
               route: '/teacher/quran_progress',
             ),
             _drawerTile(
@@ -1024,60 +1066,34 @@ class _TeacherDashboardState extends State<TeacherDashboard>
                       childAspectRatio: 1.1,
                     ),
                     delegate: SliverChildListDelegate([
-                      _buildDashboardCard(context, 'Mark Attendance',
+                      _buildDashboardCard(context, 'Attendance',
                           CupertinoIcons.square_list_fill, '/teacher/attendance'),
-                      _buildDashboardCard(context, 'Quran Recitation',
+                      _buildDashboardCard(context, 'Students',
+                          CupertinoIcons.person_2_fill, '/teacher/students',
+                          color: const Color(0xFF00695C)),
+                      _buildDashboardCard(context, 'Sabaq',
                           CupertinoIcons.book_fill, '/teacher/quran_progress'),
+                      _buildDashboardCard(context, 'My Batches',
+                          Icons.groups_rounded, '/teacher/batches',
+                          color: AppColors.goldAccent),
                       _buildDashboardCard(
                           context,
-                          'Messages Inbox',
+                          'Messages',
                           Icons.chat_bubble_outline_rounded,
                           '/teacher/messages',
                           color: const Color(0xFF388E3C)),
                       _buildDashboardCard(
                           context,
-                          'Notifications',
-                          Icons.notifications_active_rounded,
-                          '/teacher/notifications',
-                          color: const Color(0xFF6A1B9A)),
-                      _buildDashboardCard(context, 'Daily Checklist',
-                          CupertinoIcons.checkmark_square_fill, '/teacher/checklist'),
+                          'Fees',
+                          Icons.account_balance_wallet_rounded,
+                          '/teacher/fees',
+                          color: const Color(0xFFE65100)),
                       _buildDashboardCard(
                           context,
-                          'Reports & Analytics',
-                          CupertinoIcons.graph_square_fill,
-                          '/teacher/reports',
-                          color: const Color(0xFF1565C0)),
-                      _buildDashboardCard(
-                          context,
-                          'Syllabus Tracker',
-                          Icons.menu_book_rounded,
-                          '/teacher/syllabus-tracker',
-                          color: const Color(0xFF0277BD)),
-                      _buildDashboardCard(
-                          context,
-                          'Health & Emergency',
-                          Icons.monitor_heart_rounded,
-                          '/teacher/health',
-                          color: const Color(0xFFD81B60)),
-                      _buildDashboardCard(
-                          context,
-                          'Behavior Log',
-                          Icons.gavel_rounded,
-                          '/teacher/behavior',
-                          color: const Color(0xFF5D4037)),
-                      _buildDashboardCard(
-                          context,
-                          'Self-Audit Entry',
-                          Icons.fact_check_rounded,
-                          '/teacher/checklist-entry',
-                          color: const Color(0xFF00695C)),
-                      _buildDashboardCard(
-                          context,
-                          'Audit History',
-                          Icons.history_edu_rounded,
-                          '/teacher/checklist-history',
-                          color: const Color(0xFF455A64)),
+                          'My Salary',
+                          Icons.payments_rounded,
+                          '/teacher/salary',
+                          color: const Color(0xFF2E7D32)),
                     ]),
                   ),
                 ),

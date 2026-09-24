@@ -168,6 +168,7 @@ class _LogFeePaymentDialogState extends State<LogFeePaymentDialog> {
                         }
                       ],
                 labels: labels,
+                senderName: collectorName,
               );
             },
             onSend: () async {
@@ -183,6 +184,7 @@ class _LogFeePaymentDialogState extends State<LogFeePaymentDialog> {
                   dateTime: formattedTime,
                   collectorName: collectorName,
                   languageCode: widget.student.preferredLanguage,
+                  senderName: collectorName,
                 );
                 await FeePaymentRepository().markReceiptSent(insertedId);
               } else {
@@ -194,6 +196,7 @@ class _LogFeePaymentDialogState extends State<LogFeePaymentDialog> {
                   collectorName: collectorName,
                   recordedAt: now,
                   languageCode: widget.student.preferredLanguage,
+                  senderName: collectorName,
                 );
                 for (final pid in includedPaymentIds) {
                   await FeePaymentRepository().markReceiptSent(pid);

@@ -114,7 +114,7 @@ class _QuranProgressHistoryScreenState extends State<QuranProgressHistoryScreen>
       backgroundColor: const Color(0xFFF9FBE7), // Cream background
       appBar: AppBar(
         title: const Text(
-          'Review Progress History',
+          'Sabaq History',
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18, overflow: TextOverflow.ellipsis),
         ),
         flexibleSpace: Container(
@@ -162,7 +162,7 @@ class _QuranProgressHistoryScreenState extends State<QuranProgressHistoryScreen>
                                   Icon(Icons.menu_book_outlined, size: 64, color: Colors.black26),
                                   SizedBox(height: 16),
                                   Text(
-                                    'No progress logged yet. Use the + button on the Quran screen to add a record.',
+                                    'No progress logged yet. Use the + button on the Sabaq screen to add a record.',
                                     textAlign: TextAlign.center,
                                     style: TextStyle(color: Colors.black54, fontSize: 14),
                                   ),
@@ -191,8 +191,8 @@ class _QuranProgressHistoryScreenState extends State<QuranProgressHistoryScreen>
                                       return await showDialog<bool>(
                                         context: context,
                                         builder: (ctx) => AlertDialog(
-                                          title: const Text('Delete Progress Entry'),
-                                          content: const Text('Delete this Quran progress entry? This cannot be undone.'),
+                                          title: const Text('Delete Sabaq Entry'),
+                                          content: const Text('Delete this Sabaq entry? This cannot be undone.'),
                                           actions: [
                                             TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
                                             ElevatedButton(

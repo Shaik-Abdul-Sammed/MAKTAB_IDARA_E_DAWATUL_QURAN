@@ -243,9 +243,16 @@ class _TeacherManagementScreenState extends State<TeacherManagementScreen> {
                           ElevatedButton(
                             onPressed: () async {
                               Navigator.pop(ctx);
-                              if (context.mounted) {
-                                await WhatsAppUtility.sendTeacherCredentials(context, teacherMobile, teacherName, teacherPin);
-                              }
+                                final sender = context.read<AuthProvider>().currentUser?.name ?? 'Maktab Management';
+                                await WhatsAppUtility.sendTeacherCredentials(
+                                  context,
+                                  teacherMobile,
+                                  teacherName,
+                                  teacherPin,
+                                  teacherId: newTeacherId,
+                                  mobile: teacherMobile,
+                                  senderName: sender,
+                                );
                             },
                             child: const Text('Yes, Send'),
                           ),
@@ -478,7 +485,16 @@ class _TeacherManagementScreenState extends State<TeacherManagementScreen> {
                              ElevatedButton(
                                onPressed: () {
                                  Navigator.pop(ctx);
-                                 WhatsAppUtility.sendTeacherCredentials(context, teacher.mobile!, teacher.name, pinController.text);
+                                 final sender = context.read<AuthProvider>().currentUser?.name ?? 'Maktab Management';
+                                 WhatsAppUtility.sendTeacherCredentials(
+                                   context,
+                                   teacher.mobile!,
+                                   teacher.name,
+                                   pinController.text,
+                                   teacherId: teacher.id ?? 0,
+                                   mobile: teacher.mobile!,
+                                   senderName: sender,
+                                 );
                                },
                                child: const Text('Yes, Send'),
                              ),

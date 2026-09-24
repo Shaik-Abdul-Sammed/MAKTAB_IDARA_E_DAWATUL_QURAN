@@ -253,6 +253,7 @@ class _StudentPaymentHistoryScreenState extends State<StudentPaymentHistoryScree
               dateTime: formattedTime,
               collectorName: collectorName,
               languageCode: primaryStudent.preferredLanguage,
+              senderName: collectorName,
             );
             if (tx.payment.id != null) {
               await FeePaymentRepository().markReceiptSent(tx.payment.id!);
@@ -265,6 +266,7 @@ class _StudentPaymentHistoryScreenState extends State<StudentPaymentHistoryScree
               dateTime: formattedTime,
               collectorName: collectorName,
               languageCode: primaryStudent.preferredLanguage,
+              senderName: collectorName,
             );
             for (final pid in includedPaymentIds) {
               await FeePaymentRepository().markReceiptSent(pid);
@@ -293,6 +295,7 @@ class _StudentPaymentHistoryScreenState extends State<StudentPaymentHistoryScree
                     }
                   ],
             labels: labels,
+            senderName: collectorName,
           );
         },
       ),
@@ -403,6 +406,7 @@ class _StudentPaymentHistoryScreenState extends State<StudentPaymentHistoryScree
                                       dateTime: formattedTime,
                                       collectorName: collectorName,
                                       languageCode: tx.student.preferredLanguage,
+                                      senderName: collectorName,
                                     );
                                   },
                                   icon: const Icon(Icons.send_rounded, size: 14),

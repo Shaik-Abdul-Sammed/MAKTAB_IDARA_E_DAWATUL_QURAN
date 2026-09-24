@@ -10,8 +10,8 @@ class AiService {
   late GenerativeModel _model;
 
   AiService() {
-    // gemini-1.5-flash is extremely fast and capable of both text and vision
-    _model = GenerativeModel(model: 'gemini-1.5-flash', apiKey: _apiKey);
+    // gemini-2.0-flash is fast and capable of both text and vision
+    _model = GenerativeModel(model: 'gemini-2.0-flash', apiKey: _apiKey);
   }
 
   /// Analyzes a student's attendance and Quran progress and generates a constructive summary for parents.

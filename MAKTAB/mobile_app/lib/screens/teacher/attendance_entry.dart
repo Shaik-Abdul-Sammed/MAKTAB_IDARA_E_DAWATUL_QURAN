@@ -296,6 +296,7 @@ class _AttendanceEntryScreenState extends State<AttendanceEntryScreen>
           s.name,
           date: widget.date,
           languageCode: s.preferredLanguage,
+          senderName: _teacherName.isNotEmpty ? _teacherName : 'Maktab Management',
         );
         await Future.delayed(const Duration(milliseconds: 500));
       }
@@ -342,6 +343,7 @@ class _AttendanceEntryScreenState extends State<AttendanceEntryScreen>
                 present: present.map((s) => s.name).toList(),
                 absent: absent.map((s) => s.name).toList(),
                 labels: labels,
+                senderName: _teacherName.isNotEmpty ? _teacherName : 'Maktab Management',
               );
               await Printing.sharePdf(
                 bytes: bytes,
@@ -992,6 +994,7 @@ class _SummaryTile extends StatelessWidget {
               student.name,
               date: date,
               languageCode: student.preferredLanguage,
+              senderName: _teacherName.isNotEmpty ? _teacherName : 'Maktab Management',
             ),
           ),
         ]

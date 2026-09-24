@@ -79,7 +79,7 @@ class _QuranProgressSummaryScreenState extends State<QuranProgressSummaryScreen>
       backgroundColor: const Color(0xFFF9FBE7), // Cream background
       appBar: AppBar(
         title: const Text(
-          'Quran Progress Rate Overview',
+          'Sabaq Rate Overview',
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18, overflow: TextOverflow.ellipsis),
         ),
         flexibleSpace: Container(

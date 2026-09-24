@@ -57,7 +57,7 @@ class _TeacherAttendanceScreenState extends State<TeacherAttendanceScreen> {
     super.initState();
     _loadData();
     _syncSub = CloudSyncService.instance.onDataSynced.listen((col) {
-      if (col == 'teacher_attendance' || col == 'teachers') {
+      if ((col == 'teacher_attendance' || col == 'teachers') && !_isSaving) {
         _loadData();
       }
     });
@@ -73,6 +73,7 @@ class _TeacherAttendanceScreenState extends State<TeacherAttendanceScreen> {
   }
 
   Future<void> _loadData() async {
+    if (_isSaving) return;
     setState(() => _isLoading = true);
     try {
       final teachers = await _userRepository.getAllTeachers();
@@ -174,12 +175,13 @@ class _TeacherAttendanceScreenState extends State<TeacherAttendanceScreen> {
   Future<void> _saveAttendance() async {
     setState(() => _isSaving = true);
     final dateStr = DateFormat('yyyy-MM-dd').format(_selectedDate);
+    final attendanceSnapshot = Map<int, String>.from(_attendanceMap);
     try {
       final nowTime = DateFormat('hh:mm a').format(DateTime.now());
       for (final teacher in _teachers) {
         final tid = teacher.teacherId ?? teacher.id;
         if (tid == null) continue;
-        final status = _attendanceMap[tid] ?? 'Present';
+        final status = attendanceSnapshot[tid] ?? 'Present';
         final remarks = _remarksControllers[tid]?.text.trim();
         await _attendanceRepository.upsertAttendance(TeacherAttendance(
           teacherId: tid,   // canonical, not local
@@ -190,7 +192,10 @@ class _TeacherAttendanceScreenState extends State<TeacherAttendanceScreen> {
         ));
       }
       if (mounted) {
-        setState(() => _isSaving = false);
+        setState(() {
+          _attendanceMap = attendanceSnapshot;
+          _isSaving = false;
+        });
         _showPostSaveSummary(dateStr);
       }
     } catch (e) {
@@ -1073,7 +1078,8 @@ class _SummaryTeacherTile extends StatelessWidget {
             icon: const Icon(Icons.send_rounded, color: Colors.green, size: 20),
             tooltip: 'WhatsApp Teacher',
             onPressed: () async {
-              await WhatsAppUtility.sendAttendanceAlert(context, phone, teacher.name, date: dateStr);
+              final sender = context.read<AuthProvider>().currentUser?.name ?? 'Maktab Management';
+              await WhatsAppUtility.sendAttendanceAlert(context, phone, teacher.name, date: dateStr, senderName: sender);
             },
           ),
         ],

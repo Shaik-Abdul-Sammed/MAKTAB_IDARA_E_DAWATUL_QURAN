@@ -47,34 +47,40 @@ class TeacherQuickActions extends StatelessWidget {
         onTap: () => context.push('/teacher/attendance'),
       ),
       _ActionItem(
+        icon: Icons.groups_rounded,
+        label: 'Students',
+        color: const Color(0xFF00695C),
+        onTap: () => context.push('/teacher/students'),
+      ),
+      _ActionItem(
         icon: Icons.menu_book_rounded,
-        label: 'Log Quran\nProgress',
+        label: 'Log\nSabaq',
         color: const Color(0xFF1565C0),
         onTap: () => context.push('/teacher/quran_progress'),
       ),
       _ActionItem(
-        icon: Icons.checklist_rounded,
-        label: 'Submit\nChecklist',
-        color: const Color(0xFF388E3C),
-        onTap: () => context.push('/teacher/checklist'),
-      ),
-      _ActionItem(
-        icon: Icons.phone_in_talk_rounded,
-        label: 'Contact\nParents',
-        color: const Color(0xFFE65100),
-        onTap: () => _showParentContactSheet(context),
-      ),
-      _ActionItem(
-        icon: Icons.campaign_rounded,
-        label: 'Announce-\nments',
-        color: const Color(0xFF6A1B9A),
-        onTap: () => context.push('/teacher/announcements'),
-      ),
-      _ActionItem(
-        icon: Icons.groups_rounded,
+        icon: Icons.class_outlined,
         label: 'My\nBatches',
         color: AppColors.goldAccent,
         onTap: () => context.push('/teacher/batches'),
+      ),
+      _ActionItem(
+        icon: Icons.chat_bubble_outline_rounded,
+        label: 'Messages',
+        color: const Color(0xFF388E3C),
+        onTap: () => context.push('/teacher/messages'),
+      ),
+      _ActionItem(
+        icon: Icons.account_balance_wallet_rounded,
+        label: 'Fees',
+        color: const Color(0xFFE65100),
+        onTap: () => context.push('/teacher/fees'),
+      ),
+      _ActionItem(
+        icon: Icons.payments_rounded,
+        label: 'My Salary',
+        color: const Color(0xFF2E7D32),
+        onTap: () => context.push('/teacher/salary'),
       ),
     ];
   }

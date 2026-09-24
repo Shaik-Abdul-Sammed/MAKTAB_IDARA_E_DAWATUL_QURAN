@@ -308,7 +308,7 @@ class SettingsAboutScreen extends StatelessWidget {
               _buildGuideStep(
                 stepNumber: '3',
                 roleTitle: 'Parent & Communication',
-                instructions: 'Tap WhatsApp button next to student name to send attendance updates, monthly fee receipts, or Quran progress summaries.',
+                instructions: 'Tap WhatsApp button next to student name to send attendance updates, monthly fee receipts, or Sabaq summaries.',
                 badgeColor: const Color(0xFF388E3C),
               ),
 
