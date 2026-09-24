@@ -166,7 +166,7 @@ class _TeacherDetailsScreenState extends State<TeacherDetailsScreen> {
                                   pinController.text,
                                   teacherId: teacher.id ?? 0,
                                   mobile: teacher.mobile!,
-                                  languageCode: LanguageResolver.forUser(teacher),
+                                  languageCode: LanguageResolver.forUserDTO(teacher),
                                   senderName: sender,
                                 );
                               },

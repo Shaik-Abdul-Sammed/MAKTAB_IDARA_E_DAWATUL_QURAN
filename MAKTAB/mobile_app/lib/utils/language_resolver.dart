@@ -1,5 +1,6 @@
 import '../models/student.dart';
 import '../models/user.dart';
+import '../domain/dtos/user_dto.dart';
 
 class LanguageResolver {
   static const _supported = {'en', 'ur', 'hi', 'te'};
@@ -14,9 +15,15 @@ class LanguageResolver {
     return _supported.contains(lang) ? lang : 'en';
   }
 
-  static String forRecipient({Student? student, User? user}) {
+  static String forUserDTO(UserDTO user) {
+    final lang = user.preferredLanguage.trim().toLowerCase();
+    return _supported.contains(lang) ? lang : 'en';
+  }
+
+  static String forRecipient({Student? student, User? user, UserDTO? userDto}) {
     if (student != null) return forStudent(student);
     if (user != null) return forUser(user);
+    if (userDto != null) return forUserDTO(userDto);
     return 'en';
   }
 
