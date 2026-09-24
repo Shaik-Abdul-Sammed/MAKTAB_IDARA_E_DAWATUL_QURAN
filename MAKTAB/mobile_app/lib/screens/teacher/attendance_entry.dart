@@ -23,7 +23,6 @@ import '../../utils/language_resolver.dart';
 import '../../widgets/molecules/custom_app_bar.dart';
 import '../../widgets/shimmer_loader.dart';
 import '../../widgets/voice_attendance_dialog.dart';
-import '../../widgets/language_picker_dialog.dart';
 import '../../l10n/app_localizations.dart';
 
 class AttendanceEntryScreen extends StatefulWidget {

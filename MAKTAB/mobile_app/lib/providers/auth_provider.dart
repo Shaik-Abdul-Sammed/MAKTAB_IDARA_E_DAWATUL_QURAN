@@ -74,6 +74,10 @@ class AuthProvider with ChangeNotifier {
   }
 
   User? get currentUser => _currentUser;
+  void setUser(User? user) {
+    _currentUser = user;
+    notifyListeners();
+  }
   bool get isLoading => _isLoading;
   bool get isAuthenticated => _currentUser != null || (_fbAuth?.currentUser != null);
   bool get hasRegisteredAdminUser => _hasRegisteredAdmin;

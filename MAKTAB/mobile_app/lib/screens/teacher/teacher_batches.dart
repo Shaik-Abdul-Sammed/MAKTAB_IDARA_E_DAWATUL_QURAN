@@ -29,6 +29,7 @@ class _TeacherBatchesScreenState extends State<TeacherBatchesScreen> {
       final auth = Provider.of<AuthProvider>(context, listen: false);
       final user = auth.currentUser;
       final repo = BatchRepository();
+      final List<Batch> records;
       final tid = user?.teacherId ?? user?.id;
       if (user?.role == 'teacher' && tid != null) {
         records = await repo.fetchTeacherBatches(tid, user?.id);
