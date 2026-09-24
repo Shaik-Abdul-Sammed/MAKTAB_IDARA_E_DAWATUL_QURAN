@@ -280,7 +280,8 @@ class _TeacherManagementScreenState extends State<TeacherManagementScreen> {
     String? selectedPhotoPath = teacher.photoPath;
     
     // Find currently assigned batches for this teacher
-    List<int> initialBatchIds = _allBatches.where((b) => b.teacherId == teacher.id).map((b) => b.id!).toList();
+    final tid = teacher.teacherId ?? teacher.id;
+    List<int> initialBatchIds = _allBatches.where((b) => b.teacherId == tid || b.teacherId == teacher.id).map((b) => b.id!).toList();
     List<int> selectedBatchIds = List.from(initialBatchIds);
 
     Future<void> pickImage(StateSetter setState) async {
@@ -629,6 +630,24 @@ class _TeacherManagementScreenState extends State<TeacherManagementScreen> {
                               Text('Mobile: ${teacher.mobile ?? "N/A"}'),
                               const SizedBox(height: 2),
                               Text('Role: ${teacher.role}'),
+                              const SizedBox(height: 2),
+                              Builder(
+                                builder: (_) {
+                                  final assignedCount = _allBatches.where((b) =>
+                                      b.teacherId != null &&
+                                      (b.teacherId == (teacher.teacherId ?? teacher.id) || b.teacherId == teacher.id)).length;
+                                  return Text(
+                                    assignedCount == 0
+                                        ? 'No batches assigned'
+                                        : 'Batches: $assignedCount assigned',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w500,
+                                      color: assignedCount == 0 ? Colors.orange.shade800 : Colors.green.shade800,
+                                    ),
+                                  );
+                                },
+                              ),
                             ],
                           ),
                           trailing: Row(

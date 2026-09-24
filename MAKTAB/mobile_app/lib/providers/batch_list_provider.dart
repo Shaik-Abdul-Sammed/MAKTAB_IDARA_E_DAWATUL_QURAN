@@ -1,18 +1,21 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import '../models/batch.dart';
+import '../models/user.dart';
 import '../repositories/batch_repository.dart';
+import '../repositories/user_repository.dart';
 import '../services/cloud_sync_service.dart';
 
 enum BatchListStatus { initial, loading, success, error }
 
 class BatchListProvider extends ChangeNotifier {
   final BatchRepository _repo;
+  final UserRepository _userRepo = UserRepository();
   StreamSubscription<String>? _syncSub;
 
   BatchListProvider(this._repo) {
     _syncSub = CloudSyncService.instance.onDataSynced.listen((col) {
-      if (col == 'batches') {
+      if (col == 'batches' || col == 'teachers') {
         fetchBatches();
       }
     });
@@ -29,6 +32,15 @@ class BatchListProvider extends ChangeNotifier {
 
   List<Batch> _batches = [];
   List<Batch> get batches => List.unmodifiable(_batches);
+
+  List<User> _teachers = [];
+  List<User> get teachers => List.unmodifiable(_teachers);
+
+  String getTeacherName(int? teacherId) {
+    if (teacherId == null) return 'Unassigned';
+    final match = _teachers.where((t) => (t.teacherId ?? t.id) == teacherId || t.id == teacherId);
+    return match.isNotEmpty ? match.first.name : 'Unassigned';
+  }
 
   String _errorMessage = '';
   String get errorMessage => _errorMessage;
@@ -53,7 +65,12 @@ class BatchListProvider extends ChangeNotifier {
     _errorMessage = '';
     notifyListeners();
     try {
-      _batches = await _repo.getAllBatches();
+      final results = await Future.wait([
+        _repo.getAllBatches(),
+        _userRepo.getAllTeachers(),
+      ]);
+      _batches = results[0] as List<Batch>;
+      _teachers = results[1] as List<User>;
       _status = BatchListStatus.success;
     } catch (e) {
       _status = BatchListStatus.error;

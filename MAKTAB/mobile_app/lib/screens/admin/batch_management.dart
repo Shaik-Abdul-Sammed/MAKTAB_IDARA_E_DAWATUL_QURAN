@@ -43,9 +43,9 @@ class _BatchManagementScreenState extends State<BatchManagementScreen> {
   String _getTeacherName(int? teacherId) {
     if (teacherId == null) return 'Unassigned';
     try {
-      return _teachers.firstWhere((t) => t.id == teacherId).name;
-    } catch (e) {
-      return 'Unknown';
+      return _teachers.firstWhere((t) => (t.teacherId ?? t.id) == teacherId || t.id == teacherId).name;
+    } catch (_) {
+      return 'Unassigned';
     }
   }
 

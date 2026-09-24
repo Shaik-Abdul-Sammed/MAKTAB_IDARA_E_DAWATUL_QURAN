@@ -387,6 +387,7 @@ class _BatchTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final teacherName = context.watch<BatchListProvider>().getTeacherName(batch.teacherId);
     final initials = batch.name.isNotEmpty
         ? batch.name.trim().split(' ').map((e) => e.isNotEmpty ? e[0] : '').take(2).join().toUpperCase()
         : 'B';
@@ -441,6 +442,25 @@ class _BatchTile extends StatelessWidget {
                 ),
               ],
             ),
+            const SizedBox(height: 2),
+            Row(
+              children: [
+                const Icon(Icons.person_outline_rounded, size: 14, color: Color(0xFF004D40)),
+                const SizedBox(width: 4),
+                Expanded(
+                  child: Text(
+                    'Teacher: $teacherName',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: teacherName == 'Unassigned' ? Colors.orange.shade800 : Colors.black87,
+                      fontWeight: teacherName == 'Unassigned' ? FontWeight.w500 : FontWeight.normal,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ],
         ),
         trailing: Row(
@@ -449,18 +469,18 @@ class _BatchTile extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
               decoration: BoxDecoration(
-                color: batch.teacherId != null ? Colors.green.shade50 : Colors.orange.shade50,
+                color: teacherName != 'Unassigned' ? Colors.green.shade50 : Colors.orange.shade50,
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
-                  color: batch.teacherId != null ? Colors.green.shade300 : Colors.orange.shade300,
+                  color: teacherName != 'Unassigned' ? Colors.green.shade300 : Colors.orange.shade300,
                 ),
               ),
               child: Text(
-                batch.teacherId != null ? 'Assigned' : 'Unassigned',
+                teacherName != 'Unassigned' ? 'Assigned' : 'Unassigned',
                 style: TextStyle(
                   fontSize: 10,
                   fontWeight: FontWeight.bold,
-                  color: batch.teacherId != null ? Colors.green.shade700 : Colors.orange.shade700,
+                  color: teacherName != 'Unassigned' ? Colors.green.shade700 : Colors.orange.shade700,
                 ),
               ),
             ),

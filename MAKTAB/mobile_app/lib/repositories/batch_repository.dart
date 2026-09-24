@@ -38,13 +38,22 @@ class BatchRepository {
 
   /// Returns batches where batches.teacher_id = [teacherId].
   /// Returns only batches assigned to [teacherId].
-  Future<List<Batch>> fetchTeacherBatches(int teacherId) async {
+  Future<List<Batch>> fetchTeacherBatches(int teacherId, [int? alternateTeacherId]) async {
     final db = await _dbHelper.database;
-    final List<Map<String, dynamic>> maps = await db.query(
-      'batches',
-      where: 'teacher_id = ?',
-      whereArgs: [teacherId],
-    );
+    final List<Map<String, dynamic>> maps;
+    if (alternateTeacherId != null && alternateTeacherId != teacherId) {
+      maps = await db.query(
+        'batches',
+        where: 'teacher_id = ? OR teacher_id = ?',
+        whereArgs: [teacherId, alternateTeacherId],
+      );
+    } else {
+      maps = await db.query(
+        'batches',
+        where: 'teacher_id = ?',
+        whereArgs: [teacherId],
+      );
+    }
     return List.generate(maps.length, (i) => Batch.fromMap(maps[i]));
   }
 
