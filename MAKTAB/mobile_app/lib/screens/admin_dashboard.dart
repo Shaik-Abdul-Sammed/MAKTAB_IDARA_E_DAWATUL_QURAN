@@ -1121,6 +1121,13 @@ class _AdminDashboardState extends State<AdminDashboard>
                           iconColor: AppIcons.whatsappGreen,
                           bgColor: Colors.white,
                         ),
+                        _buildFeatureCard(context,
+                          title: 'Quick Send',
+                          icon: Icons.send_rounded,
+                          route: AppRoutes.adminQuickSend,
+                          iconColor: const Color(0xFF00897B),
+                          bgColor: Colors.white,
+                        ),
                       ]),
                       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                         crossAxisCount: isTablet ? 5 : 4,

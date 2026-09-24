@@ -82,6 +82,12 @@ class TeacherQuickActions extends StatelessWidget {
         color: const Color(0xFF2E7D32),
         onTap: () => context.push('/teacher/salary'),
       ),
+      _ActionItem(
+        icon: Icons.send_rounded,
+        label: 'Quick\nSend',
+        color: const Color(0xFF00897B),
+        onTap: () => context.push('/teacher/quick-send'),
+      ),
     ];
   }
 

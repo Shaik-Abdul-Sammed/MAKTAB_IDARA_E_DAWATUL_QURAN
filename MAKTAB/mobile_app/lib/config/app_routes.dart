@@ -24,6 +24,7 @@ class AppRoutes {
   static const String adminToolsWhatsApp = '/admin/tools/whatsapp';
   static const String adminToolsCalendar = '/admin/tools/calendar';
   static const String adminToolsContacts = '/admin/tools/contacts';
+  static const String adminQuickSend = '/admin/quick-send';
 
   static const String adminAttendance = '/admin/attendance';
   static const String adminQuranProgress = '/admin/quran_progress';
@@ -65,4 +66,5 @@ class AppRoutes {
   static const String teacherSupport = '/teacher/support';
   static const String teacherProfile = '/teacher/profile';
   static const String teacherSettings = '/teacher/settings';
+  static const String teacherQuickSend = '/teacher/quick-send';
 }
