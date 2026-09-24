@@ -22,6 +22,7 @@ import '../../utils/receipt_pdf_generator.dart';
 import '../../widgets/molecules/custom_app_bar.dart';
 import '../../widgets/shimmer_loader.dart';
 import '../../widgets/voice_attendance_dialog.dart';
+import '../../widgets/language_picker_dialog.dart';
 import '../../l10n/app_localizations.dart';
 
 class AttendanceEntryScreen extends StatefulWidget {
@@ -287,6 +288,8 @@ class _AttendanceEntryScreenState extends State<AttendanceEntryScreen>
 
   // ── #14: Bulk notify absent parents
   Future<void> _bulkNotifyAbsent(BuildContext ctx, List<Student> students) async {
+    final lang = await LanguagePickerDialog.show(ctx);
+    if (lang == null) return;
     for (final s in students) {
       final phone = s.phone ?? s.guardianPhone ?? '';
       if (phone.isNotEmpty && ctx.mounted) {
@@ -295,7 +298,7 @@ class _AttendanceEntryScreenState extends State<AttendanceEntryScreen>
           phone,
           s.name,
           date: widget.date,
-          languageCode: s.preferredLanguage,
+          languageCode: lang,
           senderName: _teacherName.isNotEmpty ? _teacherName : 'Maktab Management',
         );
         await Future.delayed(const Duration(milliseconds: 500));
@@ -988,14 +991,17 @@ class _SummaryTile extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.message, color: Colors.green, size: 20),
             tooltip: 'WhatsApp Parent',
-            onPressed: () => WhatsAppUtility.sendAttendanceAlert(
-              context,
-              parentMobile,
-              student.name,
-              date: date,
-              languageCode: student.preferredLanguage,
-              senderName: _teacherName.isNotEmpty ? _teacherName : 'Maktab Management',
-            ),
+            onPressed: () {
+              final sender = context.read<AuthProvider>().currentUser?.name ?? 'Maktab Management';
+              WhatsAppUtility.sendAttendanceAlert(
+                context,
+                parentMobile,
+                student.name,
+                date: date,
+                languageCode: student.preferredLanguage,
+                senderName: sender,
+              );
+            },
           ),
         ]
       ]),

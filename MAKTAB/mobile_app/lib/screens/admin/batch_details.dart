@@ -88,13 +88,20 @@ class _BatchDetailsScreenState extends State<BatchDetailsScreen> {
     if (lang == null || !mounted) return;
 
     final sender = context.read<AuthProvider>().currentUser?.name ?? 'Maktab Management';
-    await WhatsAppUtility.sendBatchNotice(
-      context,
-      batchName: batch.name,
-      timing: batch.timing,
-      languageCode: lang,
-      senderName: sender,
-    );
+    for (final s in students) {
+      final phone = s.phone ?? s.guardianPhone ?? '';
+      if (phone.isNotEmpty && mounted) {
+        await WhatsAppUtility.sendBatchNotice(
+          context,
+          batchName: batch.name,
+          timing: batch.timing,
+          phone: phone,
+          languageCode: lang,
+          senderName: sender,
+        );
+        await Future.delayed(const Duration(milliseconds: 500));
+      }
+    }
   }
 
   @override

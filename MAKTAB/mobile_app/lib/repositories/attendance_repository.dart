@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:intl/intl.dart';
 import 'package:maktab_app/models/attendance.dart';
 import 'package:maktab_app/services/database_helper.dart';
 import 'package:maktab_app/services/cloud_sync_service.dart';
@@ -212,5 +213,94 @@ class AttendanceRepository {
       }
     }
     return result;
+  }
+
+  Future<Map<int, Map<String, int>>> getAttendanceSummaryByBatch({
+    required DateTime fromDate,
+    required DateTime toDate,
+  }) async {
+    final fromStr = DateFormat('yyyy-MM-dd').format(fromDate);
+    final toStr = DateFormat('yyyy-MM-dd').format(toDate);
+    final db = await _dbHelper.database;
+    final rows = await db.rawQuery('''
+      SELECT
+        s.batch_id,
+        COUNT(DISTINCT s.id) as total_students,
+        COUNT(CASE WHEN a.status = 'Present' THEN 1 END) as present_count,
+        COUNT(CASE WHEN a.status = 'Absent' THEN 1 END) as absent_count,
+        COUNT(CASE WHEN a.status = 'Late' THEN 1 END) as late_count,
+        COUNT(CASE WHEN a.status = 'Leave' THEN 1 END) as leave_count,
+        COUNT(a.id) as total_records
+      FROM batches b
+      JOIN students s ON s.batch_id = b.id AND (s.is_deleted IS NULL OR s.is_deleted = 0)
+      LEFT JOIN attendance a ON a.student_id = s.id AND substr(a.date, 1, 10) >= ? AND substr(a.date, 1, 10) <= ?
+      GROUP BY s.batch_id
+    ''', [fromStr, toStr]);
+
+    final Map<int, Map<String, int>> result = {};
+    for (final row in rows) {
+      final batchId = row['batch_id'] as int?;
+      if (batchId != null) {
+        result[batchId] = {
+          'total': (row['total_students'] as int?) ?? 0,
+          'present': (row['present_count'] as int?) ?? 0,
+          'absent': (row['absent_count'] as int?) ?? 0,
+          'late': (row['late_count'] as int?) ?? 0,
+          'leave': (row['leave_count'] as int?) ?? 0,
+          'total_records': (row['total_records'] as int?) ?? 0,
+        };
+      }
+    }
+    return result;
+  }
+
+  Future<List<Map<String, dynamic>>> getStudentAttendanceSummary({
+    required int batchId,
+    required DateTime fromDate,
+    required DateTime toDate,
+  }) async {
+    final fromStr = DateFormat('yyyy-MM-dd').format(fromDate);
+    final toStr = DateFormat('yyyy-MM-dd').format(toDate);
+    final db = await _dbHelper.database;
+    final rows = await db.rawQuery('''
+      SELECT
+        s.id as student_id,
+        s.name as student_name,
+        s.admission_number,
+        COUNT(CASE WHEN a.status = 'Present' THEN 1 END) as present,
+        COUNT(CASE WHEN a.status = 'Absent' THEN 1 END) as absent,
+        COUNT(CASE WHEN a.status = 'Late' THEN 1 END) as late,
+        COUNT(CASE WHEN a.status = 'Leave' THEN 1 END) as leave,
+        COUNT(a.id) as total_marked
+      FROM students s
+      LEFT JOIN attendance a ON a.student_id = s.id AND substr(a.date, 1, 10) >= ? AND substr(a.date, 1, 10) <= ?
+      WHERE s.batch_id = ? AND (s.is_deleted IS NULL OR s.is_deleted = 0)
+      GROUP BY s.id
+      ORDER BY s.name ASC
+    ''', [fromStr, toStr, batchId]);
+
+    return rows.map((r) => Map<String, dynamic>.from(r)).toList();
+  }
+
+  Future<List<Map<String, dynamic>>> getStudentDailyAttendance({
+    required int studentId,
+    required DateTime fromDate,
+    required DateTime toDate,
+  }) async {
+    final fromStr = DateFormat('yyyy-MM-dd').format(fromDate);
+    final toStr = DateFormat('yyyy-MM-dd').format(toDate);
+    final db = await _dbHelper.database;
+    final rows = await db.rawQuery('''
+      SELECT
+        a.id,
+        substr(a.date, 1, 10) as date,
+        a.status,
+        a.remarks
+      FROM attendance a
+      WHERE a.student_id = ? AND substr(a.date, 1, 10) >= ? AND substr(a.date, 1, 10) <= ?
+      ORDER BY a.date DESC
+    ''', [studentId, fromStr, toStr]);
+
+    return rows.map((r) => Map<String, dynamic>.from(r)).toList();
   }
 }

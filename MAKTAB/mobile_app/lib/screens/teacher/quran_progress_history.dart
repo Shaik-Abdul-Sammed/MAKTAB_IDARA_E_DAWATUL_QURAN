@@ -5,7 +5,10 @@ import 'package:maktab_app/services/cloud_sync_service.dart';
 import 'package:maktab_app/screens/teacher/quran_progress_entry.dart';
 import '../../providers/auth_provider.dart';
 import '../../../models/quran_progress.dart';
+import '../../../models/student.dart';
 import '../../../repositories/quran_progress_repository.dart';
+import '../../../repositories/student_repository.dart';
+import '../../../utils/whatsapp_utility.dart';
 
 class QuranProgressHistoryScreen extends StatefulWidget {
   const QuranProgressHistoryScreen({super.key});
@@ -45,6 +48,163 @@ class _QuranProgressHistoryScreenState extends State<QuranProgressHistoryScreen>
         setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error loading data: $e')));
       }
+    }
+  }
+
+  Future<void> _sendSabaqToParent(QuranProgress entry) async {
+    final auth = Provider.of<AuthProvider>(context, listen: false);
+    final student = await StudentRepository().getStudentById(entry.studentId);
+    if (student == null) return;
+    final phone = student.guardianPhone ?? student.phone ?? '';
+    if (phone.trim().isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No parent contact number on record.')),
+        );
+      }
+      return;
+    }
+
+    final senderName = auth.currentUser?.name ?? 'Maktab Management';
+    const maktabName = 'MAKTAB IDARA E DAWATUL QURAN';
+    final remarks = (entry.remarks ?? '').trim();
+
+    final msg = '''
+بسم الله الرحمن الرحيم
+
+السلام عليكم ورحمة الله وبركاته
+
+Respected Parent/Guardian,
+
+We are pleased to share today's Sabaq progress for your child, *${student.name}* (Adm. No. ${student.admissionNumber}).
+
+━━━━━━━━━━━━━━━━━━━━
+📖 *Sabaq Details*
+━━━━━━━━━━━━━━━━━━━━
+• *Surah:* ${entry.surah}
+• *Ayah:* ${entry.ayahFrom}–${entry.ayahTo}
+• *Type:* ${entry.recitationType}
+• *Grade:* ${entry.grade}
+• *Date:* ${entry.date}
+
+━━━━━━━━━━━━━━━━━━━━
+📝 *Teacher's Note*
+━━━━━━━━━━━━━━━━━━━━
+${remarks.isEmpty ? 'Alhamdulillah, the recitation was completed with focus and care.' : remarks}
+
+We encourage you to review this portion with your child at home and continue the daily revision practice.
+
+May Allah bless your child with steadfastness in learning the Qur'an.
+
+جزاك الله خيرًا
+
+Warm regards,
+*$senderName*
+$maktabName
+''';
+
+    if (!mounted) return;
+    await WhatsAppUtility.launchWhatsApp(phone, msg, context: context);
+  }
+
+  Future<void> _sendDailyProgressToParents() async {
+    final auth = Provider.of<AuthProvider>(context, listen: false);
+    final canonicalTeacherId = auth.currentUser?.teacherId ?? auth.currentUser?.id;
+    if (canonicalTeacherId == null) return;
+    final todayStr = DateTime.now().toIso8601String().split('T').first;
+
+    final allProgress = await QuranProgressRepository().getProgressByTeacher(canonicalTeacherId);
+    final todayEntries = allProgress.where((p) => p.date == todayStr).toList();
+
+    if (todayEntries.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No Sabaq entries recorded for today.')),
+        );
+      }
+      return;
+    }
+
+    final senderName = auth.currentUser?.name ?? 'Maktab Management';
+    const maktabName = 'MAKTAB IDARA E DAWATUL QURAN';
+    final studentRepo = StudentRepository();
+    final Map<String, List<Map<String, dynamic>>> groupedByPhone = {};
+
+    for (final entry in todayEntries) {
+      final student = await studentRepo.getStudentById(entry.studentId);
+      if (student == null) continue;
+      final phone = (student.guardianPhone ?? student.phone ?? '').trim();
+      if (phone.isEmpty) continue;
+
+      groupedByPhone.putIfAbsent(phone, () => []).add({
+        'student': student,
+        'entry': entry,
+      });
+    }
+
+    if (groupedByPhone.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No valid parent phone numbers found for today\'s entries.')),
+        );
+      }
+      return;
+    }
+
+    for (final group in groupedByPhone.entries) {
+      final phone = group.key;
+      final items = group.value;
+
+      final sections = <String>[];
+      for (final item in items) {
+        final student = item['student'] as Student;
+        final p = item['entry'] as QuranProgress;
+        final remarks = (p.remarks ?? '').trim();
+        final note = remarks.isEmpty
+            ? 'Alhamdulillah, the recitation was completed with focus and care.'
+            : remarks;
+
+        sections.add('''Child: *${student.name}* (Adm. No. ${student.admissionNumber})
+━━━━━━━━━━━━━━━━━━━━
+📖 *Sabaq Details*
+━━━━━━━━━━━━━━━━━━━━
+• *Surah:* ${p.surah}
+• *Ayah:* ${p.ayahFrom}–${p.ayahTo}
+• *Type:* ${p.recitationType}
+• *Grade:* ${p.grade}
+• *Date:* ${p.date}
+
+━━━━━━━━━━━━━━━━━━━━
+📝 *Teacher's Note*
+━━━━━━━━━━━━━━━━━━━━
+$note''');
+      }
+
+      final msg = '''
+بسم الله الرحمن الرحيم
+
+السلام عليكم ورحمة الله وبركاته
+
+Respected Parent/Guardian,
+
+We are pleased to share today's Sabaq progress for your child${items.length > 1 ? 'ren' : ''}:
+
+${sections.join('\n\n')}
+
+We encourage you to review this portion with your child at home and continue the daily revision practice.
+
+May Allah bless your child with steadfastness in learning the Qur'an.
+
+جزاك الله خيرًا
+
+Warm regards,
+*$senderName*
+$maktabName
+''';
+
+      if (!mounted) return;
+      await WhatsAppUtility.launchWhatsApp(phone, msg, context: context);
+      await Future.delayed(const Duration(milliseconds: 500));
     }
   }
 
@@ -123,6 +283,13 @@ class _QuranProgressHistoryScreenState extends State<QuranProgressHistoryScreen>
         backgroundColor: Colors.transparent,
         iconTheme: const IconThemeData(color: Colors.white),
         centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.send_to_mobile),
+            tooltip: 'Send Today\'s Sabaq to Parents',
+            onPressed: _sendDailyProgressToParents,
+          ),
+        ],
       ),
       body: SafeArea(
         child: Column(
@@ -252,7 +419,17 @@ class _QuranProgressHistoryScreenState extends State<QuranProgressHistoryScreen>
                                           ],
                                         ),
                                         subtitle: Text('Date: ${item.date} | Ayah: ${item.ayahFrom}–${item.ayahTo} | Grade: ${item.grade}'),
-                                        trailing: const Icon(Icons.chevron_right),
+                                        trailing: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            IconButton(
+                                              icon: const Icon(Icons.send_rounded, color: Color(0xFF004D40)),
+                                              tooltip: 'Send Sabaq Update to Parent',
+                                              onPressed: () => _sendSabaqToParent(item),
+                                            ),
+                                            const Icon(Icons.chevron_right),
+                                          ],
+                                        ),
                                         onLongPress: () => _showDetailSheet(item),
                                         onTap: () async {
                                           final changed = await Navigator.push<bool>(

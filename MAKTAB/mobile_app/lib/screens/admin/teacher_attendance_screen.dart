@@ -11,6 +11,8 @@ import 'package:maktab_app/models/teacher_attendance.dart';
 import 'package:maktab_app/repositories/user_repository.dart';
 import 'package:maktab_app/repositories/teacher_attendance_repository.dart';
 import 'package:maktab_app/services/cloud_sync_service.dart';
+import 'package:provider/provider.dart';
+import 'package:maktab_app/providers/auth_provider.dart';
 import 'package:maktab_app/utils/whatsapp_utility.dart';
 import 'package:maktab_app/widgets/voice_attendance_dialog.dart';
 

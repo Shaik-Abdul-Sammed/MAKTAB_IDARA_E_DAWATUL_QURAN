@@ -106,8 +106,11 @@ class _QuranProgressEntryScreenState extends State<QuranProgressEntryScreen> {
         }
         setState(() => _isListening = false);
       },
+      // ignore: deprecated_member_use
       localeId: 'en_IN',
+      // ignore: deprecated_member_use
       listenFor: const Duration(seconds: 30),
+      // ignore: deprecated_member_use
       pauseFor: const Duration(seconds: 4),
     );
   }
@@ -179,8 +182,8 @@ class _QuranProgressEntryScreenState extends State<QuranProgressEntryScreen> {
         backgroundColor: const Color(0xFFF9FBE7),
         appBar: CustomAppBar(
           title: widget.existing != null
-              ? 'Edit Quran Progress'
-              : (widget.studentName != null ? 'Log Progress: ${widget.studentName}' : 'Log Quran Progress'),
+              ? 'Edit Sabaq'
+              : (widget.studentName != null ? 'Log Sabaq: ${widget.studentName}' : 'Log Sabaq'),
         ),
         body: SafeArea(
           child: SingleChildScrollView(
@@ -191,7 +194,7 @@ class _QuranProgressEntryScreenState extends State<QuranProgressEntryScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const _SectionTitle('Recitation Details'),
+                  const _SectionTitle('Sabaq Details'),
                   const SizedBox(height: 10),
                   SizedBox(
                     width: double.infinity,
@@ -210,41 +213,28 @@ class _QuranProgressEntryScreenState extends State<QuranProgressEntryScreen> {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  Builder(
-                    builder: (context) {
-                      final surahValue = _surahCtrl.text.isNotEmpty ? _surahCtrl.text : _surahPresets.first;
-                      final effectiveValue = _surahPresets.contains(surahValue) ? surahValue : _surahPresets.first;
-                      return DropdownButtonFormField<String>(
-                        initialValue: effectiveValue,
-                        decoration: InputDecoration(
-                          labelText: 'Surah Name',
-                          prefixIcon: const Icon(Icons.menu_book_outlined, color: Color(0xFF004D40), size: 20),
-                          filled: true,
-                          fillColor: Colors.white,
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(color: Color(0xFFD8E8D5), width: 1.2),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextFormField(
+                          controller: _surahCtrl,
+                          decoration: const InputDecoration(
+                            labelText: 'Surah',
+                            hintText: 'e.g. Al-Fatiha',
+                            prefixIcon: Icon(Icons.menu_book_outlined),
+                            border: OutlineInputBorder(),
                           ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(color: Color(0xFF004D40), width: 1.5),
-                          ),
+                          textCapitalization: TextCapitalization.words,
                         ),
-                        items: _surahPresets.toSet().map((preset) {
-                          return DropdownMenuItem<String>(
-                            value: preset,
-                            child: Text(preset, style: const TextStyle(fontSize: 14)),
-                          );
-                        }).toList(),
-                        onChanged: (val) {
-                          if (val != null) {
-                            setState(() => _surahCtrl.text = val);
-                          }
-                        },
-                      );
-                    },
+                      ),
+                      const SizedBox(width: 8),
+                      IconButton.filled(
+                        icon: Icon(_isListening ? Icons.mic : Icons.mic_none),
+                        style: IconButton.styleFrom(backgroundColor: const Color(0xFF004D40)),
+                        onPressed: _toggleVoiceInput,
+                        tooltip: 'Speak Surah and remarks',
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 20),
 
@@ -324,7 +314,7 @@ class _QuranProgressEntryScreenState extends State<QuranProgressEntryScreen> {
                       ),
                       const SizedBox(width: 8),
                       IconButton(
-                        onPressed: _toggleListen,
+                        onPressed: _toggleVoiceInput,
                         style: IconButton.styleFrom(
                           backgroundColor: _isListening ? Colors.red : const Color(0xFF004D40),
                           foregroundColor: Colors.white,
@@ -354,18 +344,18 @@ class _QuranProgressEntryScreenState extends State<QuranProgressEntryScreen> {
                                 height: 22,
                                 child: CircularProgressIndicator(color: Color(0xFF004D40), strokeWidth: 2.5),
                               )
-                            : const Text('Save Recitation Entry', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                            : const Text('Save Sabaq Entry', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                       ),
                     ),
                   ),
                   const SizedBox(height: 24),
 
-                  const _SectionTitle('Recent Recitation History'),
+                  const _SectionTitle('Recent Sabaq History'),
                   const SizedBox(height: 12),
                   Consumer<QuranProgressProvider>(
                     builder: (_, p, _) {
                       if (p.progressHistory.isEmpty) {
-                        return const Text('No past recitation logs recorded.', style: TextStyle(fontSize: 12, color: Colors.black45));
+                        return const Text('No past Sabaq logs recorded.', style: TextStyle(fontSize: 12, color: Colors.black45));
                       }
                       return ListView.builder(
                         shrinkWrap: true,

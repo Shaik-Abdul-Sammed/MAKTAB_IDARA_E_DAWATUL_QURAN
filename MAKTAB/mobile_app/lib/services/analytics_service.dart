@@ -222,13 +222,13 @@ class AnalyticsService {
               alerts.add(AnomalyAlert(
                 id: 'quran_stagnation_${studentId}_$daysDiff',
                 type: AnomalyType.quranStagnation,
-                title: '$studentName — Quran Progress Inactive ($daysDiff days)',
+                title: '$studentName — Sabaq Inactive ($daysDiff days)',
                 subtitle: 'No new progress recorded since $lastEntryDateStr (Last: $surah)',
                 severity: daysDiff >= 21 ? AlertSeverity.critical : AlertSeverity.warning,
                 studentId: studentId,
                 studentName: studentName,
                 batchName: batchName,
-                details: 'No Quran progress update submitted for $daysDiff days.',
+                details: 'No Sabaq update submitted for $daysDiff days.',
                 timestamp: now.toIso8601String(),
               ));
             }

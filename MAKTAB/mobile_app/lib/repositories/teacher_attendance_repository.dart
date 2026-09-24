@@ -1,3 +1,4 @@
+import 'package:intl/intl.dart';
 import 'package:maktab_app/models/teacher_attendance.dart';
 import 'package:maktab_app/services/database_helper.dart';
 import 'package:maktab_app/services/cloud_sync_service.dart';
@@ -145,5 +146,28 @@ class TeacherAttendanceRepository {
       INNER JOIN users u ON ta.teacher_id = u.id
       WHERE ta.date = ?
     ''', [date]);
+  }
+
+  Future<List<Map<String, dynamic>>> getTeacherDailyAttendance({
+    required int teacherId,
+    required DateTime fromDate,
+    required DateTime toDate,
+  }) async {
+    final fromStr = DateFormat('yyyy-MM-dd').format(fromDate);
+    final toStr = DateFormat('yyyy-MM-dd').format(toDate);
+    final db = await _dbHelper.database;
+    final rows = await db.rawQuery('''
+      SELECT
+        id,
+        substr(date, 1, 10) as date,
+        status,
+        remarks,
+        time
+      FROM teacher_attendance
+      WHERE teacher_id = ? AND substr(date, 1, 10) >= ? AND substr(date, 1, 10) <= ?
+      ORDER BY date DESC
+    ''', [teacherId, fromStr, toStr]);
+
+    return rows.map((r) => Map<String, dynamic>.from(r)).toList();
   }
 }

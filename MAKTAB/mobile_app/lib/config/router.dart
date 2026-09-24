@@ -43,6 +43,7 @@ import 'package:maktab_app/screens/teacher/teacher_salary_screen.dart';
 import 'package:maktab_app/screens/teacher/attendance_history.dart';
 import 'package:maktab_app/screens/reports/reports_dashboard.dart';
 import 'package:maktab_app/screens/reports/student_academic_history.dart';
+import 'package:maktab_app/screens/reports/attendance_reports_screen.dart';
 import 'package:maktab_app/screens/admin/batch_attendance_selection.dart';
 import 'package:maktab_app/screens/syllabus/syllabus_hub.dart';
 import 'package:maktab_app/screens/syllabus/study_guidelines.dart';
@@ -355,6 +356,10 @@ class AppRouter {
             path: 'reports',
             builder: (context, state) => ReportsDashboard(),
             routes: [
+              GoRoute(
+                path: 'attendance',
+                builder: (context, state) => const AttendanceReportsScreen(),
+              ),
               GoRoute(
                 path: 'academic',
                 builder: (context, state) => const StudentAcademicHistoryScreen(),
