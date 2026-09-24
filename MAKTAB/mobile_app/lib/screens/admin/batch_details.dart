@@ -13,7 +13,6 @@ import '../../widgets/molecules/confirm_dialog.dart';
 import '../../widgets/molecules/custom_app_bar.dart';
 import '../../utils/whatsapp_utility.dart';
 import '../../utils/language_resolver.dart';
-import '../../widgets/language_picker_dialog.dart';
 import '../../providers/auth_provider.dart';
 
 class BatchDetailsScreen extends StatefulWidget {
@@ -83,6 +82,7 @@ class _BatchDetailsScreenState extends State<BatchDetailsScreen> {
     if (students.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No students in batch.')));
       return;
+    }
     final sender = context.read<AuthProvider>().currentUser?.name ?? 'Maktab Management';
     for (final s in students) {
       final phone = s.phone ?? s.guardianPhone ?? '';
