@@ -881,14 +881,14 @@ class _AdminDashboardState extends State<AdminDashboard>
                         physics: const BouncingScrollPhysics(),
                         child: Row(
                           children: [
-                            SizedBox(width: cardWidth, child: _buildStatCard('Students', _totalStudents, AppIcons.students, AppColors.primaryTeal)),
+                            SizedBox(width: cardWidth, child: _buildStatCard(loc?.translate('students') ?? 'Students', _totalStudents, AppIcons.students, AppColors.primaryTeal)),
                             const SizedBox(width: 8),
-                            SizedBox(width: cardWidth, child: _buildStatCard('Teachers', _totalTeachers, AppIcons.teachers, const Color(0xFF1976D2))),
+                            SizedBox(width: cardWidth, child: _buildStatCard(loc?.translate('teachers') ?? 'Teachers', _totalTeachers, AppIcons.teachers, const Color(0xFF1976D2))),
                             const SizedBox(width: 8),
-                            SizedBox(width: cardWidth, child: _buildStatCard('Batches', _totalBatches, AppIcons.batches, const Color(0xFF388E3C))),
+                            SizedBox(width: cardWidth, child: _buildStatCard(loc?.translate('batches') ?? 'Batches', _totalBatches, AppIcons.batches, const Color(0xFF388E3C))),
                             if (isTablet) ...[
                               const SizedBox(width: 8),
-                              SizedBox(width: cardWidth, child: _buildStatCard('Attendance', 0, Icons.how_to_reg_rounded, const Color(0xFF7B1FA2))),
+                              SizedBox(width: cardWidth, child: _buildStatCard(loc?.translate('attendance') ?? 'Attendance', 0, Icons.how_to_reg_rounded, const Color(0xFF7B1FA2))),
                             ],
                           ],
                         ),
@@ -908,7 +908,7 @@ class _AdminDashboardState extends State<AdminDashboard>
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
-                  child: _sectionHeader('Core Management', Icons.manage_accounts_rounded),
+                  child: _sectionHeader(loc?.translate('core_management') ?? 'Core Management', Icons.manage_accounts_rounded),
                 ),
               ),
               SliverPadding(
