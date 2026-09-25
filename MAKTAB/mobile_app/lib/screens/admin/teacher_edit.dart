@@ -1,6 +1,10 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart' as p;
 import 'package:provider/provider.dart';
 import '../../domain/dtos/user_dto.dart';
 import '../../providers/auth_provider.dart';
@@ -25,6 +29,7 @@ class _TeacherEditScreenState extends State<TeacherEditScreen> {
   bool _pinObscured = true;
   bool _changePin = false;
   late String _selectedLanguage;
+  String? _selectedPhotoPath;
 
   @override
   void initState() {
@@ -34,6 +39,7 @@ class _TeacherEditScreenState extends State<TeacherEditScreen> {
     _mobileCtrl = TextEditingController(text: widget.teacher.mobile ?? '');
     _pinCtrl = TextEditingController();
     _selectedLanguage = widget.teacher.preferredLanguage;
+    _selectedPhotoPath = widget.teacher.photoPath;
   }
 
   @override
@@ -45,6 +51,19 @@ class _TeacherEditScreenState extends State<TeacherEditScreen> {
     super.dispose();
   }
 
+  Future<void> _pickImage() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      final directory = await getApplicationDocumentsDirectory();
+      final fileName = p.basename(pickedFile.path);
+      final savedImage = await File(pickedFile.path).copy('${directory.path}/$fileName');
+      setState(() {
+        _selectedPhotoPath = savedImage.path;
+      });
+    }
+  }
+
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     final result = await _provider.updateTeacher(
@@ -52,6 +71,7 @@ class _TeacherEditScreenState extends State<TeacherEditScreen> {
       name: _nameCtrl.text,
       mobile: _mobileCtrl.text,
       newPin: _changePin ? _pinCtrl.text : null,
+      photoPath: _selectedPhotoPath,
       preferredLanguage: _selectedLanguage,
       authProvider: context.read<AuthProvider>(),
     );
@@ -201,6 +221,8 @@ class _TeacherEditScreenState extends State<TeacherEditScreen> {
     final initials = widget.teacher.name.isNotEmpty
         ? widget.teacher.name.trim().split(' ').map((e) => e.isNotEmpty ? e[0] : '').take(2).join().toUpperCase()
         : 'T'; // ignore: avoid_empty_else
+    final photoFile = _selectedPhotoPath != null && _selectedPhotoPath!.isNotEmpty ? File(_selectedPhotoPath!) : null;
+    final hasPhoto = photoFile != null && photoFile.existsSync();
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -210,13 +232,35 @@ class _TeacherEditScreenState extends State<TeacherEditScreen> {
       ),
       child: Row(
         children: [
-          Hero(
-            tag: 'teacher_avatar_${widget.teacher.id}',
-            child: CircleAvatar(
-              radius: 30,
-              child: Text(initials,
-                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18, overflow: TextOverflow.ellipsis)),
-            ),
+          Column(
+            children: [
+              Hero(
+                tag: 'teacher_avatar_${widget.teacher.id}',
+                child: GestureDetector(
+                  onTap: _pickImage,
+                  child: CircleAvatar(
+                    radius: 28,
+                    backgroundImage: hasPhoto ? FileImage(photoFile) : null,
+                    child: hasPhoto
+                        ? null
+                        : Text(initials,
+                            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextButton.icon(
+                onPressed: _pickImage,
+                icon: const Icon(Icons.add_a_photo, size: 14),
+                label: const Text('Change Photo', style: TextStyle(fontSize: 12)),
+                style: TextButton.styleFrom(
+                  foregroundColor: const Color(0xFF004D40),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+              ),
+            ],
           ),
           const SizedBox(width: 16),
           Expanded(

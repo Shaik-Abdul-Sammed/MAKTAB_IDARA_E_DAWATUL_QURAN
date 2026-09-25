@@ -1,6 +1,10 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart' as p;
 import 'package:maktab_app/utils/whatsapp_utility.dart';
 import '../../utils/language_resolver.dart';
 import 'package:provider/provider.dart';
@@ -30,6 +34,20 @@ class _TeacherAddScreenState extends State<TeacherAddScreen> {
   bool _pinObscured = true;
   bool _confirmPinObscured = true;
   String _selectedLanguage = 'en';
+  String? _selectedPhotoPath;
+
+  Future<void> _pickImage() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      final directory = await getApplicationDocumentsDirectory();
+      final fileName = p.basename(pickedFile.path);
+      final savedImage = await File(pickedFile.path).copy('${directory.path}/$fileName');
+      setState(() {
+        _selectedPhotoPath = savedImage.path;
+      });
+    }
+  }
 
   @override
   void initState() {
@@ -112,6 +130,7 @@ class _TeacherAddScreenState extends State<TeacherAddScreen> {
       name: nameText,
       mobile: mobileText,
       pin: pinText,
+      photoPath: _selectedPhotoPath,
       monthlySalary: salaryVal,
       upiId: upiVal.isNotEmpty ? upiVal : null,
       preferredLanguage: _selectedLanguage,
@@ -211,6 +230,8 @@ class _TeacherAddScreenState extends State<TeacherAddScreen> {
                     ),
                   ),
                   const SizedBox(height: 12),
+                  _buildPhotoPicker(),
+                  const SizedBox(height: 16),
                   _buildField(
                     controller: _nameCtrl,
                     label: 'Full Name',
@@ -428,6 +449,37 @@ class _TeacherAddScreenState extends State<TeacherAddScreen> {
           borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: Colors.red, width: 1.5),
         ),
+      ),
+    );
+  }
+
+  Widget _buildPhotoPicker() {
+    final photoFile = _selectedPhotoPath != null && _selectedPhotoPath!.isNotEmpty
+        ? File(_selectedPhotoPath!)
+        : null;
+    final hasPhoto = photoFile != null && photoFile.existsSync();
+    return Center(
+      child: Column(
+        children: [
+          GestureDetector(
+            onTap: _pickImage,
+            child: CircleAvatar(
+              radius: 40,
+              backgroundColor: const Color(0xFF004D40).withValues(alpha: 0.1),
+              backgroundImage: hasPhoto ? FileImage(photoFile) : null,
+              child: hasPhoto
+                  ? null
+                  : const Icon(Icons.person, size: 48, color: Color(0xFF004D40)),
+            ),
+          ),
+          const SizedBox(height: 8),
+          TextButton.icon(
+            onPressed: _pickImage,
+            icon: const Icon(Icons.add_a_photo, size: 16),
+            label: Text(hasPhoto ? 'Change Photo' : 'Upload Photo'),
+            style: TextButton.styleFrom(foregroundColor: const Color(0xFF004D40)),
+          ),
+        ],
       ),
     );
   }

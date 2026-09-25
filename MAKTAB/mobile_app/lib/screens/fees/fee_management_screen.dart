@@ -25,22 +25,10 @@ import '../../utils/permission_helper.dart';
 import '../../widgets/molecules/custom_app_bar.dart';
 import '../../widgets/shimmer_loader.dart';
 import '../../widgets/finance/finance_totals_card.dart';
+import '../../widgets/finance/fee_card.dart';
+import '../../widgets/finance/fee_payments_list_widget.dart';
 
 import '../../widgets/bulk_fee_messaging_dialog.dart';
-
-class FeeStudentItem {
-  final Student student;
-  final double amountDue;
-  final String dueDate;
-  final String status;
-
-  FeeStudentItem({
-    required this.student,
-    required this.amountDue,
-    required this.dueDate,
-    required this.status,
-  });
-}
 
 class FeeManagementScreen extends StatefulWidget {
   const FeeManagementScreen({super.key});
@@ -223,151 +211,169 @@ class _FeeManagementScreenState extends State<FeeManagementScreen> {
         .where((i) => i.status != 'Paid')
         .fold(0.0, (sum, item) => sum + item.amountDue);
 
-    return Scaffold(
-      backgroundColor: const Color(0xFFF9FBE7),
-      appBar: CustomAppBar(
-        title: 'Fee Management & Reminders',
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.send_rounded),
-            onPressed: _openBulkMessagingDialog,
-            tooltip: 'Send Bulk Batch Reminders',
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        backgroundColor: const Color(0xFFF9FBE7),
+        appBar: CustomAppBar(
+          title: 'Fee Management & Reminders',
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.send_rounded),
+              onPressed: _openBulkMessagingDialog,
+              tooltip: 'Send Bulk Batch Reminders',
+            ),
+          ],
+          bottom: const TabBar(
+            tabs: [
+              Tab(text: 'Fee Status', icon: Icon(Icons.people_alt_outlined, size: 18)),
+              Tab(text: 'Payment History', icon: Icon(Icons.history_rounded, size: 18)),
+            ],
+            indicatorColor: AppIcons.gold,
+            labelColor: Colors.white,
+            unselectedLabelColor: Colors.white70,
           ),
-          IconButton(
-            icon: const Icon(AppIcons.history),
-            onPressed: () => context.push(AppRoutes.adminFeeHistory),
-            tooltip: 'Payment History',
-          ),
-        ],
-      ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          physics: const BouncingScrollPhysics(),
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+        ),
+        body: SafeArea(
+          child: TabBarView(
             children: [
-              if (_feeTotals.isNotEmpty)
-                FinanceTotalsCard(
-                  title: 'Collection Overview',
-                  periodTotals: _feeTotals,
-                  modeBreakdown: _modeBreakdown,
-                ),
-              _buildSummaryBanner(totalPending),
-              const SizedBox(height: 16),
+              RefreshIndicator(
+                onRefresh: _loadFeeRecords,
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (_feeTotals.isNotEmpty)
+                        FinanceTotalsCard(
+                          title: 'Collection Overview',
+                          periodTotals: _feeTotals,
+                          modeBreakdown: _modeBreakdown,
+                        ),
+                      _buildSummaryBanner(totalPending),
+                      const SizedBox(height: 16),
 
-              // ── Search bar ──────────────────────────────────────────────
-              TextField(
-                controller: _searchController,
-                decoration: InputDecoration(
-                  hintText: 'Search by name or admission no.',
-                  prefixIcon: const Icon(Icons.search, color: AppIcons.primaryTeal),
-                  suffixIcon: _searchQuery.isNotEmpty
-                      ? IconButton(
-                          icon: const Icon(Icons.clear),
-                          onPressed: () {
-                            _searchController.clear();
-                            setState(() => _searchQuery = '');
-                          },
-                        )
-                      : null,
-                  filled: true,
-                  fillColor: Colors.white,
-                  contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
-                  ),
-                ),
-                onChanged: (val) => setState(() => _searchQuery = val),
-              ),
-              const SizedBox(height: 16),
-
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: Row(
-                        children: ['All', 'Overdue', 'Pending', 'Paid'].map((f) {
-                          final isSel = _filter == f;
-                          return Padding(
-                            padding: const EdgeInsets.only(right: 8.0),
-                            child: ChoiceChip(
-                              label: Text(f),
-                              selected: isSel,
-                              selectedColor: AppIcons.primaryTeal,
-                              labelStyle: TextStyle(
-                                color: isSel ? Colors.white : AppIcons.primaryTeal,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 12,
-                              ),
-                              onSelected: (_) => setState(() => _filter = f),
-                            ),
-                          );
-                        }).toList(),
+                      // ── Search bar ──────────────────────────────────────────────
+                      TextField(
+                        controller: _searchController,
+                        decoration: InputDecoration(
+                          hintText: 'Search by name or admission no.',
+                          prefixIcon: const Icon(Icons.search, color: AppIcons.primaryTeal),
+                          suffixIcon: _searchQuery.isNotEmpty
+                              ? IconButton(
+                                  icon: const Icon(Icons.clear),
+                                  onPressed: () {
+                                    _searchController.clear();
+                                    setState(() => _searchQuery = '');
+                                  },
+                                )
+                              : null,
+                          filled: true,
+                          fillColor: Colors.white,
+                          contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                        ),
+                        onChanged: (val) => setState(() => _searchQuery = val),
                       ),
-                    ),
-                  ),
-                  if (_batches.isNotEmpty)
-                    Builder(
-                      builder: (context) {
-                        final uniqueBatches = {
-                          for (final b in _batches)
-                            if (b.id != null) b.id: b
-                        }.values.toList();
-                        final hasMatch = _selectedBatchId == null ||
-                            uniqueBatches.any((b) => b.id == _selectedBatchId);
-                        return DropdownButton<int?>(
-                          value: hasMatch ? _selectedBatchId : null,
-                          hint: const Text('Filter Batch'),
-                          items: [
-                            const DropdownMenuItem(value: null, child: Text('All Batches')),
-                            ...uniqueBatches.map((b) => DropdownMenuItem(value: b.id, child: Text(b.name))),
-                          ],
-                          onChanged: (val) {
-                            setState(() {
-                              _selectedBatchId = val;
-                            });
-                            _loadFeeRecords();
-                          },
-                        );
-                      },
-                    ),
-                ],
-              ),
-              const SizedBox(height: 16),
+                      const SizedBox(height: 16),
 
-              if (_isLoading) ...[
-                ShimmerLoader(height: 110),
-                const SizedBox(height: 12),
-                ShimmerLoader(height: 110),
-              ] else if (filtered.isEmpty) ...[
-                const Center(
-                  child: Padding(
-                    padding: EdgeInsets.all(32),
-                    child: Text('No fee records found.', style: TextStyle(color: Colors.black45)),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: SingleChildScrollView(
+                              scrollDirection: Axis.horizontal,
+                              child: Row(
+                                children: ['All', 'Overdue', 'Pending', 'Paid'].map((f) {
+                                  final isSel = _filter == f;
+                                  return Padding(
+                                    padding: const EdgeInsets.only(right: 8.0),
+                                    child: ChoiceChip(
+                                      label: Text(f),
+                                      selected: isSel,
+                                      selectedColor: AppIcons.primaryTeal,
+                                      labelStyle: TextStyle(
+                                        color: isSel ? Colors.white : AppIcons.primaryTeal,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 12,
+                                      ),
+                                      onSelected: (_) => setState(() => _filter = f),
+                                    ),
+                                  );
+                                }).toList(),
+                              ),
+                            ),
+                          ),
+                          if (_batches.isNotEmpty)
+                            Builder(
+                              builder: (context) {
+                                final uniqueBatches = {
+                                  for (final b in _batches)
+                                    if (b.id != null) b.id: b
+                                }.values.toList();
+                                final hasMatch = _selectedBatchId == null ||
+                                    uniqueBatches.any((b) => b.id == _selectedBatchId);
+                                return DropdownButton<int?>(
+                                  value: hasMatch ? _selectedBatchId : null,
+                                  hint: const Text('Filter Batch'),
+                                  items: [
+                                    const DropdownMenuItem(value: null, child: Text('All Batches')),
+                                    ...uniqueBatches.map((b) => DropdownMenuItem(value: b.id, child: Text(b.name))),
+                                  ],
+                                  onChanged: (val) {
+                                    setState(() {
+                                      _selectedBatchId = val;
+                                    });
+                                    _loadFeeRecords();
+                                  },
+                                );
+                              },
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+
+                      if (_isLoading) ...[
+                        ShimmerLoader(height: 110),
+                        const SizedBox(height: 12),
+                        ShimmerLoader(height: 110),
+                      ] else if (filtered.isEmpty) ...[
+                        const Center(
+                          child: Padding(
+                            padding: EdgeInsets.all(32),
+                            child: Text('No fee records found.', style: TextStyle(color: Colors.black45)),
+                          ),
+                        ),
+                      ] else ...[
+                        ListView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: filtered.length,
+                          itemBuilder: (context, index) {
+                            final item = filtered[index];
+                            return FeeCard(
+                              item: item,
+                              onPayUpi: () => _payViaUpi(item),
+                              onWhatsApp: () => _sendWhatsAppReminder(item),
+                              onNotify: () => _triggerNotification(item),
+                              onLog: () => _showRecordDialog(item),
+                              onEdit: () => _editFeeStructure(item),
+                              onReceipt: () => _sendReceipt(item),
+                            );
+                          },
+                        ),
+                      ],
+                    ],
                   ),
                 ),
-              ] else ...[
-                ListView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: filtered.length,
-                  itemBuilder: (context, index) {
-                    final item = filtered[index];
-                    return _FeeCard(
-                      item: item,
-                      onPayUpi: () => _payViaUpi(item),
-                      onWhatsApp: () => _sendWhatsAppReminder(item),
-                      onNotify: () => _triggerNotification(item),
-                      onLog: () => _showRecordDialog(item),
-                      onEdit: () => _editFeeStructure(item),
-                    );
-                  },
-                ),
-              ],
+              ),
+              FeePaymentsListWidget(
+                onPaymentRecorded: _loadFeeRecords,
+              ),
             ],
           ),
         ),
@@ -660,171 +666,6 @@ class _FeeManagementScreenState extends State<FeeManagementScreen> {
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             ),
           ),
-        ],
-      ),
-    );
-  }
-}
-
-class _FeeCard extends StatelessWidget {
-  final FeeStudentItem item;
-  final VoidCallback onPayUpi;
-  final VoidCallback onWhatsApp;
-  final VoidCallback onNotify;
-  final VoidCallback onLog;
-  final VoidCallback onEdit;
-
-  const _FeeCard({
-    required this.item,
-    required this.onPayUpi,
-    required this.onWhatsApp,
-    required this.onNotify,
-    required this.onLog,
-    required this.onEdit,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final s = item.student;
-    Color statusColor = Colors.green.shade700;
-    if (item.status == 'Overdue') statusColor = Colors.red.shade700;
-    if (item.status == 'Pending') statusColor = Colors.orange.shade700;
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 2)),
-        ],
-      ),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              CircleAvatar(
-                backgroundColor: AppIcons.primaryTeal,
-                child: Text(
-                  s.name.isNotEmpty ? s.name[0].toUpperCase() : 'S',
-                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      s.name,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-                    ),
-                    Text(
-                      'ADM: ${s.admissionNumber} · ${s.phone ?? 'No phone'}',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontSize: 12, color: Colors.black45),
-                    ),
-                  ],
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: statusColor.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: statusColor.withValues(alpha: 0.4)),
-                ),
-                child: Text(item.status,
-                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: statusColor)),
-              ),
-            ],
-          ),
-          const Divider(height: 20),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text('Due: ${item.dueDate}', style: const TextStyle(fontSize: 12, color: Colors.black54)),
-              Text('₹${item.amountDue.toInt()}',
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppIcons.primaryTeal)),
-            ],
-          ),
-          const SizedBox(height: 12),
-
-          if (item.status != 'Paid') ...[
-            Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: onPayUpi,
-                    icon: const Icon(Icons.payment_rounded, size: 14),
-                    label: const Text('Pay UPI', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppIcons.gold,
-                      foregroundColor: AppIcons.primaryTeal,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 6),
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: onWhatsApp,
-                    icon: const Icon(AppIcons.whatsapp, size: 14),
-                    label: const Text('WhatsApp', style: TextStyle(fontSize: 11)),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppIcons.whatsappGreen,
-                      side: const BorderSide(color: AppIcons.whatsappGreen),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 6),
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: onLog,
-                    icon: const Icon(Icons.mic, size: 14),
-                    label: const Text('Log/Voice', style: TextStyle(fontSize: 11)),
-                    style: OutlinedButton.styleFrom(
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 6),
-                
-                  IconButton(
-                    icon: const Icon(Icons.edit_note, color: Colors.blueGrey, size: 20),
-                    tooltip: 'Edit Fee Amount',
-                    onPressed: onEdit,
-                  ),
-                IconButton(
-                  icon: const Icon(AppIcons.notification, color: AppIcons.primaryTeal, size: 20),
-                  tooltip: 'Send Local App Notification',
-                  onPressed: onNotify,
-                ),
-              ],
-            ),
-          ] else ...[
-            Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: () => (context as Element).findAncestorStateOfType<_FeeManagementScreenState>()?._sendReceipt(item),
-                    icon: const Icon(AppIcons.whatsapp, size: 14),
-                    label: const Text('Send Receipt', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppIcons.whatsappGreen,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
         ],
       ),
     );
