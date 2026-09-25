@@ -318,10 +318,10 @@ class _LoginScreenState extends State<LoginScreen> {
               localeProvider.setLocale(Locale(code));
             },
             itemBuilder: (ctx) => [
-              const PopupMenuItem(value: 'en', child: Text('English')),
-              const PopupMenuItem(value: 'ur', child: Text('اردو (Urdu)')),
-              const PopupMenuItem(value: 'te', child: Text('తెలుగు (Telugu)')),
-              const PopupMenuItem(value: 'hi', child: Text('हिन्दी (Hindi)')),
+              const PopupMenuItem(value: 'en', child: Text('English', maxLines: 1, overflow: TextOverflow.ellipsis)),
+              const PopupMenuItem(value: 'ur', child: Text('اردو (Urdu)', maxLines: 1, overflow: TextOverflow.ellipsis)),
+              const PopupMenuItem(value: 'te', child: Text('తెలుగు (Telugu)', maxLines: 1, overflow: TextOverflow.ellipsis)),
+              const PopupMenuItem(value: 'hi', child: Text('हिन्दी (Hindi)', maxLines: 1, overflow: TextOverflow.ellipsis)),
             ],
           ),
         ],

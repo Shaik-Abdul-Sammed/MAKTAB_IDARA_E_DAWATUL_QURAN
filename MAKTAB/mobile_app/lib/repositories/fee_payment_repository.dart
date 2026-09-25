@@ -122,6 +122,26 @@ class FeePaymentRepository {
     return maps.map((m) => FeePayment.fromMap(m)).toList();
   }
 
+  Future<List<Map<String, dynamic>>> getPaymentsByTeacher(int canonicalTeacherId) =>
+      getPaymentsByTeacherBatches(canonicalTeacherId);
+
+  Future<Map<String, int>> getFeeTotalsForTeacher(int canonicalTeacherId) =>
+      getFeeTotals(canonicalTeacherId: canonicalTeacherId);
+
+  /// Returns all fee payments across all batches. Sorted by timestamp descending.
+  Future<List<Map<String, dynamic>>> getAllPaymentRows() async {
+    final db = await _dbHelper.database;
+    final rows = await db.rawQuery('''
+      SELECT fp.*, s.name AS student_name, s.admission_number AS student_admission,
+             s.phone AS student_phone, s.preferred_language AS student_lang
+      FROM fee_payments fp
+      INNER JOIN students s ON fp.student_id = s.id
+      WHERE (s.is_deleted IS NULL OR s.is_deleted = 0)
+      ORDER BY fp.timestamp DESC
+    ''');
+    return rows;
+  }
+
   /// Returns all fee payments for students whose batch is assigned to the given
   /// canonical teacherId. Sorted by timestamp descending.
   Future<List<Map<String, dynamic>>> getPaymentsByTeacherBatches(int canonicalTeacherId) async {

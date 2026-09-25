@@ -22,10 +22,16 @@ class LanguageToggle extends StatelessWidget {
           child: Row(
             children: [
               const Text('🇬🇧 ', style: TextStyle(fontSize: 16)),
-              Text('English', style: TextStyle(
-                fontWeight: localeProvider.locale.languageCode == 'en' ? FontWeight.bold : FontWeight.normal,
-                color: localeProvider.locale.languageCode == 'en' ? AppColors.primaryTeal : Colors.black87,
-              )),
+              Expanded(
+                child: Text('English',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontWeight: localeProvider.locale.languageCode == 'en' ? FontWeight.bold : FontWeight.normal,
+                    color: localeProvider.locale.languageCode == 'en' ? AppColors.primaryTeal : Colors.black87,
+                  ),
+                ),
+              ),
             ],
           ),
         ),
@@ -34,10 +40,16 @@ class LanguageToggle extends StatelessWidget {
           child: Row(
             children: [
               const Text('🇮🇳 ', style: TextStyle(fontSize: 16)),
-              Text('తెలుగు (Telugu)', style: TextStyle(
-                fontWeight: localeProvider.locale.languageCode == 'te' ? FontWeight.bold : FontWeight.normal,
-                color: localeProvider.locale.languageCode == 'te' ? AppColors.primaryTeal : Colors.black87,
-              )),
+              Expanded(
+                child: Text('తెలుగు (Telugu)',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontWeight: localeProvider.locale.languageCode == 'te' ? FontWeight.bold : FontWeight.normal,
+                    color: localeProvider.locale.languageCode == 'te' ? AppColors.primaryTeal : Colors.black87,
+                  ),
+                ),
+              ),
             ],
           ),
         ),
@@ -46,10 +58,16 @@ class LanguageToggle extends StatelessWidget {
           child: Row(
             children: [
               const Text('🇵🇰 ', style: TextStyle(fontSize: 16)),
-              Text('اردو (Urdu)', style: TextStyle(
-                fontWeight: localeProvider.locale.languageCode == 'ur' ? FontWeight.bold : FontWeight.normal,
-                color: localeProvider.locale.languageCode == 'ur' ? AppColors.primaryTeal : Colors.black87,
-              )),
+              Expanded(
+                child: Text('اردو (Urdu)',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontWeight: localeProvider.locale.languageCode == 'ur' ? FontWeight.bold : FontWeight.normal,
+                    color: localeProvider.locale.languageCode == 'ur' ? AppColors.primaryTeal : Colors.black87,
+                  ),
+                ),
+              ),
             ],
           ),
         ),
@@ -58,10 +76,16 @@ class LanguageToggle extends StatelessWidget {
           child: Row(
             children: [
               const Text('🇮🇳 ', style: TextStyle(fontSize: 16)),
-              Text('हिंदी (Hindi)', style: TextStyle(
-                fontWeight: localeProvider.locale.languageCode == 'hi' ? FontWeight.bold : FontWeight.normal,
-                color: localeProvider.locale.languageCode == 'hi' ? AppColors.primaryTeal : Colors.black87,
-              )),
+              Expanded(
+                child: Text('हिंदी (Hindi)',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontWeight: localeProvider.locale.languageCode == 'hi' ? FontWeight.bold : FontWeight.normal,
+                    color: localeProvider.locale.languageCode == 'hi' ? AppColors.primaryTeal : Colors.black87,
+                  ),
+                ),
+              ),
             ],
           ),
         ),

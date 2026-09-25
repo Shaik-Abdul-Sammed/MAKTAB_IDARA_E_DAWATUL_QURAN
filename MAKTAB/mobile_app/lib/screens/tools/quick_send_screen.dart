@@ -682,7 +682,10 @@ class _QuickSendScreenState extends State<QuickSendScreen> {
                 ),
                 items: _students.map((s) => DropdownMenuItem(
                   value: s,
-                  child: Text('${s.name} (${s.admissionNumber}) — ${s.guardianPhone ?? s.phone ?? 'No Phone'}'),
+                  child: Text(
+                    '${s.name} (${s.admissionNumber}) — ${s.guardianPhone ?? s.phone ?? 'No Phone'}',
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 )).toList(),
                 onChanged: _onSelectStudent,
               ),
@@ -699,7 +702,10 @@ class _QuickSendScreenState extends State<QuickSendScreen> {
                 ),
                 items: _teachers.map((t) => DropdownMenuItem(
                   value: t,
-                  child: Text('${t.name} (ID: ${t.teacherId ?? t.id}) — ${t.mobile ?? 'No Mobile'}'),
+                  child: Text(
+                    '${t.name} (ID: ${t.teacherId ?? t.id}) — ${t.mobile ?? 'No Mobile'}',
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 )).toList(),
                 onChanged: _onSelectTeacher,
               ),
@@ -922,16 +928,17 @@ class _QuickSendScreenState extends State<QuickSendScreen> {
             DropdownButtonFormField<String>(
               key: ValueKey('lang_$_selectedLanguage'),
               initialValue: _selectedLanguage,
+              isExpanded: true,
               decoration: const InputDecoration(
                 prefixIcon: Icon(Icons.translate, color: Color(0xFF004D40)),
                 border: OutlineInputBorder(),
                 contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               ),
               items: const [
-                DropdownMenuItem(value: 'en', child: Text('🇬🇧 English')),
-                DropdownMenuItem(value: 'ur', child: Text('🇵🇰 اردو (Urdu)')),
-                DropdownMenuItem(value: 'hi', child: Text('🇮🇳 हिंदी (Hindi)')),
-                DropdownMenuItem(value: 'te', child: Text('🇮🇳 తెలుగు (Telugu)')),
+                DropdownMenuItem(value: 'en', child: SizedBox(width: 200, child: Text('🇬🇧 English', maxLines: 1, overflow: TextOverflow.ellipsis))),
+                DropdownMenuItem(value: 'ur', child: SizedBox(width: 200, child: Text('🇵🇰 اردو (Urdu)', maxLines: 1, overflow: TextOverflow.ellipsis))),
+                DropdownMenuItem(value: 'hi', child: SizedBox(width: 200, child: Text('🇮🇳 हिंदी (Hindi)', maxLines: 1, overflow: TextOverflow.ellipsis))),
+                DropdownMenuItem(value: 'te', child: SizedBox(width: 200, child: Text('🇮🇳 తెలుగు (Telugu)', maxLines: 1, overflow: TextOverflow.ellipsis))),
               ],
               onChanged: (v) {
                 if (v != null) {
