@@ -15,6 +15,7 @@ import '../../repositories/student_repository.dart';
 import '../../repositories/batch_repository.dart';
 import '../../services/database_helper.dart';
 import '../../widgets/molecules/custom_app_bar.dart';
+import '../../l10n/app_localizations.dart';
 import 'package:flutter_contacts/flutter_contacts.dart' as flutter_contacts;
 import 'package:permission_handler/permission_handler.dart';
 
@@ -311,11 +312,12 @@ class _StudentAddScreenState extends State<StudentAddScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context);
     return ChangeNotifierProvider.value(
       value: _provider,
       child: Scaffold(
         backgroundColor: const Color(0xFFF9FBE7),
-        appBar: const CustomAppBar(title: 'Enroll Student'),
+        appBar: CustomAppBar(title: loc?.translate('enroll_student') ?? 'Enroll Student'),
         body: SafeArea(
           child: SingleChildScrollView(
             physics: const BouncingScrollPhysics(),
@@ -325,7 +327,7 @@ class _StudentAddScreenState extends State<StudentAddScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const _SectionTitle('Academic Details'),
+                  _SectionTitle(loc?.translate('academic_details') ?? 'Academic Details'),
                   const SizedBox(height: 12),
 
                   Center(

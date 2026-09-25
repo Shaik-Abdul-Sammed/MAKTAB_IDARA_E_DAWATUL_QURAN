@@ -13,6 +13,7 @@ import '../../repositories/batch_repository.dart';
 import '../../widgets/shimmer_loader.dart';
 import '../../widgets/molecules/confirm_dialog.dart';
 import '../../widgets/molecules/custom_app_bar.dart';
+import '../../l10n/app_localizations.dart';
 
 class StudentListScreen extends StatefulWidget {
   const StudentListScreen({super.key});
@@ -276,12 +277,13 @@ class _StudentListScreenState extends State<StudentListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context);
     return ChangeNotifierProvider.value(
       value: _provider,
       child: Scaffold(
         backgroundColor: const Color(0xFFF9FBE7),
         appBar: CustomAppBar(
-          title: 'Students Roster',
+          title: loc?.translate('students_roster') ?? 'Students Roster',
           showBackButton: true,
           actions: [
             IconButton(
@@ -294,7 +296,7 @@ class _StudentListScreenState extends State<StudentListScreen> {
             ),
             IconButton(
               icon: const Icon(Icons.archive_outlined),
-              tooltip: 'Past / Deleted Students',
+              tooltip: loc?.translate('past_students') ?? 'Past / Deleted Students',
               onPressed: () async {
                 await context.push('/admin/students/past');
                 _provider.fetchStudents();
@@ -312,7 +314,7 @@ class _StudentListScreenState extends State<StudentListScreen> {
           backgroundColor: const Color(0xFFFFD700),
           foregroundColor: const Color(0xFF004D40),
           icon: const Icon(Icons.person_add_rounded),
-          label: const Text('Add Student', style: TextStyle(fontWeight: FontWeight.bold)),
+          label: Text(loc?.translate('add_student') ?? 'Add Student', style: const TextStyle(fontWeight: FontWeight.bold)),
           onPressed: () =>
               context.push('/admin/students/add').then((_) => _provider.fetchStudents()),
         ),
@@ -329,13 +331,14 @@ class _StudentListScreenState extends State<StudentListScreen> {
   }
 
   Widget _buildSearchBar() {
+    final loc = AppLocalizations.of(context);
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
       child: TextField(
         controller: _searchController,
         onChanged: _onSearchChanged,
         decoration: InputDecoration(
-          hintText: 'Search by name, adm no, phone...',
+          hintText: loc?.translate('search_student') ?? 'Search by name, adm no, phone...',
           prefixIcon: const Icon(Icons.search, color: Color(0xFF004D40)),
           suffixIcon: _searchController.text.isNotEmpty
               ? IconButton(
@@ -368,6 +371,7 @@ class _StudentListScreenState extends State<StudentListScreen> {
 
   Widget _buildBatchFilterRow() {
     if (_isTeacher && _batches.isEmpty) return const SizedBox.shrink();
+    final loc = AppLocalizations.of(context);
     return Consumer<StudentListProvider>(
       builder: (context, p, _) {
         return SingleChildScrollView(
@@ -376,7 +380,7 @@ class _StudentListScreenState extends State<StudentListScreen> {
           child: Row(
             children: [
               ChoiceChip(
-                label: const Text('All Batches'),
+                label: Text(loc?.translate('all_batches') ?? 'All Batches'),
                 selected: !_showUnassigned && p.selectedBatchFilter == null,
                 selectedColor: const Color(0xFF004D40),
                 labelStyle: TextStyle(
@@ -392,7 +396,7 @@ class _StudentListScreenState extends State<StudentListScreen> {
               if (!_isTeacher) ...[
                 const SizedBox(width: 8),
                 ChoiceChip(
-                  label: const Text('Unassigned'),
+                  label: Text(loc?.translate('unassigned') ?? 'Unassigned'),
                   selected: _showUnassigned,
                   selectedColor: const Color(0xFF004D40),
                   labelStyle: TextStyle(
