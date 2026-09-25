@@ -623,10 +623,18 @@ class _BatchAttendanceCard extends StatelessWidget {
                   Row(
                     children: [
                       _StatDot(color: Colors.green, label: '✅ ${stat!.present} Present'),
-                      const SizedBox(width: 12),
+                      const SizedBox(width: 8),
                       _StatDot(color: Colors.red, label: '❌ ${stat!.absent} Absent'),
-                      const Spacer(),
-                      Text('${stat!.marked}/${stat!.total} marked', style: const TextStyle(fontSize: 11, color: Colors.black45)),
+                      const SizedBox(width: 8),
+                      Flexible(
+                        child: Text(
+                          '${stat!.marked}/${stat!.total} marked',
+                          style: const TextStyle(fontSize: 11, color: Colors.black45),
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                          textAlign: TextAlign.end,
+                        ),
+                      ),
                     ],
                   ),
                 ],
@@ -694,10 +702,20 @@ class _StatDot extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(children: [
-      Container(width: 8, height: 8, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
-      const SizedBox(width: 4),
-      Text(label, style: const TextStyle(fontSize: 11, color: Colors.black54)),
-    ]);
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(width: 8, height: 8, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+        const SizedBox(width: 4),
+        Flexible(
+          child: Text(
+            label,
+            style: const TextStyle(fontSize: 11, color: Colors.black54),
+            overflow: TextOverflow.ellipsis,
+            maxLines: 1,
+          ),
+        ),
+      ],
+    );
   }
 }

@@ -35,7 +35,8 @@ class _QuranProgressEntryScreenState extends State<QuranProgressEntryScreen> {
   late final TextEditingController _remarksCtrl;
 
   late stt.SpeechToText _speech;
-  bool _isListening = false;
+  bool _isListeningSurah = false;
+  bool _isListeningRemarks = false;
 
   String _grade = 'A+';
   String _recitationType = 'Sabaq';
@@ -71,6 +72,9 @@ class _QuranProgressEntryScreenState extends State<QuranProgressEntryScreen> {
 
   @override
   void dispose() {
+    if (_isListeningSurah || _isListeningRemarks) {
+      _speech.stop();
+    }
     _surahCtrl.dispose();
     _ayahFromCtrl.dispose();
     _ayahToCtrl.dispose();
@@ -79,12 +83,25 @@ class _QuranProgressEntryScreenState extends State<QuranProgressEntryScreen> {
     super.dispose();
   }
 
-  Future<void> _toggleVoiceInput() async {
-    if (_isListening) {
+  Future<void> _toggleVoiceInput({required String field}) async {
+    final isSurah = field == 'surah';
+    final isCurrentListening = isSurah ? _isListeningSurah : _isListeningRemarks;
+
+    if (isCurrentListening) {
       await _speech.stop();
-      setState(() => _isListening = false);
+      if (mounted) {
+        setState(() {
+          _isListeningSurah = false;
+          _isListeningRemarks = false;
+        });
+      }
       return;
     }
+
+    if (_isListeningSurah || _isListeningRemarks) {
+      await _speech.stop();
+    }
+
     final available = await _speech.initialize();
     if (!available) {
       if (mounted) {
@@ -94,17 +111,31 @@ class _QuranProgressEntryScreenState extends State<QuranProgressEntryScreen> {
       }
       return;
     }
-    setState(() => _isListening = true);
+
+    if (mounted) {
+      setState(() {
+        _isListeningSurah = isSurah;
+        _isListeningRemarks = !isSurah;
+      });
+    }
+
     await _speech.listen(
       onResult: (result) {
         if (!result.finalResult) return;
         final spoken = result.recognizedWords.trim();
-        final parts = spoken.split(RegExp(r'[,،.]'));
-        if (parts.isNotEmpty) _surahCtrl.text = parts.first.trim();
-        if (parts.length > 1) {
-          _remarksCtrl.text = parts.sublist(1).join(' ').trim();
+        if (spoken.isNotEmpty) {
+          if (isSurah) {
+            _surahCtrl.text = spoken;
+          } else {
+            _remarksCtrl.text = spoken;
+          }
         }
-        setState(() => _isListening = false);
+        if (mounted) {
+          setState(() {
+            _isListeningSurah = false;
+            _isListeningRemarks = false;
+          });
+        }
       },
       // ignore: deprecated_member_use
       localeId: 'en_IN',
@@ -229,10 +260,12 @@ class _QuranProgressEntryScreenState extends State<QuranProgressEntryScreen> {
                       ),
                       const SizedBox(width: 8),
                       IconButton.filled(
-                        icon: Icon(_isListening ? Icons.mic : Icons.mic_none),
-                        style: IconButton.styleFrom(backgroundColor: const Color(0xFF004D40)),
-                        onPressed: _toggleVoiceInput,
-                        tooltip: 'Speak Surah and remarks',
+                        icon: Icon(_isListeningSurah ? Icons.mic : Icons.mic_none),
+                        style: IconButton.styleFrom(
+                          backgroundColor: _isListeningSurah ? Colors.red : const Color(0xFF004D40),
+                        ),
+                        onPressed: () => _toggleVoiceInput(field: 'surah'),
+                        tooltip: 'Speak Surah',
                       ),
                     ],
                   ),
@@ -314,12 +347,12 @@ class _QuranProgressEntryScreenState extends State<QuranProgressEntryScreen> {
                       ),
                       const SizedBox(width: 8),
                       IconButton(
-                        onPressed: _toggleVoiceInput,
+                        onPressed: () => _toggleVoiceInput(field: 'remarks'),
                         style: IconButton.styleFrom(
-                          backgroundColor: _isListening ? Colors.red : const Color(0xFF004D40),
+                          backgroundColor: _isListeningRemarks ? Colors.red : const Color(0xFF004D40),
                           foregroundColor: Colors.white,
                         ),
-                        icon: Icon(_isListening ? Icons.mic : Icons.mic_none),
+                        icon: Icon(_isListeningRemarks ? Icons.mic : Icons.mic_none),
                         tooltip: 'Voice Dictate Remarks',
                       ),
                     ],

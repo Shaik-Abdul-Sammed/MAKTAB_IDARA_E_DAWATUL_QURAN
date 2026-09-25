@@ -572,7 +572,7 @@ class _BatchTimelineCard extends StatelessWidget {
                     // Attendance chip
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 5),
+                          horizontal: 8, vertical: 5),
                       decoration: BoxDecoration(
                         color: rate >= 0.75
                             ? const Color(0xFFE8F5E9)
@@ -588,6 +588,8 @@ class _BatchTimelineCard extends StatelessWidget {
                               ? const Color(0xFF2E7D32)
                               : const Color(0xFFE65100),
                         ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                   ],
@@ -684,17 +686,17 @@ class _AttendanceSummaryCard extends StatelessWidget {
                   loc?.translate('present') ?? 'Present',
                   summary['present'] ?? 0,
                   const Color(0xFF81C784)),
-              const SizedBox(width: 8),
+              const SizedBox(width: 6),
               _SummaryChip(
                   loc?.translate('absent') ?? 'Absent',
                   summary['absent'] ?? 0,
                   const Color(0xFFEF9A9A)),
-              const SizedBox(width: 8),
+              const SizedBox(width: 6),
               _SummaryChip(
                   loc?.translate('late') ?? 'Late',
                   summary['late'] ?? 0,
                   const Color(0xFFFFCC80)),
-              const SizedBox(width: 8),
+              const SizedBox(width: 6),
               _SummaryChip(
                   loc?.translate('leave') ?? 'Leave',
                   summary['leave'] ?? 0,
@@ -732,8 +734,12 @@ class _SummaryChip extends StatelessWidget {
                   fontSize: 18,
                   fontWeight: FontWeight.bold),
             ),
-            Text(label,
-                style: const TextStyle(color: Colors.white60, fontSize: 10)),
+            Text(
+              label,
+              style: const TextStyle(color: Colors.white60, fontSize: 10),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
           ],
         ),
       ),

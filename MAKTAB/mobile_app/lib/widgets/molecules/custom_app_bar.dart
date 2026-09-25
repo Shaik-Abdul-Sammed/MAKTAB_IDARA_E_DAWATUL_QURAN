@@ -57,21 +57,21 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
           : null,
 
       // Title — FittedBox shrinks text if it's too wide; never overflows
-      title: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          LayoutBuilder(
-            builder: (context, constraints) {
-              if (!constraints.hasBoundedWidth || constraints.maxWidth <= 0) {
-                return const SizedBox.shrink();
-              }
-              return ConstrainedBox(
-                // Cap width so actions don't get pushed off screen
-                constraints: BoxConstraints(
-                  maxWidth: constraints.maxWidth,
-                ),
-                child: Text(
+      title: LayoutBuilder(
+        builder: (context, constraints) {
+          if (!constraints.hasBoundedWidth || constraints.maxWidth <= 0) {
+            return const SizedBox.shrink();
+          }
+          return ConstrainedBox(
+            // Cap width so actions don't get pushed off screen
+            constraints: BoxConstraints(
+              maxWidth: constraints.maxWidth,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
                   title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -81,21 +81,21 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                     fontSize: 18,
                   ),
                 ),
-              );
-            },
-          ),
-          if (subtitle != null)
-            Text(
-              subtitle!,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                color: Colors.white70,
-                fontSize: 11,
-                fontWeight: FontWeight.normal,
-              ),
+                if (subtitle != null)
+                  Text(
+                    subtitle!,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Colors.white70,
+                      fontSize: 11,
+                      fontWeight: FontWeight.normal,
+                    ),
+                  ),
+              ],
             ),
-        ],
+          );
+        },
       ),
 
       actions: actions,

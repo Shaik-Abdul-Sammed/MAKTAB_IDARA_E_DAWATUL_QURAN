@@ -622,14 +622,24 @@ class _TeacherManagementScreenState extends State<TeacherManagementScreen> {
                           title: Text(
                             teacher.name,
                             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Color(0xFF004D40)),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                           subtitle: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               const SizedBox(height: 4),
-                              Text('Mobile: ${teacher.mobile ?? "N/A"}'),
+                              Text(
+                                'Mobile: ${teacher.mobile ?? "N/A"}',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
                               const SizedBox(height: 2),
-                              Text('Role: ${teacher.role}'),
+                              Text(
+                                'Role: ${teacher.role}',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
                               const SizedBox(height: 2),
                               Builder(
                                 builder: (_) {

@@ -161,14 +161,18 @@ class _BatchListScreenState extends State<BatchListScreen> {
     return Consumer<BatchListProvider>(
       builder: (_, p, _) => Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-        child: Row(
-          children: [
-            Flexible(child: _Chip(label: '${p.totalCount} Batches', color: const Color(0xFF004D40))),
-            const SizedBox(width: 8),
-            Flexible(child: _Chip(label: '${p.assignedCount} Assigned', color: Colors.green.shade700)),
-            const SizedBox(width: 8),
-            Flexible(child: _Chip(label: '${p.unassignedCount} Unassigned', color: Colors.orange.shade700)),
-          ],
+        child: SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          physics: const BouncingScrollPhysics(),
+          child: Row(
+            children: [
+              _Chip(label: '${p.totalCount} Batches', color: const Color(0xFF004D40)),
+              const SizedBox(width: 8),
+              _Chip(label: '${p.assignedCount} Assigned', color: Colors.green.shade700),
+              const SizedBox(width: 8),
+              _Chip(label: '${p.unassignedCount} Unassigned', color: Colors.orange.shade700),
+            ],
+          ),
         ),
       ),
     );

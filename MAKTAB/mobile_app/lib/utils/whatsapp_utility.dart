@@ -229,6 +229,33 @@ ${t['commonThanks'] ?? 'Jazak Allah Khair.'}
     await launchWhatsApp(phone, buf.toString(), context: context);
   }
 
+  static Future<void> sendTeacherAttendanceAlert(
+    BuildContext context,
+    String phone,
+    String teacherName, {
+    required String date,
+    required String status,
+    String? remarks,
+    String? senderName,
+    String languageCode = 'en',
+  }) async {
+    final t = ReceiptTemplates.get(languageCode);
+    final msg = '''
+${t['teacherAttHeader']}
+
+${t['teacherNameLabel']}: $teacherName
+${t['attDateLabel']}: $date
+${t['attStatusLabel']}: $status
+${remarks != null && remarks.isNotEmpty ? '${t['attNoteLabel']}: $remarks' : ''}
+
+${t['attPleaseContact']}
+
+${t['commonRegards']}
+*${senderName ?? 'Maktab Management'}*
+''';
+    await launchWhatsApp(phone, msg, context: context);
+  }
+
   /// Send Batch Notice via WhatsApp with language prompt.
   static Future<void> sendBatchNotice(
     BuildContext context, {

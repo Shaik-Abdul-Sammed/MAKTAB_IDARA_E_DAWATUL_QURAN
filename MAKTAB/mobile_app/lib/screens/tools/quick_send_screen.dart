@@ -411,9 +411,15 @@ class _QuickSendScreenState extends State<QuickSendScreen> {
             controller: scrollCtrl,
             children: [
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text('Message & PDF Preview', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF004D40))),
+                  const Expanded(
+                    child: Text(
+                      'Message & PDF Preview',
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF004D40)),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
                   IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
                 ],
               ),
@@ -649,14 +655,18 @@ class _QuickSendScreenState extends State<QuickSendScreen> {
         padding: const EdgeInsets.all(12),
         child: Column(
           children: [
-            Row(
-              children: [
-                _roleChip(RecipientRole.student, 'Student / Parent'),
-                const SizedBox(width: 8),
-                _roleChip(RecipientRole.teacher, 'Teacher'),
-                const SizedBox(width: 8),
-                _roleChip(RecipientRole.manager, 'Manager'),
-              ],
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              physics: const BouncingScrollPhysics(),
+              child: Row(
+                children: [
+                  _roleChip(RecipientRole.student, 'Student / Parent'),
+                  const SizedBox(width: 8),
+                  _roleChip(RecipientRole.teacher, 'Teacher'),
+                  const SizedBox(width: 8),
+                  _roleChip(RecipientRole.manager, 'Manager'),
+                ],
+              ),
             ),
             const SizedBox(height: 12),
             if (_recipientRole == RecipientRole.student) ...[

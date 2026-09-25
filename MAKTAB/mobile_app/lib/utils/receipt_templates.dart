@@ -81,6 +81,13 @@ class ReceiptTemplates {
       'attAbsentBody': 'Your child was marked absent today.',
       'attPleaseContact': 'Please contact the Maktab for any details.',
 
+      // --- Teacher Attendance keys ---
+      'teacherAttHeader': 'Staff Attendance Notice',
+      'teacherNameLabel': 'Teacher',
+      'attDateLabel': 'Date',
+      'attStatusLabel': 'Status',
+      'attNoteLabel': 'Remarks',
+
       // --- Task 2: Common keys ---
       'commonRegards': 'Warm regards,',
       'commonThanks': 'Jazak Allah Khair.',
@@ -159,6 +166,13 @@ class ReceiptTemplates {
       'attAbsentNotice': 'غیر حاضری کی اطلاع',
       'attAbsentBody': 'آپ کے بچے کو آج غیر حاضر نشان زد کیا گیا۔',
       'attPleaseContact': 'کسی بھی تفصیل کے لیے براہ کرم مکتب سے رابطہ کریں۔',
+
+      // --- Teacher Attendance keys ---
+      'teacherAttHeader': 'اسٹاف کی حاضری کی اطلاع',
+      'teacherNameLabel': 'استاد',
+      'attDateLabel': 'تاریخ',
+      'attStatusLabel': 'حالت',
+      'attNoteLabel': 'نوٹ',
 
       // --- Task 2: Common keys ---
       'commonRegards': 'نیک تمناؤں کے ساتھ،',
@@ -239,6 +253,13 @@ class ReceiptTemplates {
       'attAbsentBody': 'आपके बच्चे को आज अनुपस्थित दर्ज किया गया है।',
       'attPleaseContact': 'कृपया किसी भी विवरण के लिए मकतब से संपर्क करें।',
 
+      // --- Teacher Attendance keys ---
+      'teacherAttHeader': 'स्टाफ उपस्थिति सूचना',
+      'teacherNameLabel': 'शिक्षक',
+      'attDateLabel': 'तिथि',
+      'attStatusLabel': 'स्थिति',
+      'attNoteLabel': 'टिप्पणी',
+
       // --- Task 2: Common keys ---
       'commonRegards': 'सादर,',
       'commonThanks': 'जज़ाक अल्लाह खैर।',
@@ -317,6 +338,13 @@ class ReceiptTemplates {
       'attAbsentNotice': 'గైర్హాజరు నోటీసు',
       'attAbsentBody': 'మీ పిల్లవాడు ఈరోజు గైర్హాజరుగా నమోదు చేయబడ్డారు.',
       'attPleaseContact': 'ఏవైనా వివరాల కోసం దయచేసి మక్తబ్ను సంప్రదించండి.',
+
+      // --- Teacher Attendance keys ---
+      'teacherAttHeader': 'సిబ్బంది హాజరు నోటీసు',
+      'teacherNameLabel': 'ఉపాధ్యాయుడు',
+      'attDateLabel': 'తేదీ',
+      'attStatusLabel': 'స్థితి',
+      'attNoteLabel': 'గమనికలు',
 
       // --- Task 2: Common keys ---
       'commonRegards': 'భవదీయుడు,',

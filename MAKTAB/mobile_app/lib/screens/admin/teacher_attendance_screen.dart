@@ -295,13 +295,17 @@ class _TeacherAttendanceScreenState extends State<TeacherAttendanceScreen> {
                       ...nonPresent.map((t) => _SummaryTeacherTile(
                           teacher: t,
                           status: _attendanceMap[t.teacherId ?? t.id] ?? 'Absent',
-                          dateStr: dateStr)),
+                          dateStr: dateStr,
+                          remarks: _remarksControllers[t.teacherId ?? t.id]?.text.trim())),
                       const SizedBox(height: 16),
                     ],
                     if (present.isNotEmpty) ...[
                       _SectionLabel(label: '✅ Present (${present.length})', color: Colors.green),
                       ...present.map((t) => _SummaryTeacherTile(
-                          teacher: t, status: 'Present', dateStr: dateStr)),
+                          teacher: t,
+                          status: 'Present',
+                          dateStr: dateStr,
+                          remarks: _remarksControllers[t.teacherId ?? t.id]?.text.trim())),
                     ],
                   ],
                 ),
@@ -1028,7 +1032,13 @@ class _SummaryTeacherTile extends StatelessWidget {
   final User teacher;
   final String status;
   final String dateStr;
-  const _SummaryTeacherTile({required this.teacher, required this.status, required this.dateStr});
+  final String? remarks;
+  const _SummaryTeacherTile({
+    required this.teacher,
+    required this.status,
+    required this.dateStr,
+    this.remarks,
+  });
 
   static Color _statusColor(String s) {
     switch (s) {
@@ -1082,11 +1092,13 @@ class _SummaryTeacherTile extends StatelessWidget {
             tooltip: 'WhatsApp Teacher',
             onPressed: () async {
               final sender = context.read<AuthProvider>().currentUser?.name ?? 'Maktab Management';
-              await WhatsAppUtility.sendAttendanceAlert(
+              await WhatsAppUtility.sendTeacherAttendanceAlert(
                 context,
                 phone,
                 teacher.name,
                 date: dateStr,
+                status: status,
+                remarks: remarks,
                 languageCode: LanguageResolver.forUser(teacher),
                 senderName: sender,
               );
