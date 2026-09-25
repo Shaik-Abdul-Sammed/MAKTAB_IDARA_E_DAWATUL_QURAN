@@ -142,18 +142,6 @@ class _TeacherDashboardState extends State<TeacherDashboard>
               return d != null && d.isAfter(lastBellSeen);
             }).length;
 
-      final msgs =
-          await MessageRepository().getMessagesForUser(canonicalTeacherId);
-      final anns = await AnnouncementRepository().getRecent(limit: 20);
-
-      final batches =
-          await BatchRepository().fetchTeacherBatches(canonicalTeacherId);
-      final batchIds = batches.map((b) => b.id).whereType<int>().toSet();
-      final filteredAnns = anns
-          .where((a) => batchIds.isEmpty || batchIds.contains(a.batchId))
-          .take(20)
-          .toList();
-
       if (!mounted) return;
       setState(() {
         _unreadMessagesCount = unreadMsg;
