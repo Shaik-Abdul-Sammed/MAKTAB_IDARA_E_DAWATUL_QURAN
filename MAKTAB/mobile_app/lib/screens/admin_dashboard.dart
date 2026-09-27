@@ -1372,7 +1372,6 @@ class _AdminDashboardState extends State<AdminDashboard>
                 _drawerItem(context, icon: Icons.how_to_reg_rounded, label: loc?.translate('teacher_attendance') ?? 'Teacher Attendance', route: '/admin/teacher-attendance'),
                 _drawerItem(context, icon: AppIcons.batches, label: loc?.translate('batches') ?? 'Batches', route: AppRoutes.adminBatches),
                 _drawerItem(context, icon: AppIcons.reports, label: loc?.translate('reports') ?? 'Reports', route: AppRoutes.adminReports),
-                _drawerItem(context, icon: Icons.picture_as_pdf_rounded, label: loc?.translate('reports') ?? 'Attendance Reports', route: '/admin/reports/attendance'),
                 _drawerItem(context, icon: AppIcons.checklist, label: loc?.translate('checklist') ?? 'Checklist', route: AppRoutes.adminChecklist),
                 _drawerItem(context, icon: Icons.chat_rounded, label: loc?.translate('messages') ?? 'Messages', route: AppRoutes.adminMessages),
                 _drawerItem(context, icon: Icons.account_balance_wallet_rounded, label: loc?.translate('payments') ?? 'Payments', route: '/admin/payments'),

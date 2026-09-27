@@ -398,6 +398,7 @@ class _TeacherFeesScreenState extends State<TeacherFeesScreen> {
   }
 
   Widget _buildSummaryBanner(double totalPending) {
+    final loc = AppLocalizations.of(context);
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -451,16 +452,23 @@ class _TeacherFeesScreenState extends State<TeacherFeesScreen> {
             ),
           ),
           const SizedBox(width: 8),
-          ElevatedButton.icon(
-            onPressed: _openBulkMessagingDialog,
-            icon: const Icon(Icons.send_rounded, size: 16),
-            label: const Text('Bulk Batch Reminders', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppIcons.gold,
-              foregroundColor: const Color(0xFF004D40),
-              elevation: 2,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          Flexible(
+            child: ElevatedButton.icon(
+              onPressed: _openBulkMessagingDialog,
+              icon: const Icon(Icons.send_rounded, size: 16),
+              label: Text(
+                loc?.translate('teacher_fees_reminders') ?? 'Bulk Batch Reminders',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppIcons.gold,
+                foregroundColor: const Color(0xFF004D40),
+                elevation: 2,
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
             ),
           ),
         ],
@@ -651,6 +659,35 @@ class _TeacherFeesScreenState extends State<TeacherFeesScreen> {
             ],
           ),
         ),
+        floatingActionButton: FloatingActionButton.extended(
+          onPressed: _showRecordPaymentDialog,
+          backgroundColor: const Color(0xFF004D40),
+          foregroundColor: Colors.white,
+          elevation: 4,
+          icon: const Icon(Icons.add_card_rounded, size: 22),
+          label: Text(
+            loc?.translate('fee_record_payment') ?? 'Record Payment',
+            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showRecordPaymentDialog() {
+    if (_feeItems.isEmpty) return;
+    final loc = AppLocalizations.of(context);
+    showDialog(
+      context: context,
+      builder: (ctx) => SimpleDialog(
+        title: Text(loc?.translate('fee_record_payment') ?? 'Record Payment'),
+        children: _feeItems.map((item) => SimpleDialogOption(
+          onPressed: () {
+            Navigator.pop(ctx);
+            _showRecordDialog(item);
+          },
+          child: Text('${item.student.name} (ADM: ${item.student.admissionNumber})'),
+        )).toList(),
       ),
     );
   }

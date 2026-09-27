@@ -473,41 +473,52 @@ class _LoginScreenState extends State<LoginScreen> {
 
                           // Remember Me & Forgot Password Row
                           Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  SizedBox(
-                                    width: 24,
-                                    height: 24,
-                                    child: Checkbox(
-                                      value: _rememberManager,
-                                      activeColor: const Color(0xFF004D40),
-                                      onChanged: (val) {
-                                        setState(() {
-                                          _rememberManager = val ?? false;
-                                        });
-                                      },
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    loc?.translate('remember_me') ?? 'Remember me',
-                                    style: const TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ],
+                              SizedBox(
+                                width: 24,
+                                height: 24,
+                                child: Checkbox(
+                                  value: _rememberManager,
+                                  activeColor: const Color(0xFF004D40),
+                                  onChanged: (val) {
+                                    setState(() {
+                                      _rememberManager = val ?? false;
+                                    });
+                                  },
+                                ),
                               ),
-                              TextButton(
-                                onPressed: _showForgotPasswordDialog,
+                              const SizedBox(width: 8),
+                              Flexible(
                                 child: Text(
-                                  loc?.translate('forgot_password') ?? 'Forgot Password?',
+                                  loc?.translate('remember_me') ?? 'Remember me',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                   style: const TextStyle(
-                                    color: Color(0xFF004D40),
-                                    fontWeight: FontWeight.w600,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Flexible(
+                                child: Align(
+                                  alignment: Alignment.centerRight,
+                                  child: TextButton(
+                                    onPressed: _showForgotPasswordDialog,
+                                    style: TextButton.styleFrom(
+                                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                                      minimumSize: Size.zero,
+                                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                    ),
+                                    child: Text(
+                                      loc?.translate('forgot_password') ?? 'Forgot Password?',
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                        color: Color(0xFF004D40),
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
                                   ),
                                 ),
                               ),
@@ -605,11 +616,15 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ),
                               ),
                               const SizedBox(width: 8),
-                              Text(
-                                loc?.translate('remember_me') ?? 'Remember Teacher ID',
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w500,
+                              Flexible(
+                                child: Text(
+                                  loc?.translate('remember_me') ?? 'Remember Teacher ID',
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                               ),
                             ],

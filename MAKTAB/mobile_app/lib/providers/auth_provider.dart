@@ -837,48 +837,20 @@ class AuthProvider with ChangeNotifier {
       }
     }
 
-    // Firebase RTDB direct Teacher lookup fallback for fresh device installations across all Maktabs
+    // Firebase RTDB direct Teacher lookup fallback for fresh device installations
     if (matchedUser == null && _db != null && input.isNotEmpty) {
       try {
-        final maktabsSnap = await _db!.ref('maktabs').get().timeout(const Duration(seconds: 4));
-        if (maktabsSnap.exists && maktabsSnap.value is Map) {
-          final maktabsMap = Map<String, dynamic>.from(maktabsSnap.value as Map);
-          for (var maktabEntry in maktabsMap.entries) {
-            final mId = maktabEntry.key.toString();
-            final mVal = maktabEntry.value;
-            if (mVal is Map && mVal['teachers'] is Map) {
-              final tMap = Map<String, dynamic>.from(mVal['teachers'] as Map);
-              for (var entry in tMap.entries) {
-                try {
-                  final item = Map<String, dynamic>.from(entry.value as Map);
-                  item['id'] ??= int.tryParse(entry.key.toString());
-                  final u = User.fromMap(item);
-                  if (u.role == 'teacher' && (u.pinHash == saltedHash || u.pinHash == rawHash)) {
-                    final idMatch = (parsedId != null && (u.id == parsedId || u.teacherId == parsedId)) ||
-                        entry.key.toString() == input;
-                    bool mobileMatch = false;
-                    if (u.mobile != null && u.mobile!.isNotEmpty) {
-                      final cleanMobile = u.mobile!.replaceAll(RegExp(r'\D'), '');
-                      final cleanInput = input.replaceAll(RegExp(r'\D'), '');
-                      if (cleanMobile.isNotEmpty && cleanInput.isNotEmpty &&
-                          (cleanMobile == cleanInput || (cleanInput.length >= 10 && cleanMobile.endsWith(cleanInput)))) {
-                        mobileMatch = true;
-                      }
-                    }
-                    if (idMatch || mobileMatch) {
-                      matchedUser = u;
-                      await CloudSyncService.instance.setMaktabId(mId);
-                      await _userRepository.insertUser(u);
-                      break;
-                    }
-                  }
-                } catch (e, st) {
-                  debugPrint('[AuthProvider.loginTeacherWithPin] Local user write failed: $e\n$st');
-                  // Do not throw — teacher can still log in; profile will sync on next launch
-                }
-              }
-            }
-            if (matchedUser != null) break;
+        final activeMaktabId = await CloudSyncService.instance.getMaktabId();
+        final teacherId = parsedId?.toString() ?? input;
+        final teacherSnap = await _db!.ref('maktabs/$activeMaktabId/teachers/$teacherId').get().timeout(const Duration(seconds: 4));
+        if (teacherSnap.exists && teacherSnap.value is Map) {
+          final item = Map<String, dynamic>.from(teacherSnap.value as Map);
+          item['id'] ??= int.tryParse(teacherId);
+          final u = User.fromMap(item);
+          if (u.role == 'teacher' && (u.pinHash == saltedHash || u.pinHash == rawHash)) {
+            matchedUser = u;
+            await CloudSyncService.instance.setMaktabId(activeMaktabId);
+            await _userRepository.insertUser(u);
           }
         }
       } catch (e) {

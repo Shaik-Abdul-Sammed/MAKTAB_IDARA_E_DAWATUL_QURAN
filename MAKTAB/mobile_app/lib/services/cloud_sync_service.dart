@@ -611,9 +611,46 @@ class CloudSyncService {
 
   Future<void> pushUser(User user) async {
     try {
+      final currentUser = fb_auth.FirebaseAuth.instance.currentUser;
+      if (currentUser == null || currentUser.isAnonymous) {
+        if (kDebugMode) debugPrint('[CloudSyncService] Gated pushUser: No authenticated Firebase user.');
+        return;
+      }
+
       final maktabId = await getMaktabId();
-      final id = user.id ?? DateTime.now().millisecondsSinceEpoch;
-      await _db?.ref('maktabs/$maktabId/teachers/$id').set(user.toMap());
+      if (maktabId.isEmpty) {
+        if (kDebugMode) debugPrint('[CloudSyncService] Gated pushUser: No active maktabId.');
+        return;
+      }
+
+      // Check current user's profile in RTDB to ensure manager/admin role and matching maktabId
+      final userSnap = await _db?.ref('users/${currentUser.uid}').get().timeout(const Duration(seconds: 3));
+      if (userSnap == null || !userSnap.exists || userSnap.value is! Map) {
+        if (kDebugMode) debugPrint('[CloudSyncService] Gated pushUser: Current user profile not found.');
+        return;
+      }
+      final userData = Map<String, dynamic>.from(userSnap.value as Map);
+      final userRole = userData['role']?.toString();
+      final userMaktabId = userData['maktabId']?.toString();
+      final isActive = userData['active'] == true;
+
+      if (!isActive || (userRole != 'manager' && userRole != 'admin' && userRole != 'operator')) {
+        if (kDebugMode) debugPrint('[CloudSyncService] Skipping pushUser: Current user ($userRole) lacks teacher management permissions.');
+        return;
+      }
+
+      if (userMaktabId != maktabId) {
+        debugPrint('[CloudSyncService] Warning: Target maktabId ($maktabId) does not match manager maktabId ($userMaktabId). Skipping pushUser.');
+        return;
+      }
+
+      final id = user.id ?? user.teacherId ?? DateTime.now().millisecondsSinceEpoch;
+      final map = user.toMap();
+      map['maktabId'] = maktabId;
+      map['role'] = 'teacher';
+      map['active'] = user.isActive;
+
+      await _db?.ref('maktabs/$maktabId/teachers/$id').set(map);
     } catch (e) {
       debugPrint('Firebase pushUser error: $e');
     }

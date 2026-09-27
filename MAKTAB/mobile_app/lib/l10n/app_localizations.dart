@@ -225,6 +225,7 @@ class AppLocalizations {
       'fee_mgmt_tab_status': 'Fee Status',
       'fee_mgmt_tab_history': 'Payment History',
       'fee_mgmt_total_pending': 'Total Pending:',
+      'fee_record_payment': 'Record Payment',
       // Teacher Fees Screen
       'teacher_fees_title': 'Student Fees',
       'teacher_fees_reminders': 'Send Bulk Batch Reminders',
@@ -458,6 +459,7 @@ class AppLocalizations {
       'fee_mgmt_tab_status': 'ఫీజు స్థితి',
       'fee_mgmt_tab_history': 'చెల్లింపుల చరిత్ర',
       'fee_mgmt_total_pending': 'మొత్తం బకాయి:',
+      'fee_record_payment': 'చెల్లింపు రికార్డ్ చేయండి',
       // Teacher Fees Screen
       'teacher_fees_title': 'విద్యార్థుల ఫీజులు',
       'teacher_fees_reminders': 'బల్క్ బ్యాచ్ రిమైండర్లు పంపండి',
@@ -691,6 +693,7 @@ class AppLocalizations {
       'fee_mgmt_tab_status': 'فیس کی صورتحال',
       'fee_mgmt_tab_history': 'ادائیگیوں کی تاریخ',
       'fee_mgmt_total_pending': 'کل بقایا:',
+      'fee_record_payment': 'ادائیگی کا اندراج کریں',
       // Teacher Fees Screen
       'teacher_fees_title': 'طلباء کی فیس',
       'teacher_fees_reminders': 'بیک وقت ریمائنڈرز بھیجیں',
@@ -924,6 +927,7 @@ class AppLocalizations {
       'fee_mgmt_tab_status': 'शुल्क स्थिति',
       'fee_mgmt_tab_history': 'भुगतान इतिहास',
       'fee_mgmt_total_pending': 'कुल बकाया:',
+      'fee_record_payment': 'भुगतान दर्ज करें',
       // Teacher Fees Screen
       'teacher_fees_title': 'छात्र शुल्क',
       'teacher_fees_reminders': 'बल्क बैच रिमाइंडर भेजें',

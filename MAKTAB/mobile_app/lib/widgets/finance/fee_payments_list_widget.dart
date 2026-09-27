@@ -526,13 +526,22 @@ class _FeePaymentsListWidgetState extends State<FeePaymentsListWidget> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                'Total Collected',
-                style: TextStyle(color: Colors.white70, fontSize: 12),
+              const Expanded(
+                child: Text(
+                  'Total Collected',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(color: Colors.white70, fontSize: 12),
+                ),
               ),
-              Text(
-                '$count payment${count == 1 ? '' : 's'} · $_dateFilter',
-                style: const TextStyle(color: Colors.white54, fontSize: 11),
+              const SizedBox(width: 8),
+              Flexible(
+                child: Text(
+                  '$count payment${count == 1 ? '' : 's'} · $_dateFilter',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(color: Colors.white54, fontSize: 11),
+                ),
               ),
             ],
           ),
@@ -697,21 +706,23 @@ class _PaymentCardItem extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: AppColors.primaryTeal.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: AppColors.primaryTeal.withValues(alpha: 0.3)),
-                        ),
-                        child: Text(
-                          mode,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.primaryTeal,
+                      Flexible(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryTeal.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: AppColors.primaryTeal.withValues(alpha: 0.3)),
+                          ),
+                          child: Text(
+                            mode,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.primaryTeal,
+                            ),
                           ),
                         ),
                       ),

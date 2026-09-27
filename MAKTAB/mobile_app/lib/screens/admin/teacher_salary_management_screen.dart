@@ -221,9 +221,21 @@ class _TeacherSalaryManagementScreenState extends State<TeacherSalaryManagementS
                         decoration: BoxDecoration(color: const Color(0xFFE9F1E9), borderRadius: BorderRadius.circular(10)),
                         child: Column(
                           children: [
-                            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Monthly Salary:'), Text('₹$monthlySalary', style: const TextStyle(fontWeight: FontWeight.bold))]),
-                            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Already Paid:'), Text('₹$alreadyPaid', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green))]),
-                            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Remaining Due:'), Text('₹$remaining', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.red))]),
+                            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                              const Expanded(child: Text('Monthly Salary:', maxLines: 1, overflow: TextOverflow.ellipsis)),
+                              const SizedBox(width: 8),
+                              SizedBox(width: 90, child: Text('₹$monthlySalary', textAlign: TextAlign.end, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.bold))),
+                            ]),
+                            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                              const Expanded(child: Text('Already Paid:', maxLines: 1, overflow: TextOverflow.ellipsis)),
+                              const SizedBox(width: 8),
+                              SizedBox(width: 90, child: Text('₹$alreadyPaid', textAlign: TextAlign.end, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green))),
+                            ]),
+                            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                              const Expanded(child: Text('Remaining Due:', maxLines: 1, overflow: TextOverflow.ellipsis)),
+                              const SizedBox(width: 8),
+                              SizedBox(width: 90, child: Text('₹$remaining', textAlign: TextAlign.end, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.red))),
+                            ]),
                           ],
                         ),
                       ),
@@ -922,9 +934,11 @@ class _TeacherSalaryManagementScreenState extends State<TeacherSalaryManagementS
                                       Row(
                                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                         children: [
-                                          _buildDetailColumn('Monthly Salary', '₹$salary'),
-                                          _buildDetailColumn('Paid', '₹$paid', color: Colors.green),
-                                          _buildDetailColumn('Pending Due', '₹$remaining', color: Colors.red),
+                                          Expanded(child: _buildDetailColumn('Monthly Salary', '₹$salary')),
+                                          const SizedBox(width: 4),
+                                          Expanded(child: _buildDetailColumn('Paid', '₹$paid', color: Colors.green)),
+                                          const SizedBox(width: 4),
+                                          Expanded(child: _buildDetailColumn('Pending Due', '₹$remaining', color: Colors.red)),
                                         ],
                                       ),
                                       const SizedBox(height: 12),
