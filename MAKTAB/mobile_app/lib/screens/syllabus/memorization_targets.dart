@@ -127,8 +127,19 @@ class MemorizationTargetsScreen extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.black54)),
-          Text(value, style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF004D40))),
+          Expanded(
+            child: Text(label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.black54)),
+          ),
+          const SizedBox(width: 8),
+          Flexible(
+            child: Text(value,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF004D40))),
+          ),
         ],
       ),
     );

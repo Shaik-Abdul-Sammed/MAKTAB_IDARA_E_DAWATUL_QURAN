@@ -99,7 +99,7 @@ class _StudentPromotionScreenState extends State<StudentPromotionScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Confirm Promotion'),
-        content: Text('Promote ${_selectedStudentIds.length} students to ${_targetBatch!.name}?'),
+        content: Text('Promote ${_selectedStudentIds.length} students to ${_targetBatch!.name}?', maxLines: 1, overflow: TextOverflow.ellipsis),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
           ElevatedButton(
@@ -231,7 +231,7 @@ class _StudentPromotionScreenState extends State<StudentPromotionScreen> {
                                         onChanged: (val) => _toggleStudentSelection(student.id!),
                                         secondary: CircleAvatar(
                                           backgroundColor: const Color(0xFFE8F5E9),
-                                          child: Text(student.name[0], style: const TextStyle(color: Color(0xFF004D40))),
+                                          child: Text(student.name[0], style: const TextStyle(color: Color(0xFF004D40)), maxLines: 1, overflow: TextOverflow.ellipsis),
                                         ),
                                       ),
                                     );
@@ -283,7 +283,7 @@ class _StudentPromotionScreenState extends State<StudentPromotionScreen> {
                       ElevatedButton.icon(
                         onPressed: _isPromoting ? null : _promoteSelectedStudents,
                         icon: _isPromoting ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.upgrade),
-                        label: Text(_isPromoting ? 'Promoting...' : 'Promote ${_selectedStudentIds.length} Students'),
+                        label: Text(_isPromoting ? 'Promoting...' : 'Promote ${_selectedStudentIds.length} Students', maxLines: 1, overflow: TextOverflow.ellipsis),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFFFFD700), // Gold
                           foregroundColor: const Color(0xFF004D40),

@@ -221,8 +221,7 @@ $maktabName
                         return item.toString();
                       }
                     }(), 
-                    style: const TextStyle(fontSize: 16)
-                  ),
+                    style: const TextStyle(fontSize: 16), maxLines: 1, overflow: TextOverflow.ellipsis),
                 ),
               ),
             const SizedBox(height: 24),
@@ -406,16 +405,19 @@ $maktabName
                                           ],
                                         ),
                                         subtitle: Text('Date: ${item.date} | Ayah: ${item.ayahFrom}–${item.ayahTo} | Grade: ${item.grade}', maxLines: 2, overflow: TextOverflow.ellipsis),
-                                        trailing: Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            IconButton(
-                                              icon: const Icon(Icons.send_rounded, color: Color(0xFF004D40)),
-                                              tooltip: 'Send Sabaq Update to Parent',
-                                              onPressed: () => _sendSabaqToParent(item),
-                                            ),
-                                            const Icon(Icons.chevron_right),
-                                          ],
+                                        trailing: ConstrainedBox(
+                                          constraints: const BoxConstraints(maxWidth: 80),
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              IconButton(
+                                                icon: const Icon(Icons.send_rounded, color: Color(0xFF004D40)),
+                                                tooltip: 'Send Sabaq Update to Parent',
+                                                onPressed: () => _sendSabaqToParent(item),
+                                              ),
+                                              const Icon(Icons.chevron_right),
+                                            ],
+                                          ),
                                         ),
                                         onLongPress: () => _showDetailSheet(item),
                                         onTap: () async {

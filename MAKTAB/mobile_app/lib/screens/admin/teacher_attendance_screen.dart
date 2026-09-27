@@ -258,8 +258,7 @@ class _TeacherAttendanceScreenState extends State<TeacherAttendanceScreen> {
                         style: const TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.bold,
-                            fontSize: 16),
-                      ),
+                            fontSize: 16), maxLines: 1, overflow: TextOverflow.ellipsis),
                     ),
                     IconButton(
                       icon: const Icon(Icons.share, color: Colors.white),
@@ -624,8 +623,7 @@ class _TeacherAttendanceScreenState extends State<TeacherAttendanceScreen> {
                           Expanded(
                             child: Text(
                               '${_teachersWithoutPhoto.length} teacher(s) missing profile photo — Face Verification disabled for them.',
-                              style: const TextStyle(fontSize: 12, color: Color(0xFF8D4E00)),
-                            ),
+                              style: const TextStyle(fontSize: 12, color: Color(0xFF8D4E00)), maxLines: 1, overflow: TextOverflow.ellipsis),
                           ),
                           TextButton(
                             onPressed: () => context.push('/admin/teachers'),
@@ -755,8 +753,7 @@ class _TeacherAttendanceScreenState extends State<TeacherAttendanceScreen> {
                                                           color: statusColor,
                                                           fontWeight:
                                                               FontWeight.bold,
-                                                          fontSize: 16),
-                                                    )
+                                                          fontSize: 16), maxLines: 1, overflow: TextOverflow.ellipsis)
                                                   : null,
                                             ),
                                             const SizedBox(width: 12),
@@ -771,7 +768,7 @@ class _TeacherAttendanceScreenState extends State<TeacherAttendanceScreen> {
                                                             fontWeight:
                                                                 FontWeight.bold,
                                                             color: Color(
-                                                                0xFF1A1A1A))),
+                                                                0xFF1A1A1A)), maxLines: 1, overflow: TextOverflow.ellipsis),
                                                     Text(
                                                         teacher.mobile ??
                                                             'No Mobile',
@@ -824,7 +821,7 @@ class _TeacherAttendanceScreenState extends State<TeacherAttendanceScreen> {
                                                         content: Row(children: [
                                                           const Icon(Icons.warning_amber, color: Colors.white, size: 18),
                                                           const SizedBox(width: 8),
-                                                          Expanded(child: Text('${teacher.name} has no profile photo. Please add one to enable Face Verification.')),
+                                                          Expanded(child: Text('${teacher.name} has no profile photo. Please add one to enable Face Verification.', maxLines: 1, overflow: TextOverflow.ellipsis)),
                                                         ]),
                                                         backgroundColor: Colors.orange.shade700,
                                                         duration: const Duration(seconds: 4),
@@ -995,7 +992,7 @@ class _StatChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Column(children: [
-    Text('$value', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: color)),
+    Text('$value', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: color), maxLines: 1, overflow: TextOverflow.ellipsis),
     Text(label, style: const TextStyle(fontSize: 10, color: Colors.black54)),
   ]);
 }
@@ -1068,13 +1065,12 @@ class _SummaryTeacherTile extends StatelessWidget {
           backgroundColor: color.withValues(alpha: 0.15),
           child: Text(
             teacher.name.isNotEmpty ? teacher.name[0].toUpperCase() : 'T',
-            style: TextStyle(color: color, fontWeight: FontWeight.bold),
-          ),
+            style: TextStyle(color: color, fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
         ),
         const SizedBox(width: 10),
         Expanded(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(teacher.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+            Text(teacher.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14), maxLines: 1, overflow: TextOverflow.ellipsis),
             Text(status, style: TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.w600)),
           ]),
         ),

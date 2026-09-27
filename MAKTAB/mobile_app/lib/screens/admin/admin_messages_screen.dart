@@ -210,8 +210,7 @@ class _AdminMessagesScreenState extends State<AdminMessagesScreen> {
                                 backgroundColor: const Color(0xFF004D40),
                                 child: Text(
                                   teacher.name.isNotEmpty ? teacher.name.substring(0, 1).toUpperCase() : 'T',
-                                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                                ),
+                                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
                               ),
                               title: Row(
                                 children: [
@@ -220,8 +219,7 @@ class _AdminMessagesScreenState extends State<AdminMessagesScreen> {
                                       teacher.name,
                                       style: TextStyle(
                                         fontWeight: unreadCount > 0 ? FontWeight.bold : FontWeight.w600,
-                                      ),
-                                    ),
+                                      ), maxLines: 1, overflow: TextOverflow.ellipsis),
                                   ),
                                   if (preview != null && preview['timestamp'] != null)
                                     Text(

@@ -91,13 +91,11 @@ class _BatchAttendanceSelectionScreenState extends State<BatchAttendanceSelectio
                                   children: [
                                     Text(
                                       batch.name,
-                                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF004D40)),
-                                    ),
+                                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF004D40)), maxLines: 1, overflow: TextOverflow.ellipsis),
                                     const SizedBox(height: 4),
                                     Text(
                                       'Timing: ${batch.timing}',
-                                      style: const TextStyle(color: Colors.black54, fontSize: 13),
-                                    ),
+                                      style: const TextStyle(color: Colors.black54, fontSize: 13), maxLines: 1, overflow: TextOverflow.ellipsis),
                                   ],
                                 ),
                               ),

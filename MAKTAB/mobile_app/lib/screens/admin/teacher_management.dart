@@ -524,7 +524,7 @@ class _TeacherManagementScreenState extends State<TeacherManagementScreen> {
       builder: (context) {
         return AlertDialog(
           title: const Text('Confirm Delete'),
-          content: Text('Are you sure you want to delete ${teacher.name}? This will remove their profile from the local SQLite database.'),
+          content: Text('Are you sure you want to delete ${teacher.name}? This will remove their profile from the local SQLite database.', maxLines: 1, overflow: TextOverflow.ellipsis),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context, false),
@@ -656,62 +656,64 @@ class _TeacherManagementScreenState extends State<TeacherManagementScreen> {
                                       fontSize: 12,
                                       fontWeight: FontWeight.w500,
                                       color: assignedCount == 0 ? Colors.orange.shade800 : Colors.green.shade800,
-                                    ),
-                                  );
+                                    ), maxLines: 1, overflow: TextOverflow.ellipsis);
                                 },
                               ),
                             ],
                           ),
-                          trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              if (teacher.mobile != null && teacher.mobile!.isNotEmpty)
-                                IconButton(
-                                  icon: const Icon(Icons.message, color: Colors.green),
-                                  tooltip: 'Send/Reset PIN via WhatsApp',
-                                  onPressed: () {
-                                    _showResetPinDialog(teacher);
-                                  },
-                                ),
-                                  PopupMenuButton<String>(
-                                    icon: const Icon(Icons.more_vert, color: Color(0xFF004D40)),
-                                    onSelected: (value) async {
-                                      if (value == 'reset_password') {
-                                        if (teacher.mobile != null && teacher.mobile!.contains('@')) {
-                                          final auth = Provider.of<AuthProvider>(context, listen: false);
-                                          final success = await auth.sendPasswordReset(teacher.mobile!);
-                                          if (context.mounted) {
-                                            ScaffoldMessenger.of(context).showSnackBar(
-                                              SnackBar(content: Text(success ? 'Password reset link sent to ${teacher.mobile}' : 'Failed to send reset link', maxLines: 2, overflow: TextOverflow.ellipsis)),
-                                            );
-                                          }
-                                        } else {
-                                          _showResetPinDialog(teacher);
-                                        }
-                                      } else if (value == 'edit') {
-                                        _showEditTeacherDialog(teacher);
-                                      }
+                          trailing: ConstrainedBox(
+                            constraints: const BoxConstraints(maxWidth: 100),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                if (teacher.mobile != null && teacher.mobile!.isNotEmpty)
+                                  IconButton(
+                                    icon: const Icon(Icons.message, color: Colors.green),
+                                    tooltip: 'Send/Reset PIN via WhatsApp',
+                                    onPressed: () {
+                                      _showResetPinDialog(teacher);
                                     },
-                                    itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-                                      const PopupMenuItem<String>(
-                                        value: 'edit',
-                                        child: ListTile(
-                                          leading: Icon(Icons.edit, color: Color(0xFF004D40)),
-                                          title: Text('Edit Details', maxLines: 1, overflow: TextOverflow.ellipsis),
-                                          contentPadding: EdgeInsets.zero,
-                                        ),
-                                      ),
-                                      const PopupMenuItem<String>(
-                                        value: 'reset_password',
-                                        child: ListTile(
-                                          leading: Icon(Icons.mark_email_unread, color: Color(0xFF004D40)),
-                                          title: Text('Send Password Reset Link', maxLines: 1, overflow: TextOverflow.ellipsis),
-                                          contentPadding: EdgeInsets.zero,
-                                        ),
-                                      ),
-                                    ],
                                   ),
-                            ],
+                                    PopupMenuButton<String>(
+                                      icon: const Icon(Icons.more_vert, color: Color(0xFF004D40)),
+                                      onSelected: (value) async {
+                                        if (value == 'reset_password') {
+                                          if (teacher.mobile != null && teacher.mobile!.contains('@')) {
+                                            final auth = Provider.of<AuthProvider>(context, listen: false);
+                                            final success = await auth.sendPasswordReset(teacher.mobile!);
+                                            if (context.mounted) {
+                                              ScaffoldMessenger.of(context).showSnackBar(
+                                                SnackBar(content: Text(success ? 'Password reset link sent to ${teacher.mobile}' : 'Failed to send reset link', maxLines: 2, overflow: TextOverflow.ellipsis)),
+                                              );
+                                            }
+                                          } else {
+                                            _showResetPinDialog(teacher);
+                                          }
+                                        } else if (value == 'edit') {
+                                          _showEditTeacherDialog(teacher);
+                                        }
+                                      },
+                                      itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+                                        const PopupMenuItem<String>(
+                                          value: 'edit',
+                                          child: ListTile(
+                                            leading: Icon(Icons.edit, color: Color(0xFF004D40)),
+                                            title: Text('Edit Details', maxLines: 1, overflow: TextOverflow.ellipsis),
+                                            contentPadding: EdgeInsets.zero,
+                                          ),
+                                        ),
+                                        const PopupMenuItem<String>(
+                                          value: 'reset_password',
+                                          child: ListTile(
+                                            leading: Icon(Icons.mark_email_unread, color: Color(0xFF004D40)),
+                                            title: Text('Send Password Reset Link', maxLines: 1, overflow: TextOverflow.ellipsis),
+                                            contentPadding: EdgeInsets.zero,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                              ],
+                            ),
                           ),
                         ),
                       ),

@@ -204,8 +204,7 @@ class _BulkFeeMessagingDialogState extends State<BulkFeeMessagingDialog> {
               builder: (ctx) => AlertDialog(
                 title: Text('WhatsApp Queue (${i + 1}/${selected.length})', maxLines: 1, overflow: TextOverflow.ellipsis),
                 content: Text(
-                  'Sent message to ${item.student.name}.\nNext student: ${selected[i + 1].student.name}',
-                ),
+                  'Sent message to ${item.student.name}.\nNext student: ${selected[i + 1].student.name}', maxLines: 1, overflow: TextOverflow.ellipsis),
                 actions: [
                   TextButton(
                     onPressed: () => Navigator.pop(ctx, false),
@@ -482,8 +481,7 @@ class _BulkFeeMessagingDialogState extends State<BulkFeeMessagingDialog> {
               children: [
                 Text(
                   'Selected Students ($selectedCount / ${_items.length})',
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF004D40)),
-                ),
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF004D40)), maxLines: 1, overflow: TextOverflow.ellipsis),
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -572,7 +570,7 @@ class _BulkFeeMessagingDialogState extends State<BulkFeeMessagingDialog> {
                   child: ElevatedButton.icon(
                     onPressed: selectedCount > 0 ? _startWhatsAppQueue : null,
                     icon: const Icon(Icons.send_rounded, size: 16),
-                    label: Text('Send WhatsApp ($selectedCount)', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                    label: Text('Send WhatsApp ($selectedCount)', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFFFFD700),
                       foregroundColor: const Color(0xFF004D40),

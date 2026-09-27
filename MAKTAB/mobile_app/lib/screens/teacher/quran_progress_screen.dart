@@ -141,12 +141,12 @@ class _QuranProgressScreenState extends State<QuranProgressScreen> {
               _buildHeaderBanner(),
               const SizedBox(height: 20),
 
-              Text(loc?.translate('select_batch') ?? 'Select Batch', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF004D40))),
+              Text(loc?.translate('select_batch') ?? 'Select Batch', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF004D40)), maxLines: 1, overflow: TextOverflow.ellipsis),
               const SizedBox(height: 10),
               _buildBatchChips(),
               const SizedBox(height: 24),
 
-              Text(loc?.translate('students') ?? 'Students Recitation Roster', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF004D40))),
+              Text(loc?.translate('students') ?? 'Students Recitation Roster', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF004D40)), maxLines: 1, overflow: TextOverflow.ellipsis),
               const SizedBox(height: 12),
 
               if (_isLoading) ...[
@@ -216,13 +216,21 @@ class _QuranProgressScreenState extends State<QuranProgressScreen> {
         children: [
           const Icon(Icons.menu_book_rounded, color: Color(0xFFFFD700), size: 40),
           const SizedBox(width: 16),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(loc?.translate('quran_progress') ?? 'Sabaq Tracker', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18, overflow: TextOverflow.ellipsis)),
-              const SizedBox(height: 4),
-              Text(loc?.translate('recitation_type') ?? 'Record Sabaq, Sabaqi, and Manzil daily', style: const TextStyle(color: Colors.white70, fontSize: 12)),
-            ],
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(loc?.translate('quran_progress') ?? 'Sabaq Tracker',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
+                const SizedBox(height: 4),
+                Text(loc?.translate('recitation_type') ?? 'Record Sabaq, Sabaqi, and Manzil daily',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(color: Colors.white70, fontSize: 12)),
+              ],
+            ),
           ),
         ],
       ),
@@ -293,8 +301,7 @@ class _StudentRecitationTile extends StatelessWidget {
             leading: CircleAvatar(
               child: Text(
                 student.name.isNotEmpty ? student.name[0].toUpperCase() : 'S',
-                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-              ),
+                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
             ),
             title: Text(student.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15), maxLines: 1, overflow: TextOverflow.ellipsis),
             subtitle: Padding(
@@ -302,21 +309,30 @@ class _StudentRecitationTile extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('ADM: ${student.admissionNumber}', style: const TextStyle(fontSize: 12, color: Colors.black45)),
+                  Text('ADM: ${student.admissionNumber}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontSize: 12, color: Colors.black45)),
                   const SizedBox(height: 3),
                   if (hasProgress) ...[
                     Text(
                       '${loc?.translate('surah') ?? 'Surah'} ${p['surah']} · ${loc?.translate('ayat') ?? 'Ayah'} ${p['ayah_from']}–${p['ayah_to']}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF004D40)),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       '${loc?.translate('date_time') ?? 'Date'}: ${p['date']} · ${p['grade']}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: const TextStyle(fontSize: 11, color: Colors.black54),
                     ),
                   ] else ...[
                     Text(
                       loc?.translate('no_progress_recorded') ?? 'Not started yet',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: const TextStyle(fontSize: 12, fontStyle: FontStyle.italic, color: Colors.grey),
                     ),
                   ],
@@ -336,6 +352,8 @@ class _StudentRecitationTile extends StatelessWidget {
               icon: const Icon(Icons.edit_note_rounded, size: 16),
               label: Text(
                 '${loc?.translate('save') ?? 'Log'} ${loc?.translate('sabaq') ?? 'Sabaq'}',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11),
               ),
               style: ElevatedButton.styleFrom(

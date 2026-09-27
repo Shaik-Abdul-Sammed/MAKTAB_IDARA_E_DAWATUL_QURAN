@@ -107,7 +107,7 @@ class _StudentHealthInfoScreenState extends State<StudentHealthInfoScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Expanded(child: Text(item.name, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF004D40)))),
+                Expanded(child: Text(item.name, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF004D40)), maxLines: 1, overflow: TextOverflow.ellipsis)),
                 IconButton(
                   icon: const Icon(Icons.edit, color: Colors.blue),
                   onPressed: () {
@@ -124,10 +124,10 @@ class _StudentHealthInfoScreenState extends State<StudentHealthInfoScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Admission No: ${item.admissionNumber}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                    Text('Admission No: ${item.admissionNumber}', style: const TextStyle(fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
                     const SizedBox(height: 8),
-                    Text('Phone: ${item.phone ?? "N/A"}'),
-                    Text('Guardian: ${item.guardianName ?? "N/A"} (${item.guardianPhone ?? "N/A"})'),
+                    Text('Phone: ${item.phone ?? "N/A"}', maxLines: 1, overflow: TextOverflow.ellipsis),
+                    Text('Guardian: ${item.guardianName ?? "N/A"} (${item.guardianPhone ?? "N/A"})', maxLines: 1, overflow: TextOverflow.ellipsis),
                     const SizedBox(height: 12),
                     const Text('Health & Emergency Notes:', style: TextStyle(fontWeight: FontWeight.bold)),
                     const SizedBox(height: 4),

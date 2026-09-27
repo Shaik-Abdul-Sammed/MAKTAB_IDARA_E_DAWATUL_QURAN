@@ -232,8 +232,7 @@ class _ParentContactSheet extends StatelessWidget {
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
                         color: AppColors.primaryTeal,
-                      ),
-                    ),
+                      ), maxLines: 1, overflow: TextOverflow.ellipsis),
                   ],
                 ),
               ),
@@ -270,8 +269,7 @@ class _ParentContactSheet extends StatelessWidget {
                                 style: const TextStyle(
                                   color: AppColors.primaryTeal,
                                   fontWeight: FontWeight.bold,
-                                ),
-                              ),
+                                ), maxLines: 1, overflow: TextOverflow.ellipsis),
                             ),
                             title: Text(s.name,
                                 style: const TextStyle(

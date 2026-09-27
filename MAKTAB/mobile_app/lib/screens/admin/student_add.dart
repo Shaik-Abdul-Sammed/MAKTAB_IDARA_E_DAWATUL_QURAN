@@ -178,8 +178,7 @@ class _StudentAddScreenState extends State<StudentAddScreen> {
           builder: (ctx) => AlertDialog(
             title: const Text('Duplicate Mobile Number'),
             content: Text(
-              'A student with this mobile number already exists:\n${existing.name} (ID: ${existing.id ?? existing.admissionNumber})\n\nDo you want to continue anyway?',
-            ),
+              'A student with this mobile number already exists:\n${existing.name} (ID: ${existing.id ?? existing.admissionNumber})\n\nDo you want to continue anyway?', maxLines: 1, overflow: TextOverflow.ellipsis),
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(ctx).pop(false),
@@ -508,7 +507,7 @@ class _StudentAddScreenState extends State<StudentAddScreen> {
                                 height: 22,
                                 child: CircularProgressIndicator(color: Color(0xFF004D40), strokeWidth: 2.5),
                               )
-                            : Text(loc?.translate('student_add_btn') ?? 'Save Student', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                            : Text(loc?.translate('student_add_btn') ?? 'Save Student', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16), maxLines: 1, overflow: TextOverflow.ellipsis),
                       ),
                     ),
                   ),
@@ -647,8 +646,12 @@ class _SectionTitle extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(title,
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF004D40))),
+        Expanded(
+          child: Text(title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF004D40))),
+        ),
         // ignore: use_null_aware_elements
         if (trailing != null) trailing!,
       ],

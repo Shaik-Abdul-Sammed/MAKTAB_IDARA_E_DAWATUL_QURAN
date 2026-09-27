@@ -167,7 +167,7 @@ class _StudentAcademicHistoryScreenState extends State<StudentAcademicHistoryScr
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Academic History: ${_selectedStudent!.name}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF004D40))),
+          Text('Academic History: ${_selectedStudent!.name}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF004D40)), maxLines: 1, overflow: TextOverflow.ellipsis),
           const Divider(height: 20),
           _buildRecordRow('15 Jul 2026', 'Surah Al-Baqarah (1-50)', 'Grade A+ (Mumtaz)'),
           const Divider(),
@@ -197,13 +197,16 @@ class _StudentAcademicHistoryScreenState extends State<StudentAcademicHistoryScr
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(surah, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-              Text(date, style: const TextStyle(fontSize: 11, color: Colors.black45)),
-            ],
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(surah, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                Text(date, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 11, color: Colors.black45)),
+              ],
+            ),
           ),
+          const SizedBox(width: 8),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
             decoration: BoxDecoration(color: const Color(0xFF004D40).withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),

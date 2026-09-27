@@ -107,7 +107,7 @@ class _StudentAttendanceLogScreenState extends State<StudentAttendanceLogScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Attendance Log: ${_selectedStudent!.name}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF004D40))),
+          Text('Attendance Log: ${_selectedStudent!.name}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF004D40)), maxLines: 1, overflow: TextOverflow.ellipsis),
           const SizedBox(height: 12),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -144,8 +144,9 @@ class _StudentAttendanceLogScreenState extends State<StudentAttendanceLogScreen>
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(date, style: const TextStyle(fontSize: 12, color: Colors.black87)),
-          Text(status, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: color)),
+          Expanded(child: Text(date, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12, color: Colors.black87))),
+          const SizedBox(width: 8),
+          Flexible(child: Text(status, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: color))),
         ],
       ),
     );

@@ -387,8 +387,7 @@ class _StudentPaymentHistoryScreenState extends State<StudentPaymentHistoryScree
                                     alignment: Alignment.centerRight,
                                     child: Text(
                                       '₹${tx.payment.amount}',
-                                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.green),
-                                    ),
+                                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.green), maxLines: 1, overflow: TextOverflow.ellipsis),
                                   ),
                                 ),
                               ],

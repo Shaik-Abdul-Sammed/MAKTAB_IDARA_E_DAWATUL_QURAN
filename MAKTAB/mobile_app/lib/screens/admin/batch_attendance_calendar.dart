@@ -383,7 +383,7 @@ class _BatchAttendanceCalendarScreenState
                         child: const Text('Today', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF004D40))),
                       ),
                     const SizedBox(width: 6),
-                    Text('$total students', style: const TextStyle(fontSize: 11, color: Colors.black45)),
+                    Text('$total students', style: const TextStyle(fontSize: 11, color: Colors.black45), maxLines: 1, overflow: TextOverflow.ellipsis),
                     const SizedBox(width: 8),
                     const Icon(Icons.chevron_right, color: Colors.black26, size: 18),
                   ]),
@@ -408,7 +408,7 @@ class _BatchAttendanceCalendarScreenState
                     if (late > 0) const SizedBox(width: 10),
                     if (leave > 0) _DotStat(color: Colors.blue, label: '$leave Leave'),
                     const Spacer(),
-                    Text('${(rate * 100).round()}% present', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: dotColor)),
+                    Text('${(rate * 100).round()}% present', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: dotColor), maxLines: 1, overflow: TextOverflow.ellipsis),
                   ]),
                 ],
               ),
@@ -496,7 +496,7 @@ class _BatchAttendanceCalendarScreenState
                           _DotStat(color: Colors.red, label: '${stats['absent']} ❌'),
                           const SizedBox(width: 8),
                           Text('${(total > 0 ? (present / total * 100) : 0).round()}%',
-                              style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: dotColor)),
+                              style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: dotColor), maxLines: 1, overflow: TextOverflow.ellipsis),
                           const SizedBox(width: 6),
                           const Icon(Icons.chevron_right, color: Colors.black26, size: 16),
                         ]),
@@ -535,7 +535,7 @@ class _BatchAttendanceCalendarScreenState
           ]),
           const SizedBox(height: 4),
           Text('$activeDays class days · $totalStudents enrolled students',
-              style: const TextStyle(color: Colors.white60, fontSize: 12)),
+              style: const TextStyle(color: Colors.white60, fontSize: 12), maxLines: 1, overflow: TextOverflow.ellipsis),
           const SizedBox(height: 16),
           Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
             _MiniStat(label: 'Present',  value: '${stats['present']}',  color: Colors.greenAccent),
@@ -548,7 +548,7 @@ class _BatchAttendanceCalendarScreenState
           const SizedBox(height: 8),
           Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
             const Text('Overall Presence Rate', style: TextStyle(color: Colors.white70, fontSize: 13)),
-            Text('$rate%', style: TextStyle(color: rate >= 80 ? Colors.greenAccent : rate >= 60 ? Colors.orangeAccent : Colors.redAccent, fontWeight: FontWeight.bold, fontSize: 20)),
+            Text('$rate%', style: TextStyle(color: rate >= 80 ? Colors.greenAccent : rate >= 60 ? Colors.orangeAccent : Colors.redAccent, fontWeight: FontWeight.bold, fontSize: 20), maxLines: 1, overflow: TextOverflow.ellipsis),
           ]),
           const SizedBox(height: 8),
           ClipRRect(
@@ -596,7 +596,7 @@ class _DotStat extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(mainAxisSize: MainAxisSize.min, children: [
       Container(width: 8, height: 8, margin: const EdgeInsets.only(right: 4), decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
-      Text(label, style: const TextStyle(fontSize: 11, color: Colors.black54)),
+      Flexible(child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 11, color: Colors.black54))),
     ]);
   }
 }

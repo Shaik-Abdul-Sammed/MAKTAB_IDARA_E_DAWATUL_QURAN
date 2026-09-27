@@ -170,7 +170,7 @@ class _PasswordVaultScreenState extends State<PasswordVaultScreen>
       builder: (_) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
         title: const Text('Delete Entry'),
-        content: Text('Delete "${entry.label}"? This cannot be undone.'),
+        content: Text('Delete "${entry.label}"? This cannot be undone.', maxLines: 1, overflow: TextOverflow.ellipsis),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
           ElevatedButton(
@@ -201,7 +201,7 @@ class _PasswordVaultScreenState extends State<PasswordVaultScreen>
       content: Row(children: [
         const Icon(Icons.copy_rounded, color: Colors.white, size: 16),
         const SizedBox(width: 8),
-        Text('$label copied'),
+        Text('$label copied', maxLines: 1, overflow: TextOverflow.ellipsis),
       ]),
       backgroundColor: _teal,
       duration: const Duration(seconds: 2),
@@ -448,8 +448,7 @@ class _PasswordVaultScreenState extends State<PasswordVaultScreen>
         const SizedBox(height: 20),
         Text(
           _searchQuery.isNotEmpty ? 'No results for "$_searchQuery"' : 'No credentials saved yet',
-          style: const TextStyle(fontSize: 16, color: Colors.black54, fontWeight: FontWeight.w500),
-        ),
+          style: const TextStyle(fontSize: 16, color: Colors.black54, fontWeight: FontWeight.w500), maxLines: 1, overflow: TextOverflow.ellipsis),
         const SizedBox(height: 8),
         const Text('Tap + to add your first credential',
             style: TextStyle(fontSize: 13, color: Colors.black38)),
@@ -484,9 +483,9 @@ class _PasswordVaultScreenState extends State<PasswordVaultScreen>
                 ),
                 const SizedBox(width: 12),
                 Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(e.label, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+                  Text(e.label, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
                   if (e.username != null && e.username!.isNotEmpty)
-                    Text(e.username!, style: const TextStyle(fontSize: 12, color: Colors.black54)),
+                    Text(e.username!, style: const TextStyle(fontSize: 12, color: Colors.black54), maxLines: 1, overflow: TextOverflow.ellipsis),
                 ])),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -527,7 +526,7 @@ class _PasswordVaultScreenState extends State<PasswordVaultScreen>
                   Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                     const Text('USERNAME', style: TextStyle(fontSize: 10, color: Colors.black38, letterSpacing: 0.8, fontWeight: FontWeight.w600)),
                     const SizedBox(height: 2),
-                    Text(e.username!, style: const TextStyle(fontSize: 13, color: Colors.black87)),
+                    Text(e.username!, style: const TextStyle(fontSize: 13, color: Colors.black87), maxLines: 1, overflow: TextOverflow.ellipsis),
                   ])),
                   _actionBtn(icon: Icons.copy_rounded, color: Colors.blueGrey, tooltip: 'Copy username',
                       onTap: () => _copyToClipboard(e.username!, 'Username')),
@@ -556,7 +555,7 @@ class _PasswordVaultScreenState extends State<PasswordVaultScreen>
                 const Icon(Icons.access_time_rounded, size: 12, color: Colors.black26),
                 const SizedBox(width: 4),
                 Text('Updated: ${e.updatedAt.length >= 16 ? e.updatedAt.substring(0, 16) : e.updatedAt}',
-                    style: const TextStyle(fontSize: 10, color: Colors.black38)),
+                    style: const TextStyle(fontSize: 10, color: Colors.black38), maxLines: 1, overflow: TextOverflow.ellipsis),
                 const Spacer(),
                 TextButton.icon(
                   onPressed: () => _showAddEditDialog(e),

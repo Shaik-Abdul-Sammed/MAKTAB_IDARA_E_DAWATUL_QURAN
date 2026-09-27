@@ -409,7 +409,7 @@ class _QuranProgressEntryScreenState extends State<QuranProgressEntryScreen> {
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
                                       Text('${item.surah} (${item.ayahFrom}-${item.ayahTo})',
-                                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13), maxLines: 1, overflow: TextOverflow.ellipsis),
                                       if (item.remarks != null)
                                         Text(item.remarks!, style: const TextStyle(fontSize: 11, color: Colors.black54)),
                                     ],

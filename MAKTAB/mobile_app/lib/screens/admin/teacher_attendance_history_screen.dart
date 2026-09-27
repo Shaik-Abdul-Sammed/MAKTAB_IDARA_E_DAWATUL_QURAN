@@ -393,12 +393,14 @@ class _TeacherAttendanceHistoryScreenState
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Text(
-                              '${_attendanceRate.toStringAsFixed(0)}%',
-                              style: const TextStyle(
-                                  color: AppColors.goldAccent,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 18),
+                            FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text(
+                                '${_attendanceRate.toStringAsFixed(0)}%',
+                                style: const TextStyle(
+                                    color: AppColors.goldAccent,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 18), maxLines: 1, overflow: TextOverflow.ellipsis),
                             ),
                             const Text(
                               'Rate',
@@ -419,6 +421,8 @@ class _TeacherAttendanceHistoryScreenState
                         children: [
                           Text(
                             '$_selectedPeriod Summary',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold,

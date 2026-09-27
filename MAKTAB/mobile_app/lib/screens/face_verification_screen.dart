@@ -277,8 +277,7 @@ class _FaceVerificationScreenState extends State<FaceVerificationScreen> {
                             Text(
                               'Teacher Verification for ${widget.personName}',
                               style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
-                              textAlign: TextAlign.center,
-                            ),
+                              textAlign: TextAlign.center, maxLines: 1, overflow: TextOverflow.ellipsis),
                             const SizedBox(height: 10),
                             const Text(
                               'Confirm teacher identity to access class register.',

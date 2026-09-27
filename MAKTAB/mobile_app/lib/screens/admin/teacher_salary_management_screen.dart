@@ -154,10 +154,10 @@ class _TeacherSalaryManagementScreenState extends State<TeacherSalaryManagementS
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('UPI App launch status: ${launched ? "Success" : "Manual / App Open"}'),
+            Text('UPI App launch status: ${launched ? "Success" : "Manual / App Open"}', maxLines: 1, overflow: TextOverflow.ellipsis),
             const SizedBox(height: 8),
-            Text('Paying to: $upiId'),
-            Text('Target Amount: ₹$remainingAmount'),
+            Text('Paying to: $upiId', maxLines: 1, overflow: TextOverflow.ellipsis),
+            Text('Target Amount: ₹$remainingAmount', maxLines: 1, overflow: TextOverflow.ellipsis),
             const SizedBox(height: 12),
             const Text(
               'IMPORTANT:\nOpening the UPI application is NOT confirmation of payment. Complete the transaction in your UPI app, then tap "Record Payment" to update records.',
@@ -290,7 +290,7 @@ class _TeacherSalaryManagementScreenState extends State<TeacherSalaryManagementS
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text('After Payment Due: ₹$newRemaining', style: const TextStyle(fontWeight: FontWeight.bold)),
+                            Text('After Payment Due: ₹$newRemaining', style: const TextStyle(fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
                             Text(newTotal >= monthlySalary ? 'PAID ✓' : 'PARTIAL ⚠', style: TextStyle(fontWeight: FontWeight.bold, color: newTotal >= monthlySalary ? Colors.green : Colors.orange)),
                           ],
                         ),
@@ -662,7 +662,7 @@ class _TeacherSalaryManagementScreenState extends State<TeacherSalaryManagementS
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Delete Salary Payment'),
-        content: Text('Delete this salary payment of ₹${payment.amount} for ${payment.salaryMonth}? This cannot be undone.'),
+        content: Text('Delete this salary payment of ₹${payment.amount} for ${payment.salaryMonth}? This cannot be undone.', maxLines: 1, overflow: TextOverflow.ellipsis),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
           ElevatedButton(
@@ -897,13 +897,11 @@ class _TeacherSalaryManagementScreenState extends State<TeacherSalaryManagementS
                                             children: [
                                               Text(
                                                 teacher.name,
-                                                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF004D40)),
-                                              ),
+                                                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF004D40)), maxLines: 1, overflow: TextOverflow.ellipsis),
                                               const SizedBox(height: 2),
                                               Text(
                                                 'This Month: ₹$paid / ₹$salary',
-                                                style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
-                                              ),
+                                                style: TextStyle(fontSize: 12, color: Colors.grey.shade700), maxLines: 1, overflow: TextOverflow.ellipsis),
                                             ],
                                           ),
                                         ),
@@ -919,9 +917,13 @@ class _TeacherSalaryManagementScreenState extends State<TeacherSalaryManagementS
                                             children: [
                                               Icon(statusIcon, size: 14, color: statusColor),
                                               const SizedBox(width: 4),
-                                              Text(
-                                                status,
-                                                style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: statusColor),
+                                              Flexible(
+                                                child: Text(
+                                                  status,
+                                                  maxLines: 1,
+                                                  overflow: TextOverflow.ellipsis,
+                                                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: statusColor),
+                                                ),
                                               ),
                                             ],
                                           ),
@@ -1002,38 +1004,42 @@ class _TeacherSalaryManagementScreenState extends State<TeacherSalaryManagementS
                                         child: Row(
                                           mainAxisAlignment: MainAxisAlignment.spaceAround,
                                           children: [
-                                            Column(
-                                              children: [
-                                                const Text(
-                                                  'Paid This Year',
-                                                  maxLines: 1,
-                                                  overflow: TextOverflow.ellipsis,
-                                                  style: TextStyle(fontSize: 11, color: Colors.black54),
-                                                ),
-                                                const SizedBox(height: 2),
-                                                FittedBox(
-                                                  fit: BoxFit.scaleDown,
-                                                  alignment: Alignment.center,
-                                                  child: Text('₹$totalPaidThisYear', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF004D40))),
-                                                ),
-                                              ],
+                                            Expanded(
+                                              child: Column(
+                                                children: [
+                                                  const Text(
+                                                    'Paid This Year',
+                                                    maxLines: 1,
+                                                    overflow: TextOverflow.ellipsis,
+                                                    style: TextStyle(fontSize: 11, color: Colors.black54),
+                                                  ),
+                                                  const SizedBox(height: 2),
+                                                  FittedBox(
+                                                    fit: BoxFit.scaleDown,
+                                                    alignment: Alignment.center,
+                                                    child: Text('₹$totalPaidThisYear', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF004D40)), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                                  ),
+                                                ],
+                                              ),
                                             ),
                                             Container(width: 1, height: 30, color: Colors.black26),
-                                            Column(
-                                              children: [
-                                                const Text(
-                                                  'Paid All Time',
-                                                  maxLines: 1,
-                                                  overflow: TextOverflow.ellipsis,
-                                                  style: TextStyle(fontSize: 11, color: Colors.black54),
-                                                ),
-                                                const SizedBox(height: 2),
-                                                FittedBox(
-                                                  fit: BoxFit.scaleDown,
-                                                  alignment: Alignment.center,
-                                                  child: Text('₹$totalPaidAllTime', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF004D40))),
-                                                ),
-                                              ],
+                                            Expanded(
+                                              child: Column(
+                                                children: [
+                                                  const Text(
+                                                    'Paid All Time',
+                                                    maxLines: 1,
+                                                    overflow: TextOverflow.ellipsis,
+                                                    style: TextStyle(fontSize: 11, color: Colors.black54),
+                                                  ),
+                                                  const SizedBox(height: 2),
+                                                  FittedBox(
+                                                    fit: BoxFit.scaleDown,
+                                                    alignment: Alignment.center,
+                                                    child: Text('₹$totalPaidAllTime', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF004D40)), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                                  ),
+                                                ],
+                                              ),
                                             ),
                                           ],
                                         ),
@@ -1045,8 +1051,7 @@ class _TeacherSalaryManagementScreenState extends State<TeacherSalaryManagementS
                                         alignment: Alignment.centerLeft,
                                         child: Text(
                                           'Payment History (${allTeacherPayments.length})',
-                                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF004D40)),
-                                        ),
+                                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF004D40)), maxLines: 1, overflow: TextOverflow.ellipsis),
                                       ),
                                       const SizedBox(height: 6),
                                       if (allTeacherPayments.isEmpty)

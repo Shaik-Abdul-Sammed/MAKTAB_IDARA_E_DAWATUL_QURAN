@@ -495,11 +495,15 @@ class _AdminDashboardState extends State<AdminDashboard>
                                 children: [
                                   Text(
                                     alert.title,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
                                     style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: textColor),
                                   ),
                                   const SizedBox(height: 2),
                                   Text(
                                     alert.subtitle,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
                                     style: TextStyle(fontSize: 11, color: textColor.withValues(alpha: 0.85)),
                                   ),
                                 ],
@@ -645,7 +649,7 @@ class _AdminDashboardState extends State<AdminDashboard>
                   children: [
                     const Icon(Icons.sync_rounded, color: Color(0xFF004D40), size: 18),
                     const SizedBox(width: 10),
-                    Text(loc?.translate('sync') ?? 'Sync Devices'),
+                    Text(loc?.translate('sync') ?? 'Sync Devices', maxLines: 1, overflow: TextOverflow.ellipsis),
                   ],
                 ),
               ),
@@ -655,7 +659,7 @@ class _AdminDashboardState extends State<AdminDashboard>
                   children: [
                     const Icon(AppIcons.settings, color: Color(0xFF004D40), size: 18),
                     const SizedBox(width: 10),
-                    Text(loc?.translate('settings') ?? 'Settings'),
+                    Text(loc?.translate('settings') ?? 'Settings', maxLines: 1, overflow: TextOverflow.ellipsis),
                   ],
                 ),
               ),
@@ -696,7 +700,7 @@ class _AdminDashboardState extends State<AdminDashboard>
                                 children: auth.provisionFailures
                                     .map((f) => Padding(
                                           padding: const EdgeInsets.only(bottom: 6),
-                                          child: Text('• $f', style: const TextStyle(fontSize: 13)),
+                                          child: Text('• $f', style: const TextStyle(fontSize: 13), maxLines: 1, overflow: TextOverflow.ellipsis),
                                         ))
                                     .toList(),
                               ),
@@ -717,8 +721,7 @@ class _AdminDashboardState extends State<AdminDashboard>
                           Expanded(
                             child: Text(
                               '⚠️ ${auth.provisionFailures.length} teacher account(s) could not be provisioned. They may not be able to log in. Tap for details.',
-                              style: const TextStyle(color: Color(0xFF856404), fontSize: 12.5, fontWeight: FontWeight.w600),
-                            ),
+                              style: const TextStyle(color: Color(0xFF856404), fontSize: 12.5, fontWeight: FontWeight.w600), maxLines: 1, overflow: TextOverflow.ellipsis),
                           ),
                         ],
                       ),
@@ -749,7 +752,7 @@ class _AdminDashboardState extends State<AdminDashboard>
                                   ...auth.provisionPwMismatches
                                       .map((f) => Padding(
                                             padding: const EdgeInsets.only(bottom: 6),
-                                            child: Text('• $f', style: const TextStyle(fontSize: 13)),
+                                            child: Text('• $f', style: const TextStyle(fontSize: 13), maxLines: 1, overflow: TextOverflow.ellipsis),
                                           )),
                                   const SizedBox(height: 12),
                                   const Text(
@@ -775,8 +778,7 @@ class _AdminDashboardState extends State<AdminDashboard>
                           Expanded(
                             child: Text(
                               '🔑 ${auth.provisionPwMismatches.length} teacher account(s) have a password mismatch. Manual reset required. Tap for details.',
-                              style: const TextStyle(color: Color(0xFF721C24), fontSize: 12.5, fontWeight: FontWeight.w600),
-                            ),
+                              style: const TextStyle(color: Color(0xFF721C24), fontSize: 12.5, fontWeight: FontWeight.w600), maxLines: 1, overflow: TextOverflow.ellipsis),
                           ),
                         ],
                       ),
@@ -1172,7 +1174,7 @@ class _AdminDashboardState extends State<AdminDashboard>
                     child: _recentAttendance.isEmpty 
                       ? Padding(
                           padding: const EdgeInsets.all(24.0),
-                          child: Center(child: Text(loc?.translate('no_recent_attendance') ?? "No recent attendance records", style: const TextStyle(color: Colors.grey))),
+                          child: Center(child: Text(loc?.translate('no_recent_attendance') ?? "No recent attendance records", style: const TextStyle(color: Colors.grey), maxLines: 1, overflow: TextOverflow.ellipsis)),
                         )
                       : ListView.separated(
                           shrinkWrap: true,
@@ -1356,8 +1358,7 @@ class _AdminDashboardState extends State<AdminDashboard>
                 const SizedBox(height: 2),
                 Text(
                   loc?.translate('admin_dashboard_manager_role') ?? 'Manager & Administrator',
-                  style: const TextStyle(color: Colors.white70, fontSize: 12),
-                ),
+                  style: const TextStyle(color: Colors.white70, fontSize: 12), maxLines: 1, overflow: TextOverflow.ellipsis),
               ],
             ),
           ),

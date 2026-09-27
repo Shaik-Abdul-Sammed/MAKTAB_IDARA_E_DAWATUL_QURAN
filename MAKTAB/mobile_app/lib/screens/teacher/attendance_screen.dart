@@ -242,8 +242,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                 const SizedBox(height: 16),
                 Text(
                   loc?.translate('batch_attendance') ?? 'Select Batch to Mark Attendance',
-                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF004D40)),
-                ),
+                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF004D40)), maxLines: 1, overflow: TextOverflow.ellipsis),
                 const SizedBox(height: 10),
 
                 if (_isLoading) ...[
@@ -590,9 +589,9 @@ class _BatchAttendanceCard extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(batch.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF004D40))),
-                          Text('🕐 ${batch.timing}', style: const TextStyle(fontSize: 12, color: Colors.black54)),
-                          Text('👤 ${teacherName ?? 'Unassigned'}', style: const TextStyle(fontSize: 12, color: Colors.black45)),
+                          Text(batch.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF004D40)), maxLines: 1, overflow: TextOverflow.ellipsis),
+                          Text('🕐 ${batch.timing}', style: const TextStyle(fontSize: 12, color: Colors.black54), maxLines: 1, overflow: TextOverflow.ellipsis),
+                          Text('👤 ${teacherName ?? 'Unassigned'}', style: const TextStyle(fontSize: 12, color: Colors.black45), maxLines: 1, overflow: TextOverflow.ellipsis),
                         ],
                       ),
                     ),
@@ -603,7 +602,7 @@ class _BatchAttendanceCard extends StatelessWidget {
                         borderRadius: BorderRadius.circular(10),
                         border: Border.all(color: statusColor.withValues(alpha: 0.3)),
                       ),
-                      child: Text(_statusLabel, style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: statusColor)),
+                      child: Text(_statusLabel, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: statusColor)),
                     ),
                   ],
                 ),

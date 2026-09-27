@@ -134,8 +134,7 @@ class _AnimatedAnalyticsScreenState extends State<AnimatedAnalyticsScreen> with 
           children: [
             Text(
               '${(heightRatio * 100).toInt()}%',
-              style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: color),
-            ),
+              style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: color), maxLines: 1, overflow: TextOverflow.ellipsis),
             const SizedBox(height: 4),
             Container(
               width: 24,

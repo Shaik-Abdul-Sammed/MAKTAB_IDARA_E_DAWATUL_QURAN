@@ -314,8 +314,7 @@ class _EmptyContent extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             isFiltered ? 'Try a different name or mobile.' : 'Tap the + button to add your first teacher.',
-            style: const TextStyle(color: Colors.black45, fontSize: 13),
-          ),
+            style: const TextStyle(color: Colors.black45, fontSize: 13), maxLines: 1, overflow: TextOverflow.ellipsis),
         ],
       ),
     );

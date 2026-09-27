@@ -275,7 +275,7 @@ class _BatchManagementScreenState extends State<BatchManagementScreen> {
       builder: (context) {
         return AlertDialog(
           title: const Text('Confirm Delete'),
-          content: Text('Are you sure you want to delete ${batch.name}? Student references to this batch will remain, but the batch itself will be deleted.'),
+          content: Text('Are you sure you want to delete ${batch.name}? Student references to this batch will remain, but the batch itself will be deleted.', maxLines: 1, overflow: TextOverflow.ellipsis),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context, false),

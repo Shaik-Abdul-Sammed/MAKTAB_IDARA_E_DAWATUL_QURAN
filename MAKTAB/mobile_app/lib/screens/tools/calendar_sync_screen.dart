@@ -92,7 +92,7 @@ class _CalendarSyncScreenState extends State<CalendarSyncScreen> {
                       children: [
                         Text(ev.title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
                         const SizedBox(height: 4),
-                        Text('${ev.date} · ${ev.time}', style: const TextStyle(fontSize: 12, color: Colors.black54)),
+                        Text('${ev.date} · ${ev.time}', style: const TextStyle(fontSize: 12, color: Colors.black54), maxLines: 1, overflow: TextOverflow.ellipsis),
                       ],
                     ),
                   ),

@@ -485,8 +485,7 @@ class _AttendanceReportsScreenState extends State<AttendanceReportsScreen> {
                             Expanded(
                               child: Text(
                                 '${df.format(_fromDate)} — ${df.format(_toDate)}',
-                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF004D40)),
-                              ),
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF004D40)), maxLines: 1, overflow: TextOverflow.ellipsis),
                             ),
                             const Text('Change', style: TextStyle(fontSize: 12, color: Colors.blue, fontWeight: FontWeight.w600)),
                           ],

@@ -541,7 +541,7 @@ class _QuickSendScreenState extends State<QuickSendScreen> {
                             child: OutlinedButton.icon(
                               onPressed: _showPreviewSheet,
                               icon: const Icon(Icons.preview_rounded),
-                              label: Text(loc?.translate('message_preview') ?? 'Preview'),
+                              label: Text(loc?.translate('message_preview') ?? 'Preview', maxLines: 1, overflow: TextOverflow.ellipsis),
                               style: OutlinedButton.styleFrom(
                                 padding: const EdgeInsets.symmetric(vertical: 14),
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -625,7 +625,7 @@ class _QuickSendScreenState extends State<QuickSendScreen> {
         children: [
           Icon(icon, size: 16, color: isSelected ? Colors.white : const Color(0xFF004D40)),
           const SizedBox(width: 6),
-          Text(label),
+          Flexible(child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis)),
         ],
       ),
       selectedColor: const Color(0xFF004D40),
@@ -731,7 +731,7 @@ class _QuickSendScreenState extends State<QuickSendScreen> {
     final isSelected = _recipientRole == role;
     return ChoiceChip(
       selected: isSelected,
-      label: Text(label),
+      label: Flexible(child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis)),
       selectedColor: const Color(0xFF004D40),
       labelStyle: TextStyle(
         color: isSelected ? Colors.white : const Color(0xFF004D40),

@@ -201,7 +201,7 @@ class _TeacherFeesScreenState extends State<TeacherFeesScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Monthly Fee: ₹${item.student.feesAmount ?? 500}', style: const TextStyle(fontWeight: FontWeight.bold)),
+              Text('Monthly Fee: ₹${item.student.feesAmount ?? 500}', style: const TextStyle(fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
                 initialValue: selectedMode,
@@ -336,7 +336,7 @@ class _TeacherFeesScreenState extends State<TeacherFeesScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Student: ${item.student.name}', style: const TextStyle(fontWeight: FontWeight.bold)),
+            Text('Student: ${item.student.name}', style: const TextStyle(fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
             const SizedBox(height: 12),
             TextField(
               controller: amountCtrl,
@@ -676,8 +676,7 @@ class _TeacherFeesScreenState extends State<TeacherFeesScreen> {
           icon: const Icon(Icons.add_card_rounded, size: 22),
           label: Text(
             loc?.translate('fee_record_payment') ?? 'Record Payment',
-            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
-          ),
+            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14), maxLines: 1, overflow: TextOverflow.ellipsis),
         ),
       ),
     );
@@ -695,7 +694,7 @@ class _TeacherFeesScreenState extends State<TeacherFeesScreen> {
             Navigator.pop(ctx);
             _showRecordDialog(item);
           },
-          child: Text('${item.student.name} (ADM: ${item.student.admissionNumber})'),
+          child: Text('${item.student.name} (ADM: ${item.student.admissionNumber})', maxLines: 1, overflow: TextOverflow.ellipsis),
         )).toList(),
       ),
     );

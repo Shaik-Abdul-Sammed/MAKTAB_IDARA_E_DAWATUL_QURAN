@@ -186,8 +186,7 @@ class _ExcelImportScreenState extends State<ExcelImportScreen> with SingleTicker
                               _parsedRows.isNotEmpty
                                   ? '${_parsedRows.length} rows loaded & ready'
                                   : 'Supports .xlsx and .csv spreadsheets',
-                              style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
-                            ),
+                              style: const TextStyle(fontSize: 12, color: AppColors.textMuted), maxLines: 1, overflow: TextOverflow.ellipsis),
                           ],
                         ),
                       ),
@@ -234,8 +233,7 @@ class _ExcelImportScreenState extends State<ExcelImportScreen> with SingleTicker
                           fontWeight: FontWeight.bold,
                           fontSize: 13,
                           color: _importResult!.errorCount == 0 ? Colors.green.shade800 : Colors.orange.shade900,
-                        ),
-                      ),
+                        ), maxLines: 1, overflow: TextOverflow.ellipsis),
                     ),
                   ],
                 ),
@@ -256,8 +254,7 @@ class _ExcelImportScreenState extends State<ExcelImportScreen> with SingleTicker
                   if (_parsedRows.isNotEmpty)
                     Text(
                       '${_parsedRows.length} Rows',
-                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.primaryTeal),
-                    ),
+                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.primaryTeal), maxLines: 1, overflow: TextOverflow.ellipsis),
                 ],
               ),
             ),
@@ -303,7 +300,7 @@ class _ExcelImportScreenState extends State<ExcelImportScreen> with SingleTicker
                                   radius: 14,
                                   backgroundColor: AppColors.primaryTeal.withValues(alpha: 0.12),
                                   child: Text('${index + 1}',
-                                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.primaryTeal)),
+                                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.primaryTeal), maxLines: 1, overflow: TextOverflow.ellipsis),
                                 ),
                                 title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14), maxLines: 1, overflow: TextOverflow.ellipsis),
                                 subtitle: Text(subtitle, style: const TextStyle(fontSize: 11, color: AppColors.textMuted), maxLines: 1, overflow: TextOverflow.ellipsis),

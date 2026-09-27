@@ -222,14 +222,12 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
                     backgroundColor: Colors.white,
                     child: Text(
                       widget.student.name.isNotEmpty ? widget.student.name[0].toUpperCase() : 'S',
-                      style: const TextStyle(fontSize: 40, color: Color(0xFF004D40), fontWeight: FontWeight.bold),
-                    ),
+                      style: const TextStyle(fontSize: 40, color: Color(0xFF004D40), fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
                   ),
                   const SizedBox(height: 15),
                   Text(
                     widget.student.name,
-                    style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
-                  ),
+                    style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
                   if (widget.student.arabicName != null)
                     Text(
                       widget.student.arabicName!,
@@ -238,8 +236,7 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
                   const SizedBox(height: 5),
                   Text(
                     'Admission: ${widget.student.admissionNumber}',
-                    style: const TextStyle(color: Colors.white70, fontSize: 14),
-                  ),
+                    style: const TextStyle(color: Colors.white70, fontSize: 14), maxLines: 1, overflow: TextOverflow.ellipsis),
                   const SizedBox(height: 16),
 
                   Row(

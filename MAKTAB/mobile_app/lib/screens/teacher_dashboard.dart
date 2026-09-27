@@ -385,8 +385,7 @@ class _TeacherDashboardState extends State<TeacherDashboard>
                         fontSize: 9,
                         fontWeight: FontWeight.bold,
                       ),
-                      textAlign: TextAlign.center,
-                    ),
+                      textAlign: TextAlign.center, maxLines: 1, overflow: TextOverflow.ellipsis),
                   ),
                 ),
             ],
@@ -440,7 +439,7 @@ class _TeacherDashboardState extends State<TeacherDashboard>
                   children: [
                     const Icon(Icons.sync_rounded, color: Color(0xFF004D40), size: 18),
                     const SizedBox(width: 10),
-                    Text(loc?.translate('sync') ?? 'Sync Devices'),
+                    Text(loc?.translate('sync') ?? 'Sync Devices', maxLines: 1, overflow: TextOverflow.ellipsis),
                   ],
                 ),
               ),
@@ -450,7 +449,7 @@ class _TeacherDashboardState extends State<TeacherDashboard>
                   children: [
                     const Icon(Icons.settings_outlined, color: Color(0xFF004D40), size: 18),
                     const SizedBox(width: 10),
-                    Text(loc?.translate('settings') ?? 'Settings'),
+                    Text(loc?.translate('settings') ?? 'Settings', maxLines: 1, overflow: TextOverflow.ellipsis),
                   ],
                 ),
               ),
@@ -483,26 +482,32 @@ class _TeacherDashboardState extends State<TeacherDashboard>
                     children: [
                       MaktabLogo(size: 52, showGlow: true, animate: true),
                       const SizedBox(width: 12),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: const [
-                          Text(
-                            'MAKTAB',
-                            style: TextStyle(
-                              color: AppColors.goldAccent,
-                              fontSize: 20,
-                              fontWeight: FontWeight.w900,
-                              letterSpacing: 3,
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: const [
+                            Text(
+                              'MAKTAB',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color: AppColors.goldAccent,
+                                fontSize: 20,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: 3,
+                              ),
                             ),
-                          ),
-                          Text(
-                            'Educator Portal',
-                            style: TextStyle(
-                              color: Colors.white60,
-                              fontSize: 11,
+                            Text(
+                              'Educator Portal',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color: Colors.white60,
+                                fontSize: 11,
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ],
                   ),

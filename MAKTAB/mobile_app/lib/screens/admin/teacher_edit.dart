@@ -276,7 +276,7 @@ class _TeacherEditScreenState extends State<TeacherEditScreen> {
                 ),
                 const SizedBox(height: 4),
                 Text('ID: ${widget.teacher.id ?? '-'} · ${widget.teacher.role}',
-                    style: const TextStyle(fontSize: 12, color: Colors.black45)),
+                    style: const TextStyle(fontSize: 12, color: Colors.black45), maxLines: 1, overflow: TextOverflow.ellipsis),
                 const SizedBox(height: 4),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -418,8 +418,12 @@ class _SectionHeader extends StatelessWidget {
       children: [
         Icon(icon, color: const Color(0xFF004D40), size: 18),
         const SizedBox(width: 8),
-        Text(title,
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF004D40))),
+        Expanded(
+          child: Text(title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF004D40))),
+        ),
       ],
     );
   }

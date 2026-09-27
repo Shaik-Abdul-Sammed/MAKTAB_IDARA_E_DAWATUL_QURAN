@@ -133,36 +133,46 @@ class _TeacherSalaryScreenState extends State<TeacherSalaryScreen> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Text('This Year', style: TextStyle(color: Colors.white70, fontSize: 12)),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    '₹$totalEarnedThisYear',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 22,
-                                      fontWeight: FontWeight.bold,
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text('This Year', maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: Colors.white70, fontSize: 12)),
+                                    const SizedBox(height: 4),
+                                    FittedBox(
+                                      fit: BoxFit.scaleDown,
+                                      alignment: Alignment.centerLeft,
+                                      child: Text(
+                                        '₹$totalEarnedThisYear',
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 22,
+                                          fontWeight: FontWeight.bold,
+                                        ), maxLines: 1, overflow: TextOverflow.ellipsis),
                                     ),
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
                               Container(width: 1, height: 40, color: Colors.white24),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Text('All Time', style: TextStyle(color: Colors.white70, fontSize: 12)),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    '₹$totalEarnedAllTime',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 22,
-                                      fontWeight: FontWeight.bold,
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text('All Time', maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: Colors.white70, fontSize: 12)),
+                                    const SizedBox(height: 4),
+                                    FittedBox(
+                                      fit: BoxFit.scaleDown,
+                                      alignment: Alignment.centerLeft,
+                                      child: Text(
+                                        '₹$totalEarnedAllTime',
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 22,
+                                          fontWeight: FontWeight.bold,
+                                        ), maxLines: 1, overflow: TextOverflow.ellipsis),
                                     ),
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
                             ],
                           ),
@@ -171,11 +181,15 @@ class _TeacherSalaryScreenState extends State<TeacherSalaryScreen> {
                             children: [
                               const Icon(Icons.event_available_rounded, color: Colors.white60, size: 16),
                               const SizedBox(width: 6),
-                              Text(
-                                lastPaymentDate != null
-                                    ? 'Last Payment: $lastPaymentDate'
-                                    : 'No payments yet',
-                                style: const TextStyle(color: Colors.white70, fontSize: 12),
+                              Expanded(
+                                child: Text(
+                                  lastPaymentDate != null
+                                      ? 'Last Payment: $lastPaymentDate'
+                                      : 'No payments yet',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(color: Colors.white70, fontSize: 12),
+                                ),
                               ),
                             ],
                           ),
@@ -192,12 +206,16 @@ class _TeacherSalaryScreenState extends State<TeacherSalaryScreen> {
                         children: [
                           const Icon(Icons.history_rounded, color: Color(0xFF004D40), size: 20),
                           const SizedBox(width: 8),
-                          Text(
-                            'Payment History (${_payments.length})',
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF004D40),
+                          Expanded(
+                            child: Text(
+                              'Payment History (${_payments.length})',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF004D40),
+                              ),
                             ),
                           ),
                         ],
@@ -298,8 +316,7 @@ class _TeacherSalaryScreenState extends State<TeacherSalaryScreen> {
                                         fontSize: 18,
                                         fontWeight: FontWeight.w900,
                                         color: Color(0xFF004D40),
-                                      ),
-                                    ),
+                                      ), maxLines: 1, overflow: TextOverflow.ellipsis),
                                   ],
                                 ),
                               ),

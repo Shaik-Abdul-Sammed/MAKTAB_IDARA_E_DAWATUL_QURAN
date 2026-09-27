@@ -319,8 +319,7 @@ class _EmptyContent extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             isFiltered ? 'Try searching another name or time.' : 'Tap + Add Batch to create your first class batch.',
-            style: const TextStyle(color: Colors.black45, fontSize: 13),
-          ),
+            style: const TextStyle(color: Colors.black45, fontSize: 13), maxLines: 1, overflow: TextOverflow.ellipsis),
         ],
       ),
     );

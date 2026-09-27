@@ -390,7 +390,7 @@ class _AttendanceEntryScreenState extends State<AttendanceEntryScreen>
             Consumer<AttendanceProvider>(
               builder: (context, p, _) => TextButton(
                 onPressed: p.isSaving ? null : _save,
-                child: Text((loc?.translate('save') ?? 'SAVE').toUpperCase(), style: const TextStyle(color: Color(0xFFFFD700), fontWeight: FontWeight.bold)),
+                child: Text((loc?.translate('save') ?? 'SAVE').toUpperCase(), style: const TextStyle(color: Color(0xFFFFD700), fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
               ),
             ),
           ],
@@ -446,7 +446,7 @@ class _AttendanceEntryScreenState extends State<AttendanceEntryScreen>
                 ),
                 child: p.isSaving
                     ? const CircularProgressIndicator(color: Color(0xFF004D40))
-                    : Text(loc?.translate('save_attendance') ?? 'Save Attendance Records', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                    : Text(loc?.translate('save_attendance') ?? 'Save Attendance Records', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16), maxLines: 1, overflow: TextOverflow.ellipsis),
               ),
             ),
           ),
@@ -473,15 +473,21 @@ class _AttendanceEntryScreenState extends State<AttendanceEntryScreen>
                   fit: BoxFit.scaleDown,
                   alignment: Alignment.centerLeft,
                   child: Text('$confirmed / $total students confirmed',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: const TextStyle(fontSize: 12, color: Color(0xFF004D40), fontWeight: FontWeight.w600, height: 1.2)),
                 ),
               ),
               const SizedBox(width: 8),
-              FittedBox(
-                fit: BoxFit.scaleDown,
-                alignment: Alignment.centerRight,
-                child: Text('${p.presentCount} ✅  ${p.absentCount} ❌  ${p.lateCount} 🕒  ${p.leaveCount} 🏖️',
-                    style: const TextStyle(fontSize: 11, color: Colors.black54, height: 1.2)),
+              Flexible(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerRight,
+                  child: Text('${p.presentCount} ✅  ${p.absentCount} ❌  ${p.lateCount} 🕒  ${p.leaveCount} 🏖️',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontSize: 11, color: Colors.black54, height: 1.2)),
+                ),
               ),
             ],
           ),
@@ -548,7 +554,7 @@ class _AttendanceEntryScreenState extends State<AttendanceEntryScreen>
               children: [
                 const Icon(Icons.access_time, size: 16, color: Color(0xFF004D40)),
                 const SizedBox(width: 6),
-                Text(loc?.translate('period') ?? 'Period:', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                Text(loc?.translate('period') ?? 'Period:', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600), maxLines: 1, overflow: TextOverflow.ellipsis),
                 const SizedBox(width: 8),
                 Expanded(
                   child: DropdownButtonHideUnderline(
@@ -562,13 +568,13 @@ class _AttendanceEntryScreenState extends State<AttendanceEntryScreen>
                         return DropdownButton<String>(
                           value: effectivePeriod,
                           isDense: true,
-                          hint: Text(loc?.translate('search') ?? 'Select', style: const TextStyle(fontSize: 12)),
+                          hint: Text(loc?.translate('search') ?? 'Select', style: const TextStyle(fontSize: 12), maxLines: 1, overflow: TextOverflow.ellipsis),
                           items: [
                             if (_batchTiming != null && _batchTiming!.isNotEmpty)
                               DropdownMenuItem(value: _batchTiming!, child: Text('$_batchTiming (${loc?.translate('batches') ?? 'Batch'})', style: const TextStyle(fontSize: 12), maxLines: 1, overflow: TextOverflow.ellipsis)),
                             ...['Morning', 'Afternoon', 'Evening']
                                 .where((t) => t != _batchTiming)
-                                .map((t) => DropdownMenuItem(value: t, child: Text(loc?.translate(t.toLowerCase()) ?? t, style: const TextStyle(fontSize: 12)))),
+                                .map((t) => DropdownMenuItem(value: t, child: Text(loc?.translate(t.toLowerCase()) ?? t, style: const TextStyle(fontSize: 12), maxLines: 1, overflow: TextOverflow.ellipsis))),
                           ],
                           onChanged: (val) => p.setTimePeriod(val),
                         );
@@ -585,7 +591,7 @@ class _AttendanceEntryScreenState extends State<AttendanceEntryScreen>
               ElevatedButton.icon(
                 onPressed: p.markAllPresent,
                 icon: const Icon(Icons.check_circle_outline, size: 14),
-                label: Text(loc?.translate('mark_all_present') ?? 'Mark All Present', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                label: Text(loc?.translate('mark_all_present') ?? 'Mark All Present', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF004D40),
                   foregroundColor: Colors.white,
@@ -639,7 +645,7 @@ class _AttendanceEntryScreenState extends State<AttendanceEntryScreen>
                   child: OutlinedButton.icon(
                     onPressed: p.markAllAbsent,
                     icon: const Icon(Icons.cancel_outlined, size: 14),
-                    label: Text(loc?.translate('mark_all_absent') ?? 'Clear All', style: const TextStyle(fontSize: 11)),
+                    label: Text(loc?.translate('mark_all_absent') ?? 'Clear All', style: const TextStyle(fontSize: 11), maxLines: 1, overflow: TextOverflow.ellipsis),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: Colors.red.shade700,
                       side: BorderSide(color: Colors.red.shade300),
@@ -654,7 +660,7 @@ class _AttendanceEntryScreenState extends State<AttendanceEntryScreen>
                   child: ElevatedButton.icon(
                     onPressed: () => _openVoiceAttendance(p),
                     icon: const Icon(Icons.mic_rounded, size: 14),
-                    label: Text(loc?.translate('voice_attendance') ?? 'Voice Input', style: const TextStyle(fontSize: 11), overflow: TextOverflow.ellipsis),
+                    label: Text(loc?.translate('voice_attendance') ?? 'Voice Input', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 11)),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF004D40),
                       foregroundColor: Colors.white,
@@ -673,7 +679,7 @@ class _AttendanceEntryScreenState extends State<AttendanceEntryScreen>
                       _shareAttendanceReport(present, absent);
                     },
                     icon: const Icon(Icons.share, size: 14),
-                    label: Text(loc?.translate('send_whatsapp') ?? 'Share WhatsApp', style: const TextStyle(fontSize: 11), overflow: TextOverflow.ellipsis),
+                    label: Text(loc?.translate('send_whatsapp') ?? 'Share WhatsApp', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 11)),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: const Color(0xFF25D366),
                       side: const BorderSide(color: Color(0xFF25D366)),
@@ -747,8 +753,7 @@ class _AttendanceEntryScreenState extends State<AttendanceEntryScreen>
           const SizedBox(height: 8),
           Text(
             p.searchQuery.isNotEmpty ? 'No students match "${p.searchQuery}"' : 'No students in this category.',
-            style: const TextStyle(color: Colors.black45),
-          ),
+            style: const TextStyle(color: Colors.black45), maxLines: 1, overflow: TextOverflow.ellipsis),
         ]),
       );
     }
@@ -853,14 +858,13 @@ class _StudentAttendanceTile extends StatelessWidget {
                     ? null
                     : Text(
                         student.name.isNotEmpty ? student.name[0].toUpperCase() : '?',
-                        style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 18),
-                      ),
+                        style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 18), maxLines: 1, overflow: TextOverflow.ellipsis),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(student.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                  Text('#${student.admissionNumber}', style: const TextStyle(fontSize: 11, color: Colors.black45)),
+                  Text(student.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                  Text('#${student.admissionNumber}', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 11, color: Colors.black45)),
                 ]),
               ),
               // ── #11: Status badge (tap = cycle through Present→Absent→Late→Leave)
@@ -877,7 +881,7 @@ class _StudentAttendanceTile extends StatelessWidget {
                     child: Row(mainAxisSize: MainAxisSize.min, children: [
                       Icon(icon, color: color, size: 14),
                       const SizedBox(width: 4),
-                      Text(status, style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 12)),
+                      Text(status, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 12)),
                     ]),
                   ),
                   const SizedBox(height: 2),
@@ -916,8 +920,8 @@ class _StatPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(children: [
-      Text('$count', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20, color: color)),
-      Text(label, style: TextStyle(fontSize: 11, color: color.withValues(alpha: 0.8))),
+      Text('$count', maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20, color: color)),
+      Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 11, color: color.withValues(alpha: 0.8))),
     ]);
   }
 }
@@ -933,7 +937,7 @@ class _SectionHeader extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 8),
       child: Row(children: [
         Container(width: 4, height: 16, color: color, margin: const EdgeInsets.only(right: 8)),
-        Text(label, style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 14)),
+        Expanded(child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 14))),
       ]),
     );
   }
@@ -969,13 +973,15 @@ class _SummaryTile extends StatelessWidget {
           child: hasPhoto
               ? null
               : Text(student.name.isNotEmpty ? student.name[0].toUpperCase() : '?',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(color: color, fontWeight: FontWeight.bold)),
         ),
         const SizedBox(width: 10),
         Expanded(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(student.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-            Text(status, style: TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.w600)),
+            Text(student.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+            Text(status, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.w600)),
           ]),
         ),
         if (isAbsent && parentMobile.isNotEmpty) ...[

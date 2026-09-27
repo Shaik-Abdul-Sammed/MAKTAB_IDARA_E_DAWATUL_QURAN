@@ -178,7 +178,7 @@ class _MessageBoxScreenState extends State<MessageBoxScreen> {
             Text(item.title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
             const SizedBox(height: 6),
             Text('Date: ${item.date} | Batch ID: ${item.batchId}',
-                style: const TextStyle(fontSize: 12, color: Colors.black54)),
+                style: const TextStyle(fontSize: 12, color: Colors.black54), maxLines: 1, overflow: TextOverflow.ellipsis),
             const SizedBox(height: 12),
             Flexible(
               child: SingleChildScrollView(

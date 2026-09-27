@@ -43,6 +43,8 @@ class SettingsAboutScreen extends StatelessWidget {
               children: [
                 Text(
                   title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 15,
@@ -52,6 +54,8 @@ class SettingsAboutScreen extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   description,
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     fontSize: 13,
                     color: AppColors.textMuted,

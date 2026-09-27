@@ -191,16 +191,22 @@ class _StatsContent extends StatelessWidget {
         children: [
           const Icon(Icons.school_outlined, color: Colors.white, size: 40),
           const SizedBox(width: 16),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('${p.totalCount} Teachers Registered',
-                  style: const TextStyle(
-                      color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
-              const SizedBox(height: 4),
-              Text('${p.activeCount} active · ${p.inactiveCount} inactive',
-                  style: const TextStyle(color: Colors.white70, fontSize: 13)),
-            ],
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('${p.totalCount} Teachers Registered',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                        color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
+                const SizedBox(height: 4),
+                Text('${p.activeCount} active · ${p.inactiveCount} inactive',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(color: Colors.white70, fontSize: 13)),
+              ],
+            ),
           ),
         ],
       ),
@@ -220,10 +226,19 @@ class _StatsContent extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Active  ${p.activeCount}',
-                  style: TextStyle(fontWeight: FontWeight.bold, color: Colors.green.shade700, fontSize: 13)),
-              Text('Inactive  ${p.inactiveCount}',
-                  style: TextStyle(fontWeight: FontWeight.bold, color: Colors.orange.shade700, fontSize: 13)),
+              Flexible(
+                child: Text('Active  ${p.activeCount}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(fontWeight: FontWeight.bold, color: Colors.green.shade700, fontSize: 13)),
+              ),
+              const SizedBox(width: 8),
+              Flexible(
+                child: Text('Inactive  ${p.inactiveCount}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(fontWeight: FontWeight.bold, color: Colors.orange.shade700, fontSize: 13)),
+              ),
             ],
           ),
           const SizedBox(height: 10),
@@ -268,7 +283,7 @@ class _StatsContent extends StatelessWidget {
           Align(
             alignment: Alignment.centerRight,
             child: Text('$value%',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: color)),
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: color), maxLines: 1, overflow: TextOverflow.ellipsis),
           ),
         ],
       ),
@@ -352,7 +367,7 @@ class _RecentTile extends StatelessWidget {
           const SizedBox(width: 12),
           Expanded(
             child: Text(teacher.name,
-                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13), maxLines: 1, overflow: TextOverflow.ellipsis),
           ),
           Text(
             teacher.mobile ?? '—',

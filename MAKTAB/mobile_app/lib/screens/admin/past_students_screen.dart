@@ -94,8 +94,7 @@ class _PastStudentsScreenState extends State<PastStudentsScreen> {
       builder: (context) => AlertDialog(
         title: const Text('Restore Student'),
         content: Text(
-          'Are you sure you want to restore ${student.name} (ADM: ${student.admissionNumber}) back to active students list?',
-        ),
+          'Are you sure you want to restore ${student.name} (ADM: ${student.admissionNumber}) back to active students list?', maxLines: 1, overflow: TextOverflow.ellipsis),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -131,8 +130,7 @@ class _PastStudentsScreenState extends State<PastStudentsScreen> {
       builder: (context) => AlertDialog(
         title: const Text('Permanently Delete Student', style: TextStyle(color: Colors.red)),
         content: Text(
-          'WARNING: This will PERMANENTLY remove ${student.name} (ADM: ${student.admissionNumber}) and all associated records from the database. This action CANNOT be undone!',
-        ),
+          'WARNING: This will PERMANENTLY remove ${student.name} (ADM: ${student.admissionNumber}) and all associated records from the database. This action CANNOT be undone!', maxLines: 1, overflow: TextOverflow.ellipsis),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -195,8 +193,7 @@ class _PastStudentsScreenState extends State<PastStudentsScreen> {
                           fontWeight: FontWeight.bold,
                           color: Color(0xFF004D40),
                           fontSize: 15,
-                        ),
-                      ),
+                        ), maxLines: 1, overflow: TextOverflow.ellipsis),
                     ),
                   ],
                 ),
@@ -261,8 +258,7 @@ class _PastStudentsScreenState extends State<PastStudentsScreen> {
                                       backgroundColor: Colors.grey.shade300,
                                       child: Text(
                                         student.name.isNotEmpty ? student.name[0].toUpperCase() : 'S',
-                                        style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black87),
-                                      ),
+                                        style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black87), maxLines: 1, overflow: TextOverflow.ellipsis),
                                     ),
                                     title: Text(
                                       student.name,
@@ -282,8 +278,7 @@ class _PastStudentsScreenState extends State<PastStudentsScreen> {
                                           fontSize: 11,
                                           fontWeight: FontWeight.bold,
                                           color: Colors.amber.shade900,
-                                        ),
-                                      ),
+                                        ), maxLines: 1, overflow: TextOverflow.ellipsis),
                                     ),
                                   ),
                                   const Divider(),

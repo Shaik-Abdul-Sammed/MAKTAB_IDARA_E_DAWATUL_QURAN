@@ -146,8 +146,7 @@ class _TeacherAssignedBatchesScreenState
                           style: const TextStyle(
                               color: AppColors.primaryTeal,
                               fontWeight: FontWeight.w600,
-                              fontSize: 13),
-                        ),
+                              fontSize: 13), maxLines: 1, overflow: TextOverflow.ellipsis),
                       ),
                     ],
                   ),
@@ -249,7 +248,7 @@ class _TeacherAssignedBatchesScreenState
                                         children: [
                                           Text('⏰ ${batch.timing}',
                                               style: const TextStyle(
-                                                  fontSize: 12)),
+                                                  fontSize: 12), maxLines: 1, overflow: TextOverflow.ellipsis),
                                           if (isOwnedByOther)
                                             const Text(
                                               '⚠ Assigned to another teacher',

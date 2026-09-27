@@ -157,9 +157,9 @@ class _BackupHistoryScreenState extends State<BackupHistoryScreen> {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(b['name']!, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                                    Text(b['name']!, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13), maxLines: 1, overflow: TextOverflow.ellipsis),
                                     const SizedBox(height: 4),
-                                    Text('${b['date']} · ${b['size']}', style: const TextStyle(fontSize: 11, color: Colors.black45)),
+                                    Text('${b['date']} · ${b['size']}', style: const TextStyle(fontSize: 11, color: Colors.black45), maxLines: 1, overflow: TextOverflow.ellipsis),
                                   ],
                                 ),
                               ),
@@ -190,13 +190,21 @@ class _BackupHistoryScreenState extends State<BackupHistoryScreen> {
         children: [
           Icon(Icons.security_rounded, color: Color(0xFFFFD700), size: 40),
           SizedBox(width: 16),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Encrypted SQLite Backups', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
-              SizedBox(height: 4),
-              Text('Offline-first data protection & recovery', style: TextStyle(color: Colors.white70, fontSize: 12)),
-            ],
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Encrypted SQLite Backups',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+                SizedBox(height: 4),
+                Text('Offline-first data protection & recovery',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(color: Colors.white70, fontSize: 12)),
+              ],
+            ),
           ),
         ],
       ),

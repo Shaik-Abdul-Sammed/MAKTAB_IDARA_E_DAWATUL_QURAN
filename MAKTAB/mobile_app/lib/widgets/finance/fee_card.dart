@@ -65,8 +65,7 @@ class FeeCard extends StatelessWidget {
                 backgroundColor: AppIcons.primaryTeal,
                 child: Text(
                   s.name.isNotEmpty ? s.name[0].toUpperCase() : 'S',
-                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                ),
+                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
               ),
               const SizedBox(width: 12),
               Expanded(

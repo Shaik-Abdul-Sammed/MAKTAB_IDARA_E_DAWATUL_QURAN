@@ -154,15 +154,21 @@ class _ScheduleContent extends StatelessWidget {
         children: [
           const Icon(Icons.access_time_filled_rounded, color: Color(0xFFFFD700), size: 40),
           const SizedBox(width: 16),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('${p.batches.length} Active Batches Scheduled',
-                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18, overflow: TextOverflow.ellipsis)),
-              const SizedBox(height: 4),
-              Text('${p.totalStudents} Students Enrolled across all Timings',
-                  style: const TextStyle(color: Colors.white70, fontSize: 13)),
-            ],
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('${p.batches.length} Active Batches Scheduled',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
+                const SizedBox(height: 4),
+                Text('${p.totalStudents} Students Enrolled across all Timings',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(color: Colors.white70, fontSize: 13)),
+              ],
+            ),
           ),
         ],
       ),
@@ -211,7 +217,7 @@ class _ScheduleCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(batch.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF004D40))),
+                    Text(batch.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF004D40)), maxLines: 1, overflow: TextOverflow.ellipsis),
                     const SizedBox(height: 4),
                     Row(
                       children: [
@@ -233,26 +239,41 @@ class _ScheduleCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  const Icon(Icons.person_outline, size: 16, color: Color(0xFF004D40)),
-                  const SizedBox(width: 6),
-                  Text(
-                    teacher != null ? teacher!.name : 'Unassigned Teacher',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: teacher != null ? Colors.black87 : Colors.orange.shade700,
+              Expanded(
+                child: Row(
+                  children: [
+                    const Icon(Icons.person_outline, size: 16, color: Color(0xFF004D40)),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        teacher != null ? teacher!.name : 'Unassigned Teacher',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: teacher != null ? Colors.black87 : Colors.orange.shade700,
+                        ),
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-              Row(
-                children: [
-                  const Icon(Icons.groups_outlined, size: 16, color: Color(0xFF004D40)),
-                  const SizedBox(width: 6),
-                  Text('$studentCount Students', style: const TextStyle(fontSize: 12, color: Colors.black54, fontWeight: FontWeight.w600)),
-                ],
+              const SizedBox(width: 8),
+              Flexible(
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.groups_outlined, size: 16, color: Color(0xFF004D40)),
+                    const SizedBox(width: 6),
+                    Flexible(
+                      child: Text('$studentCount Students',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(fontSize: 12, color: Colors.black54, fontWeight: FontWeight.w600)),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),

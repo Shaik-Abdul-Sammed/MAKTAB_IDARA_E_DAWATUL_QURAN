@@ -312,7 +312,7 @@ class _StudentManagementScreenState extends State<StudentManagementScreen> {
       builder: (context) {
         return AlertDialog(
           title: const Text('Confirm Delete'),
-          content: Text('Are you sure you want to delete ${student.name}? This will permanently wipe their attendance and Sabaq logs.'),
+          content: Text('Are you sure you want to delete ${student.name}? This will permanently wipe their attendance and Sabaq logs.', maxLines: 1, overflow: TextOverflow.ellipsis),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context, false),
@@ -476,16 +476,16 @@ class _StudentManagementScreenState extends State<StudentManagementScreen> {
                                   leading: CircleAvatar(
                                     backgroundColor: const Color(0xFF004D40),
                                     foregroundColor: Colors.white,
-                                    child: Text(student.name.isNotEmpty ? student.name[0].toUpperCase() : 'S'),
+                                    child: Text(student.name.isNotEmpty ? student.name[0].toUpperCase() : 'S', maxLines: 1, overflow: TextOverflow.ellipsis),
                                   ),
                                   title: Text(student.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Color(0xFF004D40)), maxLines: 1, overflow: TextOverflow.ellipsis),
                                   subtitle: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
                                       const SizedBox(height: 4),
-                                      Text('Admission ID: ${student.admissionNumber}'),
+                                      Text('Admission ID: ${student.admissionNumber}', maxLines: 1, overflow: TextOverflow.ellipsis),
                                       const SizedBox(height: 2),
-                                      Text('Class Batch: $batchName'),
+                                      Text('Class Batch: $batchName', maxLines: 1, overflow: TextOverflow.ellipsis),
                                     ],
                                   ),
                                   trailing: const Icon(Icons.chevron_right, color: Color(0xFF004D40)),

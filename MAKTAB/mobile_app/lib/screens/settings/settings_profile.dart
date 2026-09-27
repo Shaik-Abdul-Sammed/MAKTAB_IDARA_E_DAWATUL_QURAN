@@ -39,8 +39,7 @@ class _SettingsProfileScreenState extends State<SettingsProfileScreen> {
             const SizedBox(height: 6),
             const Text(
               'Edit name, email, or profile photo for your local profile.',
-              style: TextStyle(fontSize: 14, color: Colors.black54),
-            ),
+              style: TextStyle(fontSize: 14, color: Colors.black54), maxLines: 1, overflow: TextOverflow.ellipsis),
             const SizedBox(height: 24),
             
             // Toggle options

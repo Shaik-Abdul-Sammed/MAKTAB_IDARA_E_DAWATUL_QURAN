@@ -147,8 +147,7 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
       builder: (_) => AlertDialog(
         title: const Text('Mark All Present'),
         content: Text(
-          'Mark all students in "${batch.name}" as Present for today?',
-        ),
+          'Mark all students in "${batch.name}" as Present for today?', maxLines: 1, overflow: TextOverflow.ellipsis),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -246,8 +245,7 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
                               style: TextStyle(
                                 color: Colors.white.withValues(alpha: 0.80),
                                 fontSize: 13,
-                              ),
-                            ),
+                              ), maxLines: 1, overflow: TextOverflow.ellipsis),
                             Text(
                               'Ustad $teacherName',
                               style: const TextStyle(
@@ -363,8 +361,7 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
                                 context.push('/teacher/my-attendance'),
                             child: Text(
                               loc?.translate('view_all') ?? 'View All',
-                              style: const TextStyle(color: AppColors.primaryTeal),
-                            ),
+                              style: const TextStyle(color: AppColors.primaryTeal), maxLines: 1, overflow: TextOverflow.ellipsis),
                           ),
                         ],
                       ),
@@ -557,6 +554,7 @@ class _BatchTimelineCard extends StatelessWidget {
                               fontSize: 15,
                               color: AppColors.primaryTeal,
                             ),
+                            maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
                           Text(
@@ -667,8 +665,7 @@ class _AttendanceSummaryCard extends StatelessWidget {
           Text(
             '$yearMonth Summary',
             style: const TextStyle(
-                color: Colors.white70, fontSize: 12, letterSpacing: 0.3),
-          ),
+                color: Colors.white70, fontSize: 12, letterSpacing: 0.3), maxLines: 1, overflow: TextOverflow.ellipsis),
           const SizedBox(height: 6),
           Text(
             total == 0
@@ -677,8 +674,7 @@ class _AttendanceSummaryCard extends StatelessWidget {
             style: const TextStyle(
                 color: Colors.white,
                 fontSize: 14,
-                fontWeight: FontWeight.bold),
-          ),
+                fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
           const SizedBox(height: 12),
           Row(
             children: [
@@ -735,8 +731,7 @@ class _SummaryChip extends StatelessWidget {
                 style: TextStyle(
                     color: color,
                     fontSize: 18,
-                    fontWeight: FontWeight.bold),
-              ),
+                    fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
             ),
             Text(
               label,

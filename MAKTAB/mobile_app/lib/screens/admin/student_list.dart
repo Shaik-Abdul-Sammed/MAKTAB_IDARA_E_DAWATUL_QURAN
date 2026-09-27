@@ -136,13 +136,11 @@ class _StudentListScreenState extends State<StudentListScreen> {
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
                       color: Color(0xFF004D40),
-                    ),
-                  ),
+                    ), maxLines: 1, overflow: TextOverflow.ellipsis),
                   const SizedBox(height: 4),
                   Text(
                     'ADM: ${student.admissionNumber}',
-                    style: const TextStyle(fontSize: 13, color: Colors.black54),
-                  ),
+                    style: const TextStyle(fontSize: 13, color: Colors.black54), maxLines: 1, overflow: TextOverflow.ellipsis),
                   const SizedBox(height: 20),
                   Builder(
                     builder: (context) {
@@ -314,7 +312,7 @@ class _StudentListScreenState extends State<StudentListScreen> {
           backgroundColor: const Color(0xFFFFD700),
           foregroundColor: const Color(0xFF004D40),
           icon: const Icon(Icons.person_add_rounded),
-          label: Text(loc?.translate('add_student') ?? 'Add Student', style: const TextStyle(fontWeight: FontWeight.bold)),
+          label: Text(loc?.translate('add_student') ?? 'Add Student', style: const TextStyle(fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
           onPressed: () =>
               context.push('/admin/students/add').then((_) => _provider.fetchStudents()),
         ),
@@ -653,8 +651,7 @@ class _EmptyContent extends StatelessWidget {
             const SizedBox(height: 16),
             Text(
               loc?.translate('no_batches_assigned') ?? 'No batches assigned yet.',
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF004D40)),
-            ),
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF004D40)), maxLines: 1, overflow: TextOverflow.ellipsis),
             const SizedBox(height: 8),
             const Text(
               'Contact Admin to assign your batches.',
@@ -675,8 +672,7 @@ class _EmptyContent extends StatelessWidget {
             isFiltered
                 ? (loc?.translate('student_list_no_match') ?? 'No students match your filter.')
                 : (loc?.translate('student_list_no_students') ?? 'No students registered yet.'),
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF004D40)),
-          ),
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF004D40)), maxLines: 1, overflow: TextOverflow.ellipsis),
           const SizedBox(height: 8),
           Text(
             isFiltered ? 'Try clearing search or batch filter.' : 'Tap + Add Student to enroll your first student.',
@@ -738,8 +734,7 @@ class _StudentListView extends StatelessWidget {
                     onReassign != null
                         ? (loc?.translate('student_list_assign_batch') ?? 'Assign')
                         : (loc?.translate('common_edit') ?? 'Edit'),
-                    style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
-                  ),
+                    style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
                 ],
               ),
             ),
@@ -756,8 +751,7 @@ class _StudentListView extends StatelessWidget {
                 children: [
                   Text(
                     loc?.translate('common_delete') ?? 'Delete',
-                    style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
-                  ),
+                    style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
                   const SizedBox(width: 8),
                   const Icon(Icons.delete_outline_rounded, color: Colors.white, size: 24),
                 ],

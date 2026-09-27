@@ -230,8 +230,7 @@ class _FeePaymentsListWidgetState extends State<FeePaymentsListWidget> {
                 else
                   Text(
                     'Student: ${existing['student_name']}',
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
+                    style: const TextStyle(fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
                 const SizedBox(height: 12),
                 TextField(
                   controller: amountCtrl,
@@ -336,7 +335,7 @@ class _FeePaymentsListWidgetState extends State<FeePaymentsListWidget> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Delete Payment'),
-        content: Text('Delete payment of ₹${row['amount']} for ${row['student_name']}?'),
+        content: Text('Delete payment of ₹${row['amount']} for ${row['student_name']}?', maxLines: 1, overflow: TextOverflow.ellipsis),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
           ElevatedButton(
@@ -558,8 +557,7 @@ class _FeePaymentsListWidgetState extends State<FeePaymentsListWidget> {
               color: Colors.white,
               fontSize: 28,
               fontWeight: FontWeight.bold,
-            ),
-          ),
+            ), maxLines: 1, overflow: TextOverflow.ellipsis),
           if (byMode.isNotEmpty) ...[
             const SizedBox(height: 10),
             Wrap(
@@ -574,8 +572,7 @@ class _FeePaymentsListWidgetState extends State<FeePaymentsListWidget> {
                   ),
                   child: Text(
                     '${e.key}: ₹${e.value}',
-                    style: const TextStyle(color: Colors.white, fontSize: 11),
-                  ),
+                    style: const TextStyle(color: Colors.white, fontSize: 11), maxLines: 1, overflow: TextOverflow.ellipsis),
                 );
               }).toList(),
             ),

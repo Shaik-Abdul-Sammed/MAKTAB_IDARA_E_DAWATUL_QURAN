@@ -50,8 +50,7 @@ class BatchListTile extends StatelessWidget {
             ),
             child: Text(
               '$studentCount',
-              style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF004D40)),
-            ),
+              style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF004D40)), maxLines: 1, overflow: TextOverflow.ellipsis),
           )
         ],
       ),

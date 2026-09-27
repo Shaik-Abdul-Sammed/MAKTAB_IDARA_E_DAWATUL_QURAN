@@ -260,8 +260,7 @@ class _StudentDetailContent extends StatelessWidget {
                 const SizedBox(height: 14),
                 Text(
                   student.name,
-                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 22),
-                ),
+                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 22), maxLines: 1, overflow: TextOverflow.ellipsis),
                 if (student.arabicName != null && student.arabicName!.isNotEmpty) ...[
                   const SizedBox(height: 4),
                   Text(
@@ -278,8 +277,7 @@ class _StudentDetailContent extends StatelessWidget {
                   ),
                   child: Text(
                     'ADM: ${student.admissionNumber} · $batchName',
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 12),
-                  ),
+                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 12), maxLines: 1, overflow: TextOverflow.ellipsis),
                 ),
               ],
             ),

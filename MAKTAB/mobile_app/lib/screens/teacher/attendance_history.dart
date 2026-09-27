@@ -102,7 +102,7 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(studentName, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF004D40))),
-            Text('Date: ${item.date} | Status: ${item.status}', style: const TextStyle(fontSize: 14, color: Colors.black54)),
+            Text('Date: ${item.date} | Status: ${item.status}', style: const TextStyle(fontSize: 14, color: Colors.black54), maxLines: 1, overflow: TextOverflow.ellipsis),
             const Divider(),
             const SizedBox(height: 12),
             Expanded(
@@ -115,8 +115,7 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                       return item.toString();
                     }
                   }(), 
-                  style: const TextStyle(fontSize: 16),
-                ),
+                  style: const TextStyle(fontSize: 16), maxLines: 1, overflow: TextOverflow.ellipsis),
               ),
             ),
             const SizedBox(height: 24),
@@ -226,8 +225,7 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                                           ),
                                           child: Text(
                                             '${records.length} records',
-                                            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF004D40)),
-                                          ),
+                                            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF004D40)), maxLines: 1, overflow: TextOverflow.ellipsis),
                                         ),
                                       ],
                                     ),
@@ -252,28 +250,33 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                                         ),
                                         title: Text(studentName, style: const TextStyle(fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
                                         subtitle: Text('ID: ${item.studentId}${item.time != null && item.time!.isNotEmpty ? " • ${item.time}" : ""}', maxLines: 2, overflow: TextOverflow.ellipsis),
-                                        trailing: Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            Container(
-                                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                              decoration: BoxDecoration(
-                                                color: statusBg,
-                                                borderRadius: BorderRadius.circular(12),
-                                                border: Border.all(color: statusColor.withValues(alpha: 0.3)),
-                                              ),
-                                              child: Text(
-                                                item.status,
-                                                style: TextStyle(
-                                                  color: statusColor,
-                                                  fontWeight: FontWeight.bold,
-                                                  fontSize: 12,
+                                        trailing: ConstrainedBox(
+                                          constraints: const BoxConstraints(maxWidth: 100),
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Container(
+                                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                                decoration: BoxDecoration(
+                                                  color: statusBg,
+                                                  borderRadius: BorderRadius.circular(12),
+                                                  border: Border.all(color: statusColor.withValues(alpha: 0.3)),
+                                                ),
+                                                child: Text(
+                                                  item.status,
+                                                  maxLines: 1,
+                                                  overflow: TextOverflow.ellipsis,
+                                                  style: TextStyle(
+                                                    color: statusColor,
+                                                    fontWeight: FontWeight.bold,
+                                                    fontSize: 12,
+                                                  ),
                                                 ),
                                               ),
-                                            ),
-                                            const SizedBox(width: 4),
-                                            const Icon(Icons.chevron_right, size: 18, color: Colors.black38),
-                                          ],
+                                              const SizedBox(width: 4),
+                                              const Icon(Icons.chevron_right, size: 18, color: Colors.black38),
+                                            ],
+                                          ),
                                         ),
                                         onTap: () => _showDetailSheet(item),
                                       ),

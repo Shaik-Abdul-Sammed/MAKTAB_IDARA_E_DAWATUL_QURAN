@@ -185,7 +185,7 @@ class _StudentEditScreenState extends State<StudentEditScreen> {
             Consumer<StudentFormProvider>(
               builder: (_, p, _) => TextButton(
                 onPressed: p.isLoading ? null : _submit,
-                child: Text((loc?.translate('common_save') ?? 'SAVE').toUpperCase(), style: const TextStyle(color: Color(0xFFFFD700), fontWeight: FontWeight.bold)),
+                child: Text((loc?.translate('common_save') ?? 'SAVE').toUpperCase(), style: const TextStyle(color: Color(0xFFFFD700), fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
               ),
             ),
           ],
@@ -342,7 +342,7 @@ class _StudentEditScreenState extends State<StudentEditScreen> {
                                 height: 22,
                                 child: CircularProgressIndicator(color: Color(0xFF004D40), strokeWidth: 2.5),
                               )
-                            : Text(loc?.translate('student_edit_update_btn') ?? 'Update Student', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                            : Text(loc?.translate('student_edit_update_btn') ?? 'Update Student', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16), maxLines: 1, overflow: TextOverflow.ellipsis),
                       ),
                     ),
                   ),
@@ -404,9 +404,9 @@ class _StudentEditScreenState extends State<StudentEditScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(s.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF004D40))),
+                Text(s.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF004D40)), maxLines: 1, overflow: TextOverflow.ellipsis),
                 const SizedBox(height: 4),
-                Text('ADM: ${s.admissionNumber}', style: const TextStyle(fontSize: 12, color: Colors.black45)),
+                Text('ADM: ${s.admissionNumber}', style: const TextStyle(fontSize: 12, color: Colors.black45), maxLines: 1, overflow: TextOverflow.ellipsis),
               ],
             ),
           ),

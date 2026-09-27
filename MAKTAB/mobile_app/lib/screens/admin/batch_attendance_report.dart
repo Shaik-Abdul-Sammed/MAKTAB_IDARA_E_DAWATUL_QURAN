@@ -66,8 +66,7 @@ class _BatchAttendanceReportScreenState extends State<BatchAttendanceReportScree
                         return item.toString();
                       }
                     }(), 
-                    style: const TextStyle(fontSize: 16)
-                  ),
+                    style: const TextStyle(fontSize: 16), maxLines: 1, overflow: TextOverflow.ellipsis),
                 ),
               ),
             const SizedBox(height: 24),

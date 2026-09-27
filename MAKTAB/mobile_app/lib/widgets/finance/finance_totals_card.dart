@@ -164,8 +164,7 @@ class FinanceTotalsCard extends StatelessWidget {
                               fontSize: 11,
                               fontWeight: FontWeight.w500,
                               color: Colors.grey.shade700,
-                            ),
-                          ),
+                            ), maxLines: 1, overflow: TextOverflow.ellipsis),
                           Text(
                             formatRupees(entry.value),
                             style: const TextStyle(

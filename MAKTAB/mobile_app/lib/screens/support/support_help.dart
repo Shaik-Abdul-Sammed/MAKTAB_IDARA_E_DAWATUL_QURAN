@@ -141,13 +141,21 @@ class _SupportHelpScreenState extends State<SupportHelpScreen> {
         children: [
           Icon(Icons.help_center_rounded, color: Color(0xFFFFD700), size: 40),
           SizedBox(width: 16),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Maktab Support Desk', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18, overflow: TextOverflow.ellipsis)),
-              SizedBox(height: 4),
-              Text('We are here to assist your institution', style: TextStyle(color: Colors.white70, fontSize: 12)),
-            ],
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Maktab Support Desk',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
+                SizedBox(height: 4),
+                Text('We are here to assist your institution',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(color: Colors.white70, fontSize: 12)),
+              ],
+            ),
           ),
         ],
       ),

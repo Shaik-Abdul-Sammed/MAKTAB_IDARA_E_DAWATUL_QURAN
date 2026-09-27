@@ -124,8 +124,19 @@ class ChecklistComplianceScreen extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(title, style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF004D40))),
-              Text(caption, style: const TextStyle(fontSize: 12, color: Colors.black54)),
+              Expanded(
+                child: Text(title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF004D40))),
+              ),
+              const SizedBox(width: 8),
+              Flexible(
+                child: Text(caption,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: 12, color: Colors.black54)),
+              ),
             ],
           ),
           const SizedBox(height: 12),

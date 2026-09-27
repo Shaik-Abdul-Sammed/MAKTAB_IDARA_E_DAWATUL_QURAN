@@ -232,8 +232,7 @@ class _VoiceAttendanceDialogState extends State<VoiceAttendanceDialog> {
                     const SizedBox(height: 6),
                     Text(
                       '"$_lastWords"',
-                      style: const TextStyle(fontStyle: FontStyle.italic, color: Colors.blueGrey, fontSize: 12),
-                    ),
+                      style: const TextStyle(fontStyle: FontStyle.italic, color: Colors.blueGrey, fontSize: 12), maxLines: 1, overflow: TextOverflow.ellipsis),
                   ],
                 ],
               ),

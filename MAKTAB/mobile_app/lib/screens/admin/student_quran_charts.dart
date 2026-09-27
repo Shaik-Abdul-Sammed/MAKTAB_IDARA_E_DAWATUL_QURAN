@@ -202,15 +202,21 @@ class _StudentStatsContent extends StatelessWidget {
         children: [
           const Icon(Icons.pie_chart_outline_rounded, color: Colors.white, size: 40),
           const SizedBox(width: 16),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('${p.totalCount} Enrolled Students',
-                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18, overflow: TextOverflow.ellipsis)),
-              const SizedBox(height: 4),
-              Text('${p.maleCount} Male · ${p.femaleCount} Female across ${p.batchStats.length} Batches',
-                  style: const TextStyle(color: Colors.white70, fontSize: 13)),
-            ],
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('${p.totalCount} Enrolled Students',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
+                const SizedBox(height: 4),
+                Text('${p.maleCount} Male · ${p.femaleCount} Female across ${p.batchStats.length} Batches',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(color: Colors.white70, fontSize: 13)),
+              ],
+            ),
           ),
         ],
       ),
@@ -227,8 +233,9 @@ class _StudentStatsContent extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Male: ${p.maleCount}', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blue.shade700, fontSize: 13)),
-              Text('Female: ${p.femaleCount}', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.pink.shade700, fontSize: 13)),
+              Flexible(child: Text('Male: ${p.maleCount}', maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blue.shade700, fontSize: 13))),
+              const SizedBox(width: 8),
+              Flexible(child: Text('Female: ${p.femaleCount}', maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontWeight: FontWeight.bold, color: Colors.pink.shade700, fontSize: 13))),
             ],
           ),
           const SizedBox(height: 10),
@@ -302,9 +309,19 @@ class _BatchProgressCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(batchName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF004D40))),
-              Text('$count Students (${(percentage * 100).toStringAsFixed(0)}%)',
-                  style: const TextStyle(fontSize: 12, color: Colors.black54)),
+              Expanded(
+                child: Text(batchName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF004D40))),
+              ),
+              const SizedBox(width: 8),
+              Flexible(
+                child: Text('$count Students (${(percentage * 100).toStringAsFixed(0)}%)',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: 12, color: Colors.black54)),
+              ),
             ],
           ),
           const SizedBox(height: 8),
@@ -342,9 +359,18 @@ class _RecentStudentTile extends StatelessWidget {
           ),
           const SizedBox(width: 12),
           Expanded(
-            child: Text(student.name, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+            child: Text(student.name,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
           ),
-          Text('ADM: ${student.admissionNumber}', style: const TextStyle(fontSize: 12, color: Colors.black45)),
+          const SizedBox(width: 8),
+          Flexible(
+            child: Text('ADM: ${student.admissionNumber}',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontSize: 12, color: Colors.black45)),
+          ),
         ],
       ),
     );

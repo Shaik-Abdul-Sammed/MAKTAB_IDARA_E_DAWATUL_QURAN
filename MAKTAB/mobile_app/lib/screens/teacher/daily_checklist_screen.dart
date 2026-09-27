@@ -169,8 +169,7 @@ class DailyChecklistScreen extends StatelessWidget {
               ),
               Text(
                 '${p.completionPercentage}%',
-                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
-              ),
+                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13), maxLines: 1, overflow: TextOverflow.ellipsis),
             ],
           ),
           const SizedBox(width: 20),
@@ -185,8 +184,7 @@ class DailyChecklistScreen extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   '${p.completedCount} of ${p.totalCount} tasks completed for today',
-                  style: const TextStyle(color: Colors.white70, fontSize: 12),
-                ),
+                  style: const TextStyle(color: Colors.white70, fontSize: 12), maxLines: 1, overflow: TextOverflow.ellipsis),
               ],
             ),
           ),

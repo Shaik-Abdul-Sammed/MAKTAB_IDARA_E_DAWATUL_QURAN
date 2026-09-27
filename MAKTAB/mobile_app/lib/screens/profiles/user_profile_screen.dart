@@ -48,8 +48,7 @@ class UserProfileScreen extends StatelessWidget {
                   SizedBox(height: 15),
                   Text(
                     user.name,
-                    style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold),
-                  ),
+                    style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
                   Text(
                     user.role.toUpperCase(),
                     style: TextStyle(color: Colors.white70, fontSize: 16, letterSpacing: 1.5),

@@ -302,7 +302,7 @@ class _TeacherDetailContent extends StatelessWidget {
                 const SizedBox(height: 14),
                 Text(teacher.name,
                     style: const TextStyle(
-                        color: Colors.white, fontWeight: FontWeight.bold, fontSize: 22)),
+                        color: Colors.white, fontWeight: FontWeight.bold, fontSize: 22), maxLines: 1, overflow: TextOverflow.ellipsis),
                 const SizedBox(height: 6),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),

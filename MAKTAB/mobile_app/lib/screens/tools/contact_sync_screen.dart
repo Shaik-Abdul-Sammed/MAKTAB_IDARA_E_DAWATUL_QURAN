@@ -117,16 +117,16 @@ class _ContactSyncScreenState extends State<ContactSyncScreen> {
                       children: [
                         CircleAvatar(
                           backgroundColor: const Color(0xFF004D40),
-                          child: Text(s.name.isNotEmpty ? s.name[0].toUpperCase() : 'S', style: const TextStyle(color: Colors.white)),
+                          child: Text(s.name.isNotEmpty ? s.name[0].toUpperCase() : 'S', style: const TextStyle(color: Colors.white), maxLines: 1, overflow: TextOverflow.ellipsis),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(s.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                              Text(s.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14), maxLines: 1, overflow: TextOverflow.ellipsis),
                               Text('Parent: ${s.fatherName ?? 'Guardian'} · ${s.phone ?? 'No phone'}',
-                                  style: const TextStyle(fontSize: 12, color: Colors.black54)),
+                                  style: const TextStyle(fontSize: 12, color: Colors.black54), maxLines: 1, overflow: TextOverflow.ellipsis),
                             ],
                           ),
                         ),
