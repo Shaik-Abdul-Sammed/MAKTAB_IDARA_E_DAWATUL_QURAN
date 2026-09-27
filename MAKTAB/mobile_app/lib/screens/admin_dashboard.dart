@@ -351,9 +351,13 @@ class _AdminDashboardState extends State<AdminDashboard>
             ],
           ),
           const SizedBox(height: 8),
-          AnimatedCounter(
-            count: value,
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: color),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: AnimatedCounter(
+              count: value,
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: color),
+            ),
           ),
           const SizedBox(height: 2),
           Text(label,
@@ -1350,9 +1354,9 @@ class _AdminDashboardState extends State<AdminDashboard>
                   overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 2),
-                const Text(
-                  'Manager & Administrator',
-                  style: TextStyle(color: Colors.white70, fontSize: 12),
+                Text(
+                  loc?.translate('admin_dashboard_manager_role') ?? 'Manager & Administrator',
+                  style: const TextStyle(color: Colors.white70, fontSize: 12),
                 ),
               ],
             ),

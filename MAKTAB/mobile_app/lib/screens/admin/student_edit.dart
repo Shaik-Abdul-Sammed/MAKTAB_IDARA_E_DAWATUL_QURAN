@@ -14,6 +14,7 @@ import '../../providers/student_form_provider.dart';
 import '../../repositories/student_repository.dart';
 import '../../repositories/batch_repository.dart';
 import '../../widgets/molecules/custom_app_bar.dart';
+import '../../l10n/app_localizations.dart';
 
 class StudentEditScreen extends StatefulWidget {
   final Student student;
@@ -173,17 +174,18 @@ class _StudentEditScreenState extends State<StudentEditScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context);
     return ChangeNotifierProvider.value(
       value: _provider,
       child: Scaffold(
         backgroundColor: const Color(0xFFF9FBE7),
         appBar: CustomAppBar(
-          title: 'Edit Student',
+          title: loc?.translate('student_edit_title') ?? 'Edit Student',
           actions: [
             Consumer<StudentFormProvider>(
               builder: (_, p, _) => TextButton(
                 onPressed: p.isLoading ? null : _submit,
-                child: const Text('SAVE', style: TextStyle(color: Color(0xFFFFD700), fontWeight: FontWeight.bold)),
+                child: Text((loc?.translate('common_save') ?? 'SAVE').toUpperCase(), style: const TextStyle(color: Color(0xFFFFD700), fontWeight: FontWeight.bold)),
               ),
             ),
           ],
@@ -199,11 +201,11 @@ class _StudentEditScreenState extends State<StudentEditScreen> {
                 children: [
                   _buildHeaderCard(),
                   const SizedBox(height: 20),
-                  const _SectionTitle('Academic Details'),
+                  _SectionTitle(loc?.translate('academic_details') ?? 'Academic Details'),
                   const SizedBox(height: 12),
                   _buildField(
                     controller: _admCtrl,
-                    label: 'Admission Number',
+                    label: loc?.translate('student_add_adm_number') ?? 'Admission Number',
                     icon: Icons.confirmation_number_outlined,
                     validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null,
                   ),
@@ -211,7 +213,7 @@ class _StudentEditScreenState extends State<StudentEditScreen> {
 
                   _buildField(
                     controller: _feesCtrl,
-                    label: 'Fees Amount (Optional)',
+                    label: loc?.translate('student_add_fees_amount') ?? 'Fees Amount (Optional)',
                     icon: Icons.currency_rupee,
                     keyboardType: TextInputType.number,
                   ),
@@ -219,6 +221,7 @@ class _StudentEditScreenState extends State<StudentEditScreen> {
                   _buildBatchDropdown(),
                   const SizedBox(height: 16),
                   DropdownButtonFormField<String>(
+                    isExpanded: true,
                     initialValue: ['en', 'ur', 'hi', 'te'].contains(_preferredLanguage)
                         ? _preferredLanguage
                         : 'en',
@@ -228,10 +231,10 @@ class _StudentEditScreenState extends State<StudentEditScreen> {
                       border: OutlineInputBorder(),
                     ),
                     items: const [
-                      DropdownMenuItem(value: 'en', child: Text('English')),
-                      DropdownMenuItem(value: 'ur', child: Text('اردو (Urdu)')),
-                      DropdownMenuItem(value: 'hi', child: Text('हिन्दी (Hindi)')),
-                      DropdownMenuItem(value: 'te', child: Text('తెలుగు (Telugu)')),
+                      DropdownMenuItem(value: 'en', child: Text('English', maxLines: 1, overflow: TextOverflow.ellipsis)),
+                      DropdownMenuItem(value: 'ur', child: Text('اردو (Urdu)', maxLines: 1, overflow: TextOverflow.ellipsis)),
+                      DropdownMenuItem(value: 'hi', child: Text('हिन्दी (Hindi)', maxLines: 1, overflow: TextOverflow.ellipsis)),
+                      DropdownMenuItem(value: 'te', child: Text('తెలుగు (Telugu)', maxLines: 1, overflow: TextOverflow.ellipsis)),
                     ],
                     onChanged: (v) => setState(() => _preferredLanguage = v ?? 'en'),
                   ),
@@ -272,23 +275,23 @@ class _StudentEditScreenState extends State<StudentEditScreen> {
                   ),
                   const SizedBox(height: 24),
 
-                  const _SectionTitle('Guardian Contact'),
+                  _SectionTitle(loc?.translate('guardian_contact') ?? 'Guardian Contact'),
                   const SizedBox(height: 12),
                   _buildField(
                     controller: _fatherNameCtrl,
-                    label: "Father's Name",
+                    label: loc?.translate('student_edit_father_name') ?? "Father's Name",
                     icon: Icons.person_outline,
                   ),
                   const SizedBox(height: 16),
                   _buildField(
                     controller: _guardianNameCtrl,
-                    label: "Guardian Name (Optional)",
+                    label: loc?.translate('student_edit_guardian_name') ?? "Guardian Name (Optional)",
                     icon: Icons.person_outline,
                   ),
                   const SizedBox(height: 16),
                   _buildField(
                     controller: _phoneCtrl,
-                    label: 'Parent Phone Number',
+                    label: loc?.translate('student_edit_phone') ?? 'Parent Phone Number',
                     icon: Icons.phone_outlined,
                     keyboardType: TextInputType.phone,
                     inputFormatters: [
@@ -339,7 +342,7 @@ class _StudentEditScreenState extends State<StudentEditScreen> {
                                 height: 22,
                                 child: CircularProgressIndicator(color: Color(0xFF004D40), strokeWidth: 2.5),
                               )
-                            : const Text('Update Student', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                            : Text(loc?.translate('student_edit_update_btn') ?? 'Update Student', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                       ),
                     ),
                   ),

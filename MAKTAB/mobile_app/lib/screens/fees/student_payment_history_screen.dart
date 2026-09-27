@@ -364,68 +364,85 @@ class _StudentPaymentHistoryScreenState extends State<StudentPaymentHistoryScree
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      Text(tx.student.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                                      Text('ADM: ${tx.student.admissionNumber} · ${tx.payment.mode}', style: const TextStyle(fontSize: 12, color: Colors.black54)),
+                                      Text(
+                                        tx.student.name,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                                      ),
+                                      Text(
+                                        'ADM: ${tx.student.admissionNumber} · ${tx.payment.mode}',
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(fontSize: 12, color: Colors.black54),
+                                      ),
                                     ],
                                   ),
                                 ),
-                                Text('₹${tx.payment.amount}',
-                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.green)),
+                                const SizedBox(width: 8),
+                                SizedBox(
+                                  width: 90,
+                                  child: FittedBox(
+                                    fit: BoxFit.scaleDown,
+                                    alignment: Alignment.centerRight,
+                                    child: Text(
+                                      '₹${tx.payment.amount}',
+                                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.green),
+                                    ),
+                                  ),
+                                ),
                               ],
                             ),
                             const SizedBox(height: 12),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.end,
                               children: [
-                                if (tx.payment.receiptSent == 0) ...[
-                                  OutlinedButton.icon(
-                                    onPressed: () => _handleSendReceipt(tx),
-                                    icon: const Icon(Icons.send_rounded, size: 14),
-                                    label: const Text('Send Receipt', style: TextStyle(fontSize: 11)),
-                                    style: OutlinedButton.styleFrom(
-                                      foregroundColor: const Color(0xFF004D40),
-                                      side: const BorderSide(color: Color(0xFF004D40)),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                ],
-                                OutlinedButton.icon(
-                                  onPressed: () async {
-                                    final phone = tx.student.phone ?? '';
-                                    final parsed = DateTime.tryParse(tx.payment.timestamp);
-                                    final formattedTime = parsed != null ? DateFormat('dd MMM yyyy, hh:mm a').format(parsed) : tx.payment.timestamp;
-                                    final month = parsed != null ? DateFormat('MMMM yyyy').format(parsed) : tx.payment.timestamp.split('T')[0];
-                                    final currentUser = Provider.of<AuthProvider>(context, listen: false).currentUser;
-                                    final collectorName = currentUser?.name ?? 'Management';
+                                SizedBox(
+                                  width: tx.payment.receiptSent == 0 ? 116 : 80,
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    mainAxisAlignment: MainAxisAlignment.end,
+                                    children: [
+                                      if (tx.payment.receiptSent == 0)
+                                        _IconAction(
+                                          icon: Icons.send_rounded,
+                                          tooltip: 'Send Receipt',
+                                          color: const Color(0xFF004D40),
+                                          onTap: () => _handleSendReceipt(tx),
+                                        ),
+                                      _IconAction(
+                                        icon: Icons.message_rounded,
+                                        tooltip: 'WhatsApp Receipt',
+                                        color: Colors.green.shade700,
+                                        onTap: () async {
+                                          final phone = tx.student.phone ?? '';
+                                          final parsed = DateTime.tryParse(tx.payment.timestamp);
+                                          final formattedTime = parsed != null ? DateFormat('dd MMM yyyy, hh:mm a').format(parsed) : tx.payment.timestamp;
+                                          final month = parsed != null ? DateFormat('MMMM yyyy').format(parsed) : tx.payment.timestamp.split('T')[0];
+                                          final currentUser = Provider.of<AuthProvider>(context, listen: false).currentUser;
+                                          final collectorName = currentUser?.name ?? 'Management';
 
-                                    await WhatsAppUtility.sendFeeReceipt(
-                                      context,
-                                      phone,
-                                      tx.student.name,
-                                      tx.payment.amount.toDouble(),
-                                      month,
-                                      paymentMode: tx.payment.mode,
-                                      dateTime: formattedTime,
-                                      collectorName: collectorName,
-                                      languageCode: LanguageResolver.forStudent(tx.student),
-                                      senderName: collectorName,
-                                    );
-                                  },
-                                  icon: const Icon(Icons.send_rounded, size: 14),
-                                  label: const Text('WhatsApp Receipt', style: TextStyle(fontSize: 11)),
-                                  style: OutlinedButton.styleFrom(
-                                    foregroundColor: const Color(0xFF004D40),
-                                    side: const BorderSide(color: Color(0xFF004D40)),
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                OutlinedButton.icon(
-                                  onPressed: () => _printReceipt(tx),
-                                  icon: const Icon(Icons.print_rounded, size: 14),
-                                  label: const Text('Print Receipt PDF', style: TextStyle(fontSize: 11)),
-                                  style: OutlinedButton.styleFrom(
-                                    foregroundColor: const Color(0xFF004D40),
-                                    side: const BorderSide(color: Color(0xFF004D40)),
+                                          await WhatsAppUtility.sendFeeReceipt(
+                                            context,
+                                            phone,
+                                            tx.student.name,
+                                            tx.payment.amount.toDouble(),
+                                            month,
+                                            paymentMode: tx.payment.mode,
+                                            dateTime: formattedTime,
+                                            collectorName: collectorName,
+                                            languageCode: LanguageResolver.forStudent(tx.student),
+                                            senderName: collectorName,
+                                          );
+                                        },
+                                      ),
+                                      _IconAction(
+                                        icon: Icons.print_rounded,
+                                        tooltip: 'Print Receipt PDF',
+                                        color: const Color(0xFF004D40),
+                                        onTap: () => _printReceipt(tx),
+                                      ),
+                                    ],
                                   ),
                                 ),
                               ],
@@ -436,6 +453,32 @@ class _StudentPaymentHistoryScreenState extends State<StudentPaymentHistoryScree
                     },
                   ),
       ),
+    );
+  }
+}
+
+class _IconAction extends StatelessWidget {
+  final IconData icon;
+  final String tooltip;
+  final VoidCallback? onTap;
+  final Color? color;
+
+  const _IconAction({
+    required this.icon,
+    required this.tooltip,
+    this.onTap,
+    this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      icon: Icon(icon, size: 20, color: color),
+      tooltip: tooltip,
+      onPressed: onTap,
+      visualDensity: VisualDensity.compact,
+      padding: EdgeInsets.zero,
+      constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
     );
   }
 }

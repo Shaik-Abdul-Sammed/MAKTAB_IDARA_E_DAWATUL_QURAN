@@ -360,7 +360,7 @@ class _StudentAddScreenState extends State<StudentAddScreen> {
                   const SizedBox(height: 16),
                   _buildField(
                     controller: _admCtrl,
-                    label: 'Admission Number',
+                    label: loc?.translate('student_add_adm_number') ?? 'Admission Number',
                     hint: _defaultAdmNumber ?? 'e.g. ADM-${DateTime.now().year}-001',
                     icon: Icons.confirmation_number_outlined,
                   ),
@@ -368,7 +368,7 @@ class _StudentAddScreenState extends State<StudentAddScreen> {
 
                   _buildField(
                     controller: _feesCtrl,
-                    label: 'Fees Amount (Optional)',
+                    label: loc?.translate('student_add_fees_amount') ?? 'Fees Amount (Optional)',
                     icon: Icons.currency_rupee,
                     keyboardType: TextInputType.number,
                   ),
@@ -376,29 +376,30 @@ class _StudentAddScreenState extends State<StudentAddScreen> {
                   _buildBatchDropdown(),
                   const SizedBox(height: 16),
                   DropdownButtonFormField<String>(
+                    isExpanded: true,
                     initialValue: ['en', 'ur', 'hi', 'te'].contains(_preferredLanguage)
                         ? _preferredLanguage
                         : 'en',
-                    decoration: const InputDecoration(
-                      labelText: 'Preferred Language for Receipts',
-                      prefixIcon: Icon(Icons.translate),
-                      border: OutlineInputBorder(),
+                    decoration: InputDecoration(
+                      labelText: loc?.translate('student_add_preferred_lang') ?? 'Preferred Language for Receipts',
+                      prefixIcon: const Icon(Icons.translate),
+                      border: const OutlineInputBorder(),
                     ),
                     items: const [
-                      DropdownMenuItem(value: 'en', child: Text('English')),
-                      DropdownMenuItem(value: 'ur', child: Text('اردو (Urdu)')),
-                      DropdownMenuItem(value: 'hi', child: Text('हिन्दी (Hindi)')),
-                      DropdownMenuItem(value: 'te', child: Text('తెలుగు (Telugu)')),
+                      DropdownMenuItem(value: 'en', child: Text('English', maxLines: 1, overflow: TextOverflow.ellipsis)),
+                      DropdownMenuItem(value: 'ur', child: Text('اردو (Urdu)', maxLines: 1, overflow: TextOverflow.ellipsis)),
+                      DropdownMenuItem(value: 'hi', child: Text('हिन्दी (Hindi)', maxLines: 1, overflow: TextOverflow.ellipsis)),
+                      DropdownMenuItem(value: 'te', child: Text('తెలుగు (Telugu)', maxLines: 1, overflow: TextOverflow.ellipsis)),
                     ],
                     onChanged: (v) => setState(() => _preferredLanguage = v ?? 'en'),
                   ),
                   const SizedBox(height: 24),
 
-                  const _SectionTitle('Student Profile'),
+                  _SectionTitle(loc?.translate('student_add_profile') ?? 'Student Profile'),
                   const SizedBox(height: 12),
                   _buildField(
                     controller: _nameCtrl,
-                    label: 'Student Full Name',
+                    label: loc?.translate('student_add_full_name') ?? 'Student Full Name',
                     hint: 'e.g. Muhammad Zaid',
                     icon: Icons.badge_outlined,
                     textCapitalization: TextCapitalization.words,
@@ -507,7 +508,7 @@ class _StudentAddScreenState extends State<StudentAddScreen> {
                                 height: 22,
                                 child: CircularProgressIndicator(color: Color(0xFF004D40), strokeWidth: 2.5),
                               )
-                            : const Text('Save Student', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                            : Text(loc?.translate('student_add_btn') ?? 'Save Student', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                       ),
                     ),
                   ),

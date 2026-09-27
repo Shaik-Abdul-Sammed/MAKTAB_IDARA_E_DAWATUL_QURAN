@@ -1,13 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 import "../../utils/reminder_formatter.dart";
 import 'package:intl/intl.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../../config/app_icons.dart';
-import '../../config/app_routes.dart';
-import '../../models/student.dart';
 import '../../models/fee_payment.dart';
 import '../../providers/auth_provider.dart';
 import '../../repositories/fee_payment_repository.dart';
@@ -24,6 +21,7 @@ import 'package:path_provider/path_provider.dart';
 import '../../utils/permission_helper.dart';
 import '../../widgets/molecules/custom_app_bar.dart';
 import '../../widgets/shimmer_loader.dart';
+import '../../l10n/app_localizations.dart';
 import '../../widgets/finance/finance_totals_card.dart';
 import '../../widgets/finance/fee_card.dart';
 import '../../widgets/finance/fee_payments_list_widget.dart';
@@ -211,23 +209,24 @@ class _FeeManagementScreenState extends State<FeeManagementScreen> {
         .where((i) => i.status != 'Paid')
         .fold(0.0, (sum, item) => sum + item.amountDue);
 
+    final loc = AppLocalizations.of(context);
     return DefaultTabController(
       length: 2,
       child: Scaffold(
         backgroundColor: const Color(0xFFF9FBE7),
         appBar: CustomAppBar(
-          title: 'Fee Management & Reminders',
+          title: loc?.translate('fee_mgmt_title') ?? 'Fee Management & Reminders',
           actions: [
             IconButton(
               icon: const Icon(Icons.send_rounded),
               onPressed: _openBulkMessagingDialog,
-              tooltip: 'Send Bulk Batch Reminders',
+              tooltip: loc?.translate('fee_mgmt_bulk_reminders') ?? 'Send Bulk Batch Reminders',
             ),
           ],
-          bottom: const TabBar(
+          bottom: TabBar(
             tabs: [
-              Tab(text: 'Fee Status', icon: Icon(Icons.people_alt_outlined, size: 18)),
-              Tab(text: 'Payment History', icon: Icon(Icons.history_rounded, size: 18)),
+              Tab(text: loc?.translate('fee_mgmt_tab_status') ?? 'Fee Status', icon: const Icon(Icons.people_alt_outlined, size: 18)),
+              Tab(text: loc?.translate('fee_mgmt_tab_history') ?? 'Payment History', icon: const Icon(Icons.history_rounded, size: 18)),
             ],
             indicatorColor: AppIcons.gold,
             labelColor: Colors.white,
@@ -287,6 +286,7 @@ class _FeeManagementScreenState extends State<FeeManagementScreen> {
                           Expanded(
                             child: SingleChildScrollView(
                               scrollDirection: Axis.horizontal,
+                              physics: const BouncingScrollPhysics(),
                               child: Row(
                                 children: ['All', 'Overdue', 'Pending', 'Paid'].map((f) {
                                   final isSel = _filter == f;
@@ -641,11 +641,15 @@ class _FeeManagementScreenState extends State<FeeManagementScreen> {
                         style: TextStyle(color: Colors.white70, fontSize: 12),
                       ),
                       const SizedBox(height: 4),
-                      Text(
-                        '₹${totalPending.toInt()}',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 22),
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          '₹${totalPending.toInt()}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 22),
+                        ),
                       ),
                     ],
                   ),

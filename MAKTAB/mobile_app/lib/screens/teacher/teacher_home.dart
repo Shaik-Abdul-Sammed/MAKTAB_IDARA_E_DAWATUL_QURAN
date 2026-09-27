@@ -727,12 +727,16 @@ class _SummaryChip extends StatelessWidget {
         ),
         child: Column(
           children: [
-            Text(
-              '$count',
-              style: TextStyle(
-                  color: color,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.center,
+              child: Text(
+                '$count',
+                style: TextStyle(
+                    color: color,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold),
+              ),
             ),
             Text(
               label,

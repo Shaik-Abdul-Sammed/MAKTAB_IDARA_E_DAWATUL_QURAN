@@ -8,7 +8,6 @@ import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 import '../../config/app_icons.dart';
-import '../../models/student.dart';
 import '../../models/batch.dart';
 import '../../models/fee_payment.dart';
 import '../../providers/auth_provider.dart';
@@ -22,6 +21,7 @@ import '../../utils/whatsapp_utility.dart';
 import '../../utils/language_resolver.dart';
 import '../../utils/permission_helper.dart';
 import '../../widgets/molecules/custom_app_bar.dart';
+import '../../l10n/app_localizations.dart';
 import '../../widgets/shimmer_loader.dart';
 import '../../widgets/finance/finance_totals_card.dart';
 import '../../widgets/finance/fee_card.dart';
@@ -155,21 +155,27 @@ class _TeacherFeesScreenState extends State<TeacherFeesScreen> {
     final s = item.student;
     final phone = s.guardianPhone ?? s.phone ?? '';
     final msg = ReminderFormatter.formatFeeReminder(
+      amountDue: item.amountDue,
       studentName: s.name,
-      amount: item.amountDue,
+      admissionNumber: s.admissionNumber,
       dueDate: item.dueDate,
-      lang: LanguageResolver.forStudent(s),
-      senderName: _teacherName,
     );
-    await WhatsAppUtility.sendMessage(context, phone, msg);
+    await WhatsAppUtility.launchWhatsApp(phone, msg, context: context);
   }
 
   Future<void> _triggerNotification(FeeStudentItem item) async {
     final s = item.student;
-    await NotificationService().showNotification(
-      id: s.id ?? DateTime.now().millisecondsSinceEpoch ~/ 1000,
-      title: 'Fee Reminder: ${s.name}',
-      body: 'Monthly fee of ₹${item.amountDue.toInt()} is ${item.status.toLowerCase()}.',
+    final granted = await PermissionHelper.requestPermissionWithRationale(
+      context: context,
+      permission: Permission.notification,
+      title: 'Notification Permission',
+      rationale: 'Maktab App needs permission to show instant fee reminder notifications on your device.',
+    );
+    if (!granted) return;
+
+    await NotificationService().showFeeReminderNotification(
+      studentName: s.name,
+      amount: item.amountDue,
     );
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -217,7 +223,12 @@ class _TeacherFeesScreenState extends State<TeacherFeesScreen> {
                         recordFilePath = path;
                       });
                     } else {
-                      if (await PermissionHelper.requestMicrophonePermission(context)) {
+                      if (await PermissionHelper.requestPermissionWithRationale(
+                        context: context,
+                        permission: Permission.microphone,
+                        title: 'Microphone Permission',
+                        rationale: 'Maktab App requires microphone permission to record voice notes.',
+                      )) {
                         final directory = await getApplicationDocumentsDirectory();
                         final p = '${directory.path}/voice_note_${DateTime.now().millisecondsSinceEpoch}.m4a';
                         await audioRecorder.start(const RecordConfig(), path: p);
@@ -423,11 +434,15 @@ class _TeacherFeesScreenState extends State<TeacherFeesScreen> {
                         style: TextStyle(color: Colors.white70, fontSize: 12),
                       ),
                       const SizedBox(height: 4),
-                      Text(
-                        '₹${totalPending.toInt()}',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 22),
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          '₹${totalPending.toInt()}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 22),
+                        ),
                       ),
                     ],
                   ),
@@ -468,23 +483,24 @@ class _TeacherFeesScreenState extends State<TeacherFeesScreen> {
         .where((i) => i.status != 'Paid')
         .fold(0.0, (sum, item) => sum + item.amountDue);
 
+    final loc = AppLocalizations.of(context);
     return DefaultTabController(
       length: 2,
       child: Scaffold(
         backgroundColor: const Color(0xFFF9FBE7),
         appBar: CustomAppBar(
-          title: 'Student Fees',
+          title: loc?.translate('teacher_fees_title') ?? 'Student Fees',
           actions: [
             IconButton(
               icon: const Icon(Icons.send_rounded),
               onPressed: _openBulkMessagingDialog,
-              tooltip: 'Send Bulk Batch Reminders',
+              tooltip: loc?.translate('teacher_fees_reminders') ?? 'Send Bulk Batch Reminders',
             ),
           ],
-          bottom: const TabBar(
+          bottom: TabBar(
             tabs: [
-              Tab(text: 'Fee Status', icon: Icon(Icons.people_alt_outlined, size: 18)),
-              Tab(text: 'Payment History', icon: Icon(Icons.history_rounded, size: 18)),
+              Tab(text: loc?.translate('teacher_fees_tab_status') ?? 'Fee Status', icon: const Icon(Icons.people_alt_outlined, size: 18)),
+              Tab(text: loc?.translate('teacher_fees_tab_history') ?? 'Payment History', icon: const Icon(Icons.history_rounded, size: 18)),
             ],
             indicatorColor: AppIcons.gold,
             labelColor: Colors.white,
@@ -543,6 +559,7 @@ class _TeacherFeesScreenState extends State<TeacherFeesScreen> {
                           Expanded(
                             child: SingleChildScrollView(
                               scrollDirection: Axis.horizontal,
+                              physics: const BouncingScrollPhysics(),
                               child: Row(
                                 children: ['All', 'Overdue', 'Pending', 'Paid'].map((f) {
                                   final isSel = _filter == f;

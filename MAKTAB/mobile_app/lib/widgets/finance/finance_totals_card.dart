@@ -80,6 +80,8 @@ class FinanceTotalsCard extends StatelessWidget {
                 ),
                 Text(
                   'Total: ${formatRupees(allTime)}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
@@ -192,6 +194,8 @@ class FinanceTotalsCard extends StatelessWidget {
         children: [
           Text(
             label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w600,

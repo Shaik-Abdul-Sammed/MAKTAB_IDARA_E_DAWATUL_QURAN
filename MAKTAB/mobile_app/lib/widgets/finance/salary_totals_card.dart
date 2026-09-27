@@ -66,6 +66,8 @@ class SalaryTotalsCard extends StatelessWidget {
                     pendingCount > 0
                         ? '$pendingCount Pending'
                         : 'All Paid',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.bold,
@@ -95,6 +97,8 @@ class SalaryTotalsCard extends StatelessWidget {
                       children: [
                         Text(
                           'This Month',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w600,
@@ -117,6 +121,8 @@ class SalaryTotalsCard extends StatelessWidget {
                         const SizedBox(height: 2),
                         Text(
                           '$paidCount of $totalTeachers teachers paid',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: TextStyle(
                             fontSize: 10,
                             color: Colors.grey.shade600,
@@ -142,6 +148,8 @@ class SalaryTotalsCard extends StatelessWidget {
                       children: [
                         Text(
                           'This Year',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w600,
@@ -164,6 +172,8 @@ class SalaryTotalsCard extends StatelessWidget {
                         const SizedBox(height: 2),
                         Text(
                           'Total paid this calendar year',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: TextStyle(
                             fontSize: 10,
                             color: Colors.grey.shade600,
@@ -197,6 +207,8 @@ class SalaryTotalsCard extends StatelessWidget {
                   Expanded(
                     child: Text(
                       'Teachers Pending This Month: $pendingCount of $totalTeachers',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w500,

@@ -14,6 +14,7 @@ import '../../utils/receipt_templates.dart';
 import '../../utils/receipt_pdf_generator.dart';
 import '../../utils/whatsapp_utility.dart';
 import '../../widgets/molecules/custom_app_bar.dart';
+import '../../l10n/app_localizations.dart';
 
 enum QuickSendDocType {
   feeReceipt,
@@ -499,9 +500,10 @@ class _QuickSendScreenState extends State<QuickSendScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context);
     return Scaffold(
       backgroundColor: const Color(0xFFF9FBE7),
-      appBar: const CustomAppBar(title: 'Send to Anyone'),
+      appBar: CustomAppBar(title: loc?.translate('quick_send_title') ?? 'Send to Anyone'),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : SafeArea(
@@ -513,22 +515,22 @@ class _QuickSendScreenState extends State<QuickSendScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // Section 1: Document Type
-                      _buildSectionHeader('1. Select Document Type'),
+                      _buildSectionHeader(loc?.translate('quick_send_sec_doc_type') ?? '1. Select Document Type'),
                       _buildDocTypeSelector(),
                       const SizedBox(height: 16),
 
                       // Section 2: Recipient
-                      _buildSectionHeader('2. Recipient'),
+                      _buildSectionHeader(loc?.translate('quick_send_sec_recipient') ?? '2. Recipient'),
                       _buildRecipientSection(),
                       const SizedBox(height: 16),
 
                       // Section 3: Document Fields
-                      _buildSectionHeader('3. Document Details'),
+                      _buildSectionHeader(loc?.translate('quick_send_sec_details') ?? '3. Document Details'),
                       _buildDocSpecificFields(),
                       const SizedBox(height: 16),
 
                       // Section 4: Preferred Language
-                      _buildSectionHeader('4. Message & Document Language'),
+                      _buildSectionHeader(loc?.translate('quick_send_sec_lang') ?? '4. Message & Document Language'),
                       _buildLanguageSection(),
                       const SizedBox(height: 24),
 
@@ -539,7 +541,7 @@ class _QuickSendScreenState extends State<QuickSendScreen> {
                             child: OutlinedButton.icon(
                               onPressed: _showPreviewSheet,
                               icon: const Icon(Icons.preview_rounded),
-                              label: const Text('Preview'),
+                              label: Text(loc?.translate('message_preview') ?? 'Preview'),
                               style: OutlinedButton.styleFrom(
                                 padding: const EdgeInsets.symmetric(vertical: 14),
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),

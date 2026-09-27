@@ -18,6 +18,7 @@ import 'dart:convert';
 
 import 'dart:async';
 import 'package:maktab_app/services/cloud_sync_service.dart';
+import 'package:maktab_app/l10n/app_localizations.dart';
 
 class TeacherManagementScreen extends StatefulWidget {
   const TeacherManagementScreen({super.key});
@@ -541,10 +542,11 @@ class _TeacherManagementScreenState extends State<TeacherManagementScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context);
     return Scaffold(
       backgroundColor: const Color(0xFFF9FBE7), // Cream background
       appBar: AppBar(
-        title: const Text('Teacher Management', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        title: Text(loc?.translate('teacher_mgmt_title') ?? 'Teacher Management', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         backgroundColor: const Color(0xFF004D40),
         iconTheme: const IconThemeData(color: Colors.white),
         centerTitle: true,
@@ -552,9 +554,9 @@ class _TeacherManagementScreenState extends State<TeacherManagementScreen> {
       body: _isLoading
           ? const Padding(padding: EdgeInsets.all(16.0), child: ShimmerListLoader())
           : _teachers.isEmpty
-              ? const EmptyStateWidget(
+              ? EmptyStateWidget(
                   icon: Icons.person_off,
-                  title: 'No Teachers Found',
+                  title: loc?.translate('no_teachers_found') ?? 'No Teachers Found',
                   message: 'There are currently no teachers added yet.',
                 )
               : ListView.builder(

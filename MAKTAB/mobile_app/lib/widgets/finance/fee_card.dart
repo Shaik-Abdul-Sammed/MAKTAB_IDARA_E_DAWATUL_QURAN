@@ -110,16 +110,27 @@ class FeeCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                'Due: ${item.dueDate}',
-                style: const TextStyle(fontSize: 12, color: Colors.black54),
+              Expanded(
+                child: Text(
+                  'Due: ${item.dueDate}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontSize: 12, color: Colors.black54),
+                ),
               ),
-              Text(
-                '₹${item.amountDue.toInt()}',
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                  color: AppIcons.primaryTeal,
+              SizedBox(
+                width: 90,
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerRight,
+                  child: Text(
+                    '₹${item.amountDue.toInt()}',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      color: AppIcons.primaryTeal,
+                    ),
+                  ),
                 ),
               ),
             ],
@@ -134,6 +145,8 @@ class FeeCard extends StatelessWidget {
                     icon: const Icon(Icons.payment_rounded, size: 14),
                     label: const Text(
                       'Pay UPI',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
                     ),
                     style: ElevatedButton.styleFrom(
@@ -143,40 +156,39 @@ class FeeCard extends StatelessWidget {
                     ),
                   ),
                 ),
-                const SizedBox(width: 6),
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: onWhatsApp,
-                    icon: const Icon(AppIcons.whatsapp, size: 14),
-                    label: const Text('WhatsApp', style: TextStyle(fontSize: 11)),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppIcons.whatsappGreen,
-                      side: const BorderSide(color: AppIcons.whatsappGreen),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    ),
+                const SizedBox(width: 8),
+                SizedBox(
+                  width: (36 * 4) + 8,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      _IconAction(
+                        icon: AppIcons.whatsapp,
+                        tooltip: 'WhatsApp Reminder',
+                        color: AppIcons.whatsappGreen,
+                        onTap: onWhatsApp,
+                      ),
+                      _IconAction(
+                        icon: Icons.mic,
+                        tooltip: 'Log/Voice Payment',
+                        color: AppIcons.primaryTeal,
+                        onTap: onLog,
+                      ),
+                      _IconAction(
+                        icon: Icons.edit_note,
+                        tooltip: 'Edit Fee Amount',
+                        color: Colors.blueGrey,
+                        onTap: onEdit,
+                      ),
+                      _IconAction(
+                        icon: AppIcons.notification,
+                        tooltip: 'Send Local App Notification',
+                        color: AppIcons.primaryTeal,
+                        onTap: onNotify,
+                      ),
+                    ],
                   ),
-                ),
-                const SizedBox(width: 6),
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: onLog,
-                    icon: const Icon(Icons.mic, size: 14),
-                    label: const Text('Log/Voice', style: TextStyle(fontSize: 11)),
-                    style: OutlinedButton.styleFrom(
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 6),
-                IconButton(
-                  icon: const Icon(Icons.edit_note, color: Colors.blueGrey, size: 20),
-                  tooltip: 'Edit Fee Amount',
-                  onPressed: onEdit,
-                ),
-                IconButton(
-                  icon: const Icon(AppIcons.notification, color: AppIcons.primaryTeal, size: 20),
-                  tooltip: 'Send Local App Notification',
-                  onPressed: onNotify,
                 ),
               ],
             ),
@@ -189,6 +201,8 @@ class FeeCard extends StatelessWidget {
                     icon: const Icon(AppIcons.whatsapp, size: 14),
                     label: const Text(
                       'Send Receipt',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
                     ),
                     style: ElevatedButton.styleFrom(
@@ -203,6 +217,32 @@ class FeeCard extends StatelessWidget {
           ],
         ],
       ),
+    );
+  }
+}
+
+class _IconAction extends StatelessWidget {
+  final IconData icon;
+  final String tooltip;
+  final VoidCallback? onTap;
+  final Color? color;
+
+  const _IconAction({
+    required this.icon,
+    required this.tooltip,
+    this.onTap,
+    this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      icon: Icon(icon, size: 20, color: color),
+      tooltip: tooltip,
+      onPressed: onTap,
+      visualDensity: VisualDensity.compact,
+      padding: EdgeInsets.zero,
+      constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
     );
   }
 }

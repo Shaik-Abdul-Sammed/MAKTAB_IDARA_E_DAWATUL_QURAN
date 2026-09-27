@@ -288,7 +288,7 @@ class _StudentListScreenState extends State<StudentListScreen> {
           actions: [
             IconButton(
               icon: const Icon(Icons.trending_up_rounded),
-              tooltip: 'Bulk Promote Students',
+              tooltip: loc?.translate('student_list_bulk_promote') ?? 'Bulk Promote Students',
               onPressed: () async {
                 await context.push('/admin/students/promotion');
                 _provider.fetchStudents();
@@ -338,7 +338,7 @@ class _StudentListScreenState extends State<StudentListScreen> {
         controller: _searchController,
         onChanged: _onSearchChanged,
         decoration: InputDecoration(
-          hintText: loc?.translate('search_student') ?? 'Search by name, adm no, phone...',
+          hintText: loc?.translate('student_list_search_hint') ?? 'Search by student name or admission number...',
           prefixIcon: const Icon(Icons.search, color: Color(0xFF004D40)),
           suffixIcon: _searchController.text.isNotEmpty
               ? IconButton(
@@ -643,19 +643,20 @@ class _EmptyContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context);
     if (noBatches) {
-      return const Center(
+      return Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.class_outlined, size: 72, color: Color(0xFFB0BEC5)),
-            SizedBox(height: 16),
+            const Icon(Icons.class_outlined, size: 72, color: Color(0xFFB0BEC5)),
+            const SizedBox(height: 16),
             Text(
-              'No batches assigned yet.',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF004D40)),
+              loc?.translate('no_batches_assigned') ?? 'No batches assigned yet.',
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF004D40)),
             ),
-            SizedBox(height: 8),
-            Text(
+            const SizedBox(height: 8),
+            const Text(
               'Contact Admin to assign your batches.',
               style: TextStyle(color: Colors.black45, fontSize: 13),
             ),
@@ -671,7 +672,9 @@ class _EmptyContent extends StatelessWidget {
               size: 72, color: const Color(0xFFB0BEC5)),
           const SizedBox(height: 16),
           Text(
-            isFiltered ? 'No students match your filter.' : 'No students registered yet.',
+            isFiltered
+                ? (loc?.translate('student_list_no_match') ?? 'No students match your filter.')
+                : (loc?.translate('student_list_no_students') ?? 'No students registered yet.'),
             style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF004D40)),
           ),
           const SizedBox(height: 8),
@@ -716,6 +719,7 @@ class _StudentListView extends StatelessWidget {
         itemCount: students.length,
         itemBuilder: (context, index) {
           final student = students[index];
+          final loc = AppLocalizations.of(context);
           return Dismissible(
             key: ValueKey(student.id),
             background: Container(
@@ -730,7 +734,12 @@ class _StudentListView extends StatelessWidget {
                 children: [
                   Icon(onReassign != null ? Icons.assignment_ind_rounded : Icons.edit_rounded, color: Colors.white, size: 24),
                   const SizedBox(width: 8),
-                  Text(onReassign != null ? 'Assign' : 'Edit', style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold)),
+                  Text(
+                    onReassign != null
+                        ? (loc?.translate('student_list_assign_batch') ?? 'Assign')
+                        : (loc?.translate('common_edit') ?? 'Edit'),
+                    style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
+                  ),
                 ],
               ),
             ),
@@ -742,12 +751,15 @@ class _StudentListView extends StatelessWidget {
               ),
               alignment: Alignment.centerRight,
               padding: const EdgeInsets.only(right: 24),
-              child: const Row(
+              child: Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  Text('Delete', style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold)),
-                  SizedBox(width: 8),
-                  Icon(Icons.delete_outline_rounded, color: Colors.white, size: 24),
+                  Text(
+                    loc?.translate('common_delete') ?? 'Delete',
+                    style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(width: 8),
+                  const Icon(Icons.delete_outline_rounded, color: Colors.white, size: 24),
                 ],
               ),
             ),

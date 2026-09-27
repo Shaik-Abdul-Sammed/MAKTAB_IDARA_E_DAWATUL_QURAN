@@ -262,6 +262,7 @@ class _TeacherAddScreenState extends State<TeacherAddScreen> {
                   ),
                   const SizedBox(height: 16),
                   DropdownButtonFormField<String>(
+                    isExpanded: true,
                     initialValue: _selectedLanguage,
                     decoration: InputDecoration(
                       labelText: 'Preferred Language',
@@ -271,10 +272,10 @@ class _TeacherAddScreenState extends State<TeacherAddScreen> {
                       fillColor: Colors.white,
                     ),
                     items: const [
-                      DropdownMenuItem(value: 'en', child: Text('English')),
-                      DropdownMenuItem(value: 'ur', child: Text('اردو (Urdu)')),
-                      DropdownMenuItem(value: 'hi', child: Text('हिन्दी (Hindi)')),
-                      DropdownMenuItem(value: 'te', child: Text('తెలుగు (Telugu)')),
+                      DropdownMenuItem(value: 'en', child: Text('English', maxLines: 1, overflow: TextOverflow.ellipsis)),
+                      DropdownMenuItem(value: 'ur', child: Text('اردو (Urdu)', maxLines: 1, overflow: TextOverflow.ellipsis)),
+                      DropdownMenuItem(value: 'hi', child: Text('हिन्दी (Hindi)', maxLines: 1, overflow: TextOverflow.ellipsis)),
+                      DropdownMenuItem(value: 'te', child: Text('తెలుగు (Telugu)', maxLines: 1, overflow: TextOverflow.ellipsis)),
                     ],
                     onChanged: (val) {
                       if (val != null) setState(() => _selectedLanguage = val);

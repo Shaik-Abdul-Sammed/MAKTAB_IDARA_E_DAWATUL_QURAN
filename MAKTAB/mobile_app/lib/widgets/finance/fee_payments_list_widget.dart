@@ -7,7 +7,6 @@ import '../../models/student.dart';
 import '../../providers/auth_provider.dart';
 import '../../repositories/fee_payment_repository.dart';
 import '../../repositories/student_repository.dart';
-import '../../services/database_helper.dart';
 import '../../utils/receipt_templates.dart';
 import '../../utils/receipt_pdf_generator.dart';
 import '../../utils/whatsapp_utility.dart';
@@ -368,7 +367,7 @@ class _FeePaymentsListWidgetState extends State<FeePaymentsListWidget> {
     final auth = Provider.of<AuthProvider>(context, listen: false);
     final collectorName = auth.currentUser?.name ?? 'Maktab Management';
 
-    final labels = ReceiptTemplates.feeReceiptLabels(lang);
+    final labels = ReceiptTemplates.get(lang);
     final buf = StringBuffer();
     buf.writeln(labels['header']);
     buf.writeln('--------------------------------');
@@ -579,6 +578,7 @@ class _FeePaymentsListWidgetState extends State<FeePaymentsListWidget> {
           Expanded(
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
+              physics: const BouncingScrollPhysics(),
               child: Row(
                 children: _dateFilters.map((f) {
                   final sel = _dateFilter == f;
@@ -669,19 +669,33 @@ class _PaymentCardItem extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(studentName,
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                  Text('ADM: $admission',
-                      style: const TextStyle(fontSize: 11, color: Colors.black45)),
+                  Text(
+                    studentName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                  ),
+                  Text(
+                    'ADM: $admission',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: 11, color: Colors.black45),
+                  ),
                   const SizedBox(height: 6),
                   Row(
                     children: [
-                      Text('₹$amount',
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          '₹$amount',
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
                             color: AppColors.primaryTeal,
-                          )),
+                          ),
+                        ),
+                      ),
                       const SizedBox(width: 8),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -690,12 +704,16 @@ class _PaymentCardItem extends StatelessWidget {
                           borderRadius: BorderRadius.circular(10),
                           border: Border.all(color: AppColors.primaryTeal.withValues(alpha: 0.3)),
                         ),
-                        child: Text(mode,
-                            style: const TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.primaryTeal,
-                            )),
+                        child: Text(
+                          mode,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.primaryTeal,
+                          ),
+                        ),
                       ),
                       if (receiptSent) ...[
                         const SizedBox(width: 6),
@@ -705,13 +723,20 @@ class _PaymentCardItem extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 4),
-                  Text(displayTime,
-                      style: const TextStyle(fontSize: 11, color: Colors.black45)),
+                  Text(
+                    displayTime,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: 11, color: Colors.black45),
+                  ),
                 ],
               ),
             ),
-            PopupMenuButton<String>(
-              icon: const Icon(Icons.more_vert_rounded, color: Colors.black45),
+            SizedBox(
+              width: 36,
+              child: PopupMenuButton<String>(
+                padding: EdgeInsets.zero,
+                icon: const Icon(Icons.more_vert_rounded, color: Colors.black45),
               onSelected: (value) {
                 if (value == 'receipt') onReceipt();
                 if (value == 'edit') onEdit();
@@ -744,7 +769,8 @@ class _PaymentCardItem extends StatelessWidget {
                 ),
               ],
             ),
-          ],
+          ),
+        ],
         ),
       ),
     );

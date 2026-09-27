@@ -12,6 +12,7 @@ import 'package:maktab_app/screens/settings/diagnostics_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:maktab_app/providers/locale_provider.dart';
 import 'package:maktab_app/repositories/user_repository.dart';
+import 'package:maktab_app/l10n/app_localizations.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -83,10 +84,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context);
     return Scaffold(
       backgroundColor: const Color(0xFFF9FBE7),
       appBar: AppBar(
-        title: const Text('Settings & Configuration'),
+        title: Text(loc?.translate('settings_screen_title') ?? 'Settings & Configuration'),
                 flexibleSpace: Container(
           decoration: const BoxDecoration(gradient: AppColors.primaryGradient),
         ),
@@ -102,10 +104,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   padding: const EdgeInsets.all(16),
                   children: [
                     if (isAdmin) ...[
-                      _buildSectionHeader('Tools & Integrations'),
+                      _buildSectionHeader(loc?.translate('settings_tools_integrations') ?? 'Tools & Integrations'),
                       ListTile(
                         leading: const Icon(Icons.account_balance_wallet_rounded, color: Color(0xFF004D40)),
-                        title: const Text('Fee Management & UPI'),
+                        title: Text(loc?.translate('settings_fee_management_upi') ?? 'Fee Management & UPI'),
                         subtitle: const Text('Track pending fees and collect via UPI'),
                         trailing: const Icon(Icons.chevron_right),
                         onTap: () => context.push('/admin/fees'),
@@ -113,7 +115,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       const Divider(height: 1),
                       ListTile(
                         leading: const Icon(Icons.chat_rounded, color: Colors.green),
-                        title: const Text('WhatsApp Broadcasts'),
+                        title: Text(loc?.translate('settings_whatsapp_broadcasts') ?? 'WhatsApp Broadcasts'),
                         subtitle: const Text('Send template messages to parents'),
                         trailing: const Icon(Icons.chevron_right),
                         onTap: () => context.push('/admin/tools/whatsapp'),
@@ -121,7 +123,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       const Divider(height: 1),
                       ListTile(
                         leading: const Icon(Icons.calendar_month_rounded, color: Color(0xFF004D40)),
-                        title: const Text('Calendar Sync'),
+                        title: Text(loc?.translate('settings_calendar_sync') ?? 'Calendar Sync'),
                         subtitle: const Text('Add exam and fee due dates to device calendar'),
                         trailing: const Icon(Icons.chevron_right),
                         onTap: () => context.push('/admin/tools/calendar'),
@@ -168,27 +170,35 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             leading: const Icon(Icons.language_rounded, color: Color(0xFF004D40)),
                             title: const Text('Preferred Language'),
                             subtitle: Text(languages[currentCode] ?? 'English'),
-                            trailing: DropdownButton<String>(
-                              value: languages.containsKey(currentCode) ? currentCode : 'en',
-                              underline: const SizedBox(),
-                              items: languages.entries.map((e) {
-                                return DropdownMenuItem<String>(
-                                  value: e.key,
-                                  child: Text(e.value),
-                                );
-                              }).toList(),
-                              onChanged: (val) async {
-                                if (val != null && user != null) {
-                                  final updated = user.copyWith(preferredLanguage: val);
-                                  await UserRepository().updateUser(updated);
-                                  auth.setUser(updated);
-                                  if (context.mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(content: Text('Preferred language updated.')),
-                                    );
+                            trailing: SizedBox(
+                              width: 140,
+                              child: DropdownButton<String>(
+                                isExpanded: true,
+                                value: languages.containsKey(currentCode) ? currentCode : 'en',
+                                underline: const SizedBox(),
+                                items: languages.entries.map((e) {
+                                  return DropdownMenuItem<String>(
+                                    value: e.key,
+                                    child: Text(
+                                      e.value,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  );
+                                }).toList(),
+                                onChanged: (val) async {
+                                  if (val != null && user != null) {
+                                    final updated = user.copyWith(preferredLanguage: val);
+                                    await UserRepository().updateUser(updated);
+                                    auth.setUser(updated);
+                                    if (context.mounted) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(content: Text('Preferred language updated.')),
+                                      );
+                                    }
                                   }
-                                }
-                              },
+                                },
+                              ),
                             ),
                           );
                         },
@@ -211,20 +221,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             leading: const Icon(Icons.language_rounded, color: Color(0xFF004D40)),
                             title: const Text('Language'),
                             subtitle: Text(languages[currentCode] ?? 'English'),
-                            trailing: DropdownButton<String>(
-                              value: languages.containsKey(currentCode) ? currentCode : 'en',
-                              underline: const SizedBox(),
-                              items: languages.entries.map((e) {
-                                return DropdownMenuItem<String>(
-                                  value: e.key,
-                                  child: Text(e.value),
-                                );
-                              }).toList(),
-                              onChanged: (val) {
-                                if (val != null) {
-                                  localeProvider.setLocale(Locale(val));
-                                }
-                              },
+                            trailing: SizedBox(
+                              width: 140,
+                              child: DropdownButton<String>(
+                                isExpanded: true,
+                                value: languages.containsKey(currentCode) ? currentCode : 'en',
+                                underline: const SizedBox(),
+                                items: languages.entries.map((e) {
+                                  return DropdownMenuItem<String>(
+                                    value: e.key,
+                                    child: Text(
+                                      e.value,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  );
+                                }).toList(),
+                                onChanged: (val) {
+                                  if (val != null) {
+                                    localeProvider.setLocale(Locale(val));
+                                  }
+                                },
+                              ),
                             ),
                           );
                         },

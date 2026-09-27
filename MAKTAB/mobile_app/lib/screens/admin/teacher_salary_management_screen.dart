@@ -20,6 +20,7 @@ import 'package:maktab_app/utils/receipt_pdf_generator.dart';
 import 'package:maktab_app/utils/language_resolver.dart';
 import 'package:maktab_app/widgets/receipt_preview_dialog.dart';
 import 'package:maktab_app/widgets/finance/salary_totals_card.dart';
+import 'package:maktab_app/l10n/app_localizations.dart';
 
 class TeacherSalaryManagementScreen extends StatefulWidget {
   const TeacherSalaryManagementScreen({super.key});
@@ -733,9 +734,10 @@ class _TeacherSalaryManagementScreenState extends State<TeacherSalaryManagementS
     }
     int totalPendingThisMonth = (totalMonthlySalary - totalPaidThisMonth).clamp(0, totalMonthlySalary);
 
+    final loc = AppLocalizations.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Salary & Payment Management'),
+        title: Text(loc?.translate('salary_mgmt_title') ?? 'Salary & Payment Management'),
                 flexibleSpace: Container(
           decoration: const BoxDecoration(gradient: AppColors.primaryGradient),
         ),
@@ -744,7 +746,7 @@ class _TeacherSalaryManagementScreenState extends State<TeacherSalaryManagementS
         actions: [
           IconButton(
             icon: const Icon(Icons.picture_as_pdf),
-            tooltip: 'Export PDF Report',
+            tooltip: loc?.translate('salary_mgmt_export_pdf') ?? 'Export PDF Report',
             onPressed: _generateAndSharePdfReport,
           ),
         ],
@@ -928,36 +930,50 @@ class _TeacherSalaryManagementScreenState extends State<TeacherSalaryManagementS
                                       const SizedBox(height: 12),
 
                                       // Action Buttons Row
-                                      Wrap(
-                                        spacing: 8,
-                                        runSpacing: 8,
+                                      Row(
                                         children: [
-                                          ElevatedButton.icon(
-                                            icon: const Icon(Icons.payments, size: 16),
-                                            label: const Text('PAY SALARY'),
-                                            style: ElevatedButton.styleFrom(
-                                              foregroundColor: Colors.white,
-                                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                              textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-                                            ),
-                                            onPressed: () => _showRecordPaymentDialog(teacher),
-                                          ),
-                                          if (teacher.upiId != null && teacher.upiId!.isNotEmpty && remaining > 0)
-                                            OutlinedButton.icon(
-                                              icon: const Icon(Icons.qr_code, size: 16),
-                                              label: const Text('PAY VIA UPI'),
-                                              style: OutlinedButton.styleFrom(
-                                                foregroundColor: const Color(0xFF004D40),
-                                                side: const BorderSide(color: Color(0xFF004D40)),
+                                          Expanded(
+                                            child: ElevatedButton.icon(
+                                              icon: const Icon(Icons.payments, size: 16),
+                                              label: Text(
+                                                loc?.translate('salary_mgmt_pay_salary') ?? 'PAY SALARY',
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                              style: ElevatedButton.styleFrom(
+                                                foregroundColor: Colors.white,
                                                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                                                 textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
                                               ),
-                                              onPressed: () => _launchUpiPayment(teacher, remaining),
+                                              onPressed: () => _showRecordPaymentDialog(teacher),
                                             ),
-                                          IconButton(
-                                            icon: const Icon(Icons.settings, color: Colors.grey),
+                                          ),
+                                          if (teacher.upiId != null && teacher.upiId!.isNotEmpty && remaining > 0) ...[
+                                            const SizedBox(width: 8),
+                                            Expanded(
+                                              child: OutlinedButton.icon(
+                                                icon: const Icon(Icons.qr_code, size: 16),
+                                                label: Text(
+                                                  loc?.translate('salary_mgmt_pay_upi') ?? 'PAY VIA UPI',
+                                                  maxLines: 1,
+                                                  overflow: TextOverflow.ellipsis,
+                                                ),
+                                                style: OutlinedButton.styleFrom(
+                                                  foregroundColor: const Color(0xFF004D40),
+                                                  side: const BorderSide(color: Color(0xFF004D40)),
+                                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                                  textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                                                ),
+                                                onPressed: () => _launchUpiPayment(teacher, remaining),
+                                              ),
+                                            ),
+                                          ],
+                                          const SizedBox(width: 4),
+                                          _IconAction(
+                                            icon: Icons.settings,
                                             tooltip: 'Edit Salary Config',
-                                            onPressed: () => _showEditSalaryConfigDialog(teacher),
+                                            color: Colors.grey,
+                                            onTap: () => _showEditSalaryConfigDialog(teacher),
                                           ),
                                         ],
                                       ),
@@ -975,17 +991,35 @@ class _TeacherSalaryManagementScreenState extends State<TeacherSalaryManagementS
                                           children: [
                                             Column(
                                               children: [
-                                                const Text('Paid This Year', style: TextStyle(fontSize: 11, color: Colors.black54)),
+                                                const Text(
+                                                  'Paid This Year',
+                                                  maxLines: 1,
+                                                  overflow: TextOverflow.ellipsis,
+                                                  style: TextStyle(fontSize: 11, color: Colors.black54),
+                                                ),
                                                 const SizedBox(height: 2),
-                                                Text('₹$totalPaidThisYear', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF004D40))),
+                                                FittedBox(
+                                                  fit: BoxFit.scaleDown,
+                                                  alignment: Alignment.center,
+                                                  child: Text('₹$totalPaidThisYear', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF004D40))),
+                                                ),
                                               ],
                                             ),
                                             Container(width: 1, height: 30, color: Colors.black26),
                                             Column(
                                               children: [
-                                                const Text('Paid All Time', style: TextStyle(fontSize: 11, color: Colors.black54)),
+                                                const Text(
+                                                  'Paid All Time',
+                                                  maxLines: 1,
+                                                  overflow: TextOverflow.ellipsis,
+                                                  style: TextStyle(fontSize: 11, color: Colors.black54),
+                                                ),
                                                 const SizedBox(height: 2),
-                                                Text('₹$totalPaidAllTime', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF004D40))),
+                                                FittedBox(
+                                                  fit: BoxFit.scaleDown,
+                                                  alignment: Alignment.center,
+                                                  child: Text('₹$totalPaidAllTime', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF004D40))),
+                                                ),
                                               ],
                                             ),
                                           ],
@@ -1023,27 +1057,43 @@ class _TeacherSalaryManagementScreenState extends State<TeacherSalaryManagementS
                                                 color: p.receiptSent == 1 ? Colors.green : Colors.amber.shade800,
                                                 size: 20,
                                               ),
-                                              title: Text('₹${p.amount} — ${p.salaryMonth}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                                              subtitle: Text('${p.paymentDate} • ${p.paymentMode}${p.transactionReference != null && p.transactionReference!.isNotEmpty ? " • Ref: ${p.transactionReference}" : ""}'),
-                                              trailing: Row(
-                                                mainAxisSize: MainAxisSize.min,
-                                                children: [
-                                                  IconButton(
-                                                    icon: const Icon(Icons.share, size: 18, color: Color(0xFF004D40)),
-                                                    tooltip: 'Share Receipt',
-                                                    onPressed: () => _shareReceipt(p, teacher),
-                                                  ),
-                                                  IconButton(
-                                                    icon: const Icon(Icons.edit_outlined, size: 18, color: Colors.blueGrey),
-                                                    tooltip: 'Edit Payment',
-                                                    onPressed: () => _showEditPaymentDialog(p, teacher),
-                                                  ),
-                                                  IconButton(
-                                                    icon: const Icon(Icons.delete_outline, size: 18, color: Colors.red),
-                                                    tooltip: 'Delete Payment',
-                                                    onPressed: () => _deletePayment(p),
-                                                  ),
-                                                ],
+                                              title: Text(
+                                                '₹${p.amount} — ${p.salaryMonth}',
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                                              ),
+                                              subtitle: Text(
+                                                '${p.paymentDate} • ${p.paymentMode}${p.transactionReference != null && p.transactionReference!.isNotEmpty ? " • Ref: ${p.transactionReference}" : ""}',
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                              trailing: SizedBox(
+                                                width: 116,
+                                                child: Row(
+                                                  mainAxisSize: MainAxisSize.min,
+                                                  mainAxisAlignment: MainAxisAlignment.end,
+                                                  children: [
+                                                    _IconAction(
+                                                      icon: Icons.share,
+                                                      tooltip: 'Share Receipt',
+                                                      color: const Color(0xFF004D40),
+                                                      onTap: () => _shareReceipt(p, teacher),
+                                                    ),
+                                                    _IconAction(
+                                                      icon: Icons.edit_outlined,
+                                                      tooltip: 'Edit Payment',
+                                                      color: Colors.blueGrey,
+                                                      onTap: () => _showEditPaymentDialog(p, teacher),
+                                                    ),
+                                                    _IconAction(
+                                                      icon: Icons.delete_outline,
+                                                      tooltip: 'Delete Payment',
+                                                      color: Colors.red,
+                                                      onTap: () => _deletePayment(p),
+                                                    ),
+                                                  ],
+                                                ),
                                               ),
                                             );
                                           },
@@ -1079,9 +1129,18 @@ class _TeacherSalaryManagementScreenState extends State<TeacherSalaryManagementS
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text(title, style: TextStyle(fontSize: 11, color: Colors.grey.shade700)),
+                  Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(fontSize: 11, color: Colors.grey.shade700),
+                  ),
                   const SizedBox(height: 2),
-                  Text(value, style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: color)),
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Text(value, style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: color)),
+                  ),
                 ],
               ),
             ),
@@ -1095,8 +1154,17 @@ class _TeacherSalaryManagementScreenState extends State<TeacherSalaryManagementS
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: TextStyle(fontSize: 11, color: Colors.grey.shade600)),
-        Text(value, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: color ?? Colors.black87)),
+        Text(
+          label,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+        ),
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: Text(value, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: color ?? Colors.black87)),
+        ),
       ],
     );
   }
@@ -1109,4 +1177,31 @@ class TeacherSalaryScreenBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => const TeacherSalaryManagementScreen();
+}
+
+
+class _IconAction extends StatelessWidget {
+  final IconData icon;
+  final String tooltip;
+  final VoidCallback? onTap;
+  final Color? color;
+
+  const _IconAction({
+    required this.icon,
+    required this.tooltip,
+    this.onTap,
+    this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      icon: Icon(icon, size: 20, color: color),
+      tooltip: tooltip,
+      onPressed: onTap,
+      visualDensity: VisualDensity.compact,
+      padding: EdgeInsets.zero,
+      constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+    );
+  }
 }
