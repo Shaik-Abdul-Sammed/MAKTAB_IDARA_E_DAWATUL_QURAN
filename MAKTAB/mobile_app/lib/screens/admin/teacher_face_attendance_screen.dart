@@ -165,7 +165,7 @@ class _TeacherFaceAttendanceScreenState extends State<TeacherFaceAttendanceScree
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Attendance marked Present for ${_selectedTeacher!.name}!'),
+          content: Text('Attendance marked Present for ${_selectedTeacher!.name}!', maxLines: 2, overflow: TextOverflow.ellipsis),
           backgroundColor: AppColors.success,
         ),
       );
@@ -248,8 +248,7 @@ class _TeacherFaceAttendanceScreenState extends State<TeacherFaceAttendanceScree
                           value: teacher,
                           child: Text(
                             teacher.name,
-                            style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
-                          ),
+                            style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white), maxLines: 1, overflow: TextOverflow.ellipsis),
                         );
                       }).toList(),
                       onChanged: (val) {

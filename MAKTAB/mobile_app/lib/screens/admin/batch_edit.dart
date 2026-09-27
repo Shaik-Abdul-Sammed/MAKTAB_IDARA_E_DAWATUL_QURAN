@@ -72,7 +72,7 @@ class _BatchEditScreenState extends State<BatchEditScreen> {
     if (_provider.status == BatchFormStatus.success) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Batch updated successfully!'),
+          content: Text('Batch updated successfully!', maxLines: 2, overflow: TextOverflow.ellipsis),
           backgroundColor: Color(0xFF004D40),
         ),
       );
@@ -80,7 +80,7 @@ class _BatchEditScreenState extends State<BatchEditScreen> {
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(_provider.errorMessage),
+          content: Text(_provider.errorMessage, maxLines: 2, overflow: TextOverflow.ellipsis),
           backgroundColor: Colors.red.shade700,
           action: SnackBarAction(label: 'Retry', textColor: Colors.white, onPressed: _submit),
         ),
@@ -258,7 +258,7 @@ class _BatchEditScreenState extends State<BatchEditScreen> {
         ...uniqueTeachers.map((t) {
           return DropdownMenuItem<int?>(
             value: t.id,
-            child: Text(t.name, style: const TextStyle(fontSize: 14)),
+            child: Text(t.name, style: const TextStyle(fontSize: 14), maxLines: 1, overflow: TextOverflow.ellipsis),
           );
         }),
       ],

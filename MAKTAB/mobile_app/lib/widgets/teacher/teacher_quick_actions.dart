@@ -189,7 +189,7 @@ class _ParentContactSheet extends StatelessWidget {
     } else {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Cannot dial $phone')),
+          SnackBar(content: Text('Cannot dial $phone', maxLines: 2, overflow: TextOverflow.ellipsis)),
         );
       }
     }
@@ -275,8 +275,8 @@ class _ParentContactSheet extends StatelessWidget {
                             ),
                             title: Text(s.name,
                                 style: const TextStyle(
-                                    fontWeight: FontWeight.w600)),
-                            subtitle: Text('$contactName • $phone'),
+                                    fontWeight: FontWeight.w600), maxLines: 1, overflow: TextOverflow.ellipsis),
+                            subtitle: Text('$contactName • $phone', maxLines: 2, overflow: TextOverflow.ellipsis),
                             trailing: IconButton(
                               icon: const Icon(Icons.call_rounded,
                                   color: Color(0xFF388E3C)),

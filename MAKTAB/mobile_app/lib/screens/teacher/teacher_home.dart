@@ -191,7 +191,7 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
     });
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('${students.length} students marked Present'),
+        content: Text('${students.length} students marked Present', maxLines: 2, overflow: TextOverflow.ellipsis),
         backgroundColor: AppColors.primaryTeal,
       ),
     );
@@ -785,12 +785,10 @@ class _AttendanceLogTile extends StatelessWidget {
             fontWeight: FontWeight.bold,
             color: statusColor,
             fontSize: 14,
-          ),
-        ),
+          ), maxLines: 1, overflow: TextOverflow.ellipsis),
         subtitle: Text(
           record.date,
-          style: const TextStyle(fontSize: 12, color: Colors.black54),
-        ),
+          style: const TextStyle(fontSize: 12, color: Colors.black54), maxLines: 2, overflow: TextOverflow.ellipsis),
         trailing: record.remarks?.isNotEmpty == true
             ? Tooltip(
                 message: record.remarks!,

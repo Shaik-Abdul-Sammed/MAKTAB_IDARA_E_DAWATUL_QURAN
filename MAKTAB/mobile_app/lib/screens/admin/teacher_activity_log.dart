@@ -35,7 +35,7 @@ class _TeacherActivityLogScreenState extends State<TeacherActivityLogScreen> {
     } catch (e) {
         if (mounted) {
             setState(() => _isLoading = false);
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error loading data: $e')));
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error loading data: $e', maxLines: 2, overflow: TextOverflow.ellipsis)));
         }
     }
   }
@@ -149,8 +149,8 @@ class _TeacherActivityLogScreenState extends State<TeacherActivityLogScreen> {
                                     foregroundColor: Colors.white,
                                     child: Icon(Icons.work_history, size: 18),
                                   ),
-                                  title: Text('Teacher ID: ${item.teacherId}', style: const TextStyle(fontWeight: FontWeight.bold)),
-                                  subtitle: Text('Date: ${item.date} | Check In: ${item.status}'),
+                                  title: Text('Teacher ID: ${item.teacherId}', style: const TextStyle(fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                  subtitle: Text('Date: ${item.date} | Check In: ${item.status}', maxLines: 2, overflow: TextOverflow.ellipsis),
                                   trailing: const Icon(Icons.chevron_right),
                                   onTap: () => _showDetailSheet(item),
                                 ),

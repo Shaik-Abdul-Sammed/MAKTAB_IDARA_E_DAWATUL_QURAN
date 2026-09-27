@@ -66,7 +66,7 @@ class _MessageBoxScreenState extends State<MessageBoxScreen> {
       if (!mounted) return;
       setState(() => _isLoadingAnnouncements = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error loading announcements: $e')),
+        SnackBar(content: Text('Error loading announcements: $e', maxLines: 2, overflow: TextOverflow.ellipsis)),
       );
     }
   }
@@ -83,7 +83,7 @@ class _MessageBoxScreenState extends State<MessageBoxScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text(isEditing ? 'Edit Announcement' : 'New Announcement'),
+        title: Text(isEditing ? 'Edit Announcement' : 'New Announcement', maxLines: 1, overflow: TextOverflow.ellipsis),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -374,7 +374,7 @@ class _MessageBoxScreenState extends State<MessageBoxScreen> {
               foregroundColor: Colors.white,
               child: Icon(Icons.announcement, size: 18),
             ),
-            title: Text(item.title, style: const TextStyle(fontWeight: FontWeight.bold)),
+            title: Text(item.title, style: const TextStyle(fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
             subtitle: Text('Date: ${item.date} | ${item.content}', maxLines: 2, overflow: TextOverflow.ellipsis),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => _showAnnouncementDetailSheet(item),

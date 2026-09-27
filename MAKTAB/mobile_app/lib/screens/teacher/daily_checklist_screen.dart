@@ -236,8 +236,7 @@ class _ChecklistTile extends StatelessWidget {
                 fontSize: 13,
                 decoration: item.isCompleted ? TextDecoration.lineThrough : null,
                 color: item.isCompleted ? Colors.black45 : const Color(0xFF1A1A1A),
-              ),
-            ),
+              ), maxLines: 1, overflow: TextOverflow.ellipsis),
             subtitle: Padding(
               padding: const EdgeInsets.only(top: 4.0),
               child: Container(

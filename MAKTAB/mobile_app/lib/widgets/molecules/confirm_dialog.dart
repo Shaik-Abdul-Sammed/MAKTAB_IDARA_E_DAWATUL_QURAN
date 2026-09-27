@@ -9,7 +9,7 @@ class ConfirmDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text(title, style: const TextStyle(color: Color(0xFF004D40))),
+      title: Text(title, style: const TextStyle(color: Color(0xFF004D40)), maxLines: 1, overflow: TextOverflow.ellipsis),
       content: Text(message),
       actions: [
         TextButton(

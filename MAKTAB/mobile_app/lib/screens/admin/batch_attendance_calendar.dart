@@ -74,7 +74,7 @@ class _BatchAttendanceCalendarScreenState
       if (mounted) {
         setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error loading data: $e')));
+            SnackBar(content: Text('Error loading data: $e', maxLines: 2, overflow: TextOverflow.ellipsis)));
       }
     }
   }
@@ -137,7 +137,7 @@ class _BatchAttendanceCalendarScreenState
     final records = _allAttendance.where((a) => a.date == dateStr).toList();
     if (records.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No attendance records for this date.')));
+          const SnackBar(content: Text('No attendance records for this date.', maxLines: 2, overflow: TextOverflow.ellipsis)));
       return;
     }
 
@@ -209,8 +209,8 @@ class _BatchAttendanceCalendarScreenState
                           backgroundColor: color.withValues(alpha: 0.12),
                           child: Icon(icon, color: color, size: 20),
                         ),
-                        title: Text(student.name, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
-                        subtitle: Text('ADM: ${student.admissionNumber}', style: const TextStyle(fontSize: 11)),
+                        title: Text(student.name, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14), maxLines: 1, overflow: TextOverflow.ellipsis),
+                        subtitle: Text('ADM: ${student.admissionNumber}', style: const TextStyle(fontSize: 11), maxLines: 2, overflow: TextOverflow.ellipsis),
                         trailing: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                           decoration: BoxDecoration(
@@ -281,8 +281,7 @@ class _BatchAttendanceCalendarScreenState
       appBar: AppBar(
         title: Text(
           _batch != null ? '${_batch!.name} — Records' : 'Attendance Records',
-          style: const TextStyle(color: Color(0xFFFFD700), fontWeight: FontWeight.bold),
-        ),
+          style: const TextStyle(color: Color(0xFFFFD700), fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
                 flexibleSpace: Container(
           decoration: const BoxDecoration(gradient: AppColors.primaryGradient),
         ),

@@ -176,7 +176,7 @@ class _TeacherDashboardState extends State<TeacherDashboard>
                   context.push(route);
                 } else {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('$title module coming soon')),
+                    SnackBar(content: Text('$title module coming soon', maxLines: 2, overflow: TextOverflow.ellipsis)),
                   );
                 }
               },
@@ -422,7 +422,7 @@ class _TeacherDashboardState extends State<TeacherDashboard>
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
-                      content: Text('Multi-device sync completed!'),
+                      content: Text('Multi-device sync completed!', maxLines: 2, overflow: TextOverflow.ellipsis),
                       backgroundColor: Color(0xFF004D40),
                       duration: Duration(seconds: 2),
                     ),
@@ -837,7 +837,7 @@ class _TeacherDashboardState extends State<TeacherDashboard>
     return ListTile(
       leading: Icon(icon, color: tileColor, size: 22),
       title: Text(label,
-          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500), maxLines: 1, overflow: TextOverflow.ellipsis),
       onTap: () {
         Navigator.of(context).pop(); // close drawer
         context.push(route);

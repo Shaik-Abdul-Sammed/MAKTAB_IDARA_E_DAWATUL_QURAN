@@ -79,7 +79,7 @@ class _QuranProgressScreenState extends State<QuranProgressScreen> {
       if (mounted) {
         setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Could not load progress: $e'), backgroundColor: Colors.redAccent),
+          SnackBar(content: Text('Could not load progress: $e', maxLines: 2, overflow: TextOverflow.ellipsis), backgroundColor: Colors.redAccent),
         );
       }
     }
@@ -105,7 +105,7 @@ class _QuranProgressScreenState extends State<QuranProgressScreen> {
       if (mounted) {
         setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Could not load progress: $e'), backgroundColor: Colors.redAccent),
+          SnackBar(content: Text('Could not load progress: $e', maxLines: 2, overflow: TextOverflow.ellipsis), backgroundColor: Colors.redAccent),
         );
       }
     }
@@ -241,7 +241,7 @@ class _QuranProgressScreenState extends State<QuranProgressScreen> {
           return Padding(
             padding: const EdgeInsets.only(right: 8.0),
             child: ChoiceChip(
-              label: Text(b.name),
+              label: Text(b.name, maxLines: 1, overflow: TextOverflow.ellipsis),
               selected: isSelected,
               selectedColor: const Color(0xFF004D40),
               labelStyle: TextStyle(
@@ -296,7 +296,7 @@ class _StudentRecitationTile extends StatelessWidget {
                 style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
               ),
             ),
-            title: Text(student.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+            title: Text(student.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15), maxLines: 1, overflow: TextOverflow.ellipsis),
             subtitle: Padding(
               padding: const EdgeInsets.only(top: 4.0),
               child: Column(

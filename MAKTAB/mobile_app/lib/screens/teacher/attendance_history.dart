@@ -46,7 +46,7 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
     } catch (e) {
       if (mounted) {
         setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error loading data: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error loading data: $e', maxLines: 2, overflow: TextOverflow.ellipsis)));
       }
     }
   }
@@ -250,8 +250,8 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                                             style: const TextStyle(fontWeight: FontWeight.bold),
                                           ),
                                         ),
-                                        title: Text(studentName, style: const TextStyle(fontWeight: FontWeight.bold)),
-                                        subtitle: Text('ID: ${item.studentId}${item.time != null && item.time!.isNotEmpty ? " • ${item.time}" : ""}'),
+                                        title: Text(studentName, style: const TextStyle(fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                        subtitle: Text('ID: ${item.studentId}${item.time != null && item.time!.isNotEmpty ? " • ${item.time}" : ""}', maxLines: 2, overflow: TextOverflow.ellipsis),
                                         trailing: Row(
                                           mainAxisSize: MainAxisSize.min,
                                           children: [

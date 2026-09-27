@@ -73,7 +73,7 @@ class _AttendanceReportsScreenState extends State<AttendanceReportsScreen> {
       if (mounted) {
         setState(() => _isLoadingInitial = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to load data: $e')),
+          SnackBar(content: Text('Failed to load data: $e', maxLines: 2, overflow: TextOverflow.ellipsis)),
         );
       }
     }
@@ -245,7 +245,7 @@ class _AttendanceReportsScreenState extends State<AttendanceReportsScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Could not generate PDF. Try a smaller range.'),
+            content: Text('Could not generate PDF. Try a smaller range.', maxLines: 2, overflow: TextOverflow.ellipsis),
             backgroundColor: Colors.redAccent,
           ),
         );
@@ -374,7 +374,7 @@ class _AttendanceReportsScreenState extends State<AttendanceReportsScreen> {
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
                           enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFD8E8D5))),
                         ),
-                        items: _batches.map((b) => DropdownMenuItem(value: b, child: Text('${b.name} (${b.timing})'))).toList(),
+                        items: _batches.map((b) => DropdownMenuItem(value: b, child: Text('${b.name} (${b.timing})', maxLines: 1, overflow: TextOverflow.ellipsis))).toList(),
                         onChanged: (val) => setState(() => _selectedBatch = val),
                       ),
                       const SizedBox(height: 20),
@@ -392,7 +392,7 @@ class _AttendanceReportsScreenState extends State<AttendanceReportsScreen> {
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
                           enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFD8E8D5))),
                         ),
-                        items: _students.map((s) => DropdownMenuItem(value: s, child: Text('${s.name} (${s.admissionNumber})'))).toList(),
+                        items: _students.map((s) => DropdownMenuItem(value: s, child: Text('${s.name} (${s.admissionNumber})', maxLines: 1, overflow: TextOverflow.ellipsis))).toList(),
                         onChanged: (val) => setState(() => _selectedStudent = val),
                       ),
                       const SizedBox(height: 20),
@@ -410,7 +410,7 @@ class _AttendanceReportsScreenState extends State<AttendanceReportsScreen> {
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
                           enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFD8E8D5))),
                         ),
-                        items: _teachers.map((t) => DropdownMenuItem(value: t, child: Text('${t.name} (${t.mobile ?? 'No Mobile'})'))).toList(),
+                        items: _teachers.map((t) => DropdownMenuItem(value: t, child: Text('${t.name} (${t.mobile ?? 'No Mobile'})', maxLines: 1, overflow: TextOverflow.ellipsis))).toList(),
                         onChanged: (val) => setState(() => _selectedTeacher = val),
                       ),
                       const SizedBox(height: 20),

@@ -73,7 +73,7 @@ class _StudentListScreenState extends State<StudentListScreen> {
       debugPrint('[StudentListScreen._loadBatches] load failed: $e\n$st');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not load data.')),
+          const SnackBar(content: Text('Could not load data.', maxLines: 2, overflow: TextOverflow.ellipsis)),
         );
       }
     }
@@ -162,7 +162,7 @@ class _StudentListScreenState extends State<StudentListScreen> {
                         items: uniqueBatches.map((b) {
                           return DropdownMenuItem<int?>(
                             value: b.id,
-                            child: Text(b.name),
+                            child: Text(b.name, maxLines: 1, overflow: TextOverflow.ellipsis),
                           );
                         }).toList(),
                         onChanged: (val) {
@@ -193,7 +193,7 @@ class _StudentListScreenState extends State<StudentListScreen> {
                               if (mounted) {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
-                                    content: Text('Assigned "${student.name}" to batch.'),
+                                    content: Text('Assigned "${student.name}" to batch.', maxLines: 2, overflow: TextOverflow.ellipsis),
                                     backgroundColor: const Color(0xFF004D40),
                                   ),
                                 );
@@ -254,7 +254,7 @@ class _StudentListScreenState extends State<StudentListScreen> {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('"${student.name}" removed from database.'),
+            content: Text('"${student.name}" removed from database.', maxLines: 2, overflow: TextOverflow.ellipsis),
             backgroundColor: Colors.green.shade700,
           ),
         );
@@ -380,7 +380,7 @@ class _StudentListScreenState extends State<StudentListScreen> {
           child: Row(
             children: [
               ChoiceChip(
-                label: Text(loc?.translate('all_batches') ?? 'All Batches'),
+                label: Text(loc?.translate('all_batches') ?? 'All Batches', maxLines: 1, overflow: TextOverflow.ellipsis),
                 selected: !_showUnassigned && p.selectedBatchFilter == null,
                 selectedColor: const Color(0xFF004D40),
                 labelStyle: TextStyle(
@@ -396,7 +396,7 @@ class _StudentListScreenState extends State<StudentListScreen> {
               if (!_isTeacher) ...[
                 const SizedBox(width: 8),
                 ChoiceChip(
-                  label: Text(loc?.translate('unassigned') ?? 'Unassigned'),
+                  label: Text(loc?.translate('unassigned') ?? 'Unassigned', maxLines: 1, overflow: TextOverflow.ellipsis),
                   selected: _showUnassigned,
                   selectedColor: const Color(0xFF004D40),
                   labelStyle: TextStyle(
@@ -411,7 +411,7 @@ class _StudentListScreenState extends State<StudentListScreen> {
               ..._batches.map((b) => Padding(
                     padding: const EdgeInsets.only(right: 8.0),
                     child: ChoiceChip(
-                      label: Text(b.name),
+                      label: Text(b.name, maxLines: 1, overflow: TextOverflow.ellipsis),
                       selected: !_showUnassigned && p.selectedBatchFilter == b.id,
                       selectedColor: const Color(0xFF004D40),
                       labelStyle: TextStyle(
@@ -891,20 +891,23 @@ class _StudentTile extends StatelessWidget {
                 ],
               ],
             ),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Tooltip(
-                  message: isSynced ? 'Synced with cloud' : 'Pending cloud sync',
-                  child: Icon(
-                    isSynced ? Icons.cloud_done_rounded : Icons.cloud_off_rounded,
-                    size: 18,
-                    color: isSynced ? Colors.green.shade600 : Colors.amber.shade800,
+            trailing: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 80),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Tooltip(
+                    message: isSynced ? 'Synced with cloud' : 'Pending cloud sync',
+                    child: Icon(
+                      isSynced ? Icons.cloud_done_rounded : Icons.cloud_off_rounded,
+                      size: 18,
+                      color: isSynced ? Colors.green.shade600 : Colors.amber.shade800,
+                    ),
                   ),
-                ),
-                const SizedBox(width: 4),
-                const Icon(Icons.chevron_right, color: Colors.black26),
-              ],
+                  const SizedBox(width: 4),
+                  const Icon(Icons.chevron_right, color: Colors.black26),
+                ],
+              ),
             ),
             onTap: () => context.push('/admin/students/${student.id}'),
             onLongPress: onLongPress,

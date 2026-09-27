@@ -62,7 +62,7 @@ class _TeacherListScreenState extends State<TeacherListScreen> {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('"${teacher.name}" has been removed.'),
+            content: Text('"${teacher.name}" has been removed.', maxLines: 2, overflow: TextOverflow.ellipsis),
             backgroundColor: Colors.green.shade700,
           ),
         );
@@ -438,7 +438,7 @@ class _TeacherTile extends StatelessWidget {
           ),
         ),
         title: Text(teacher.name,
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF1A1A1A))),
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF1A1A1A)), maxLines: 1, overflow: TextOverflow.ellipsis),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -447,37 +447,47 @@ class _TeacherTile extends StatelessWidget {
               children: [
                 const Icon(Icons.phone_outlined, size: 13, color: Colors.black38),
                 const SizedBox(width: 4),
-                Text(teacher.mobile ?? 'No mobile', style: const TextStyle(fontSize: 12, color: Colors.black54)),
+                Expanded(
+                  child: Text(teacher.mobile ?? 'No mobile',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontSize: 12, color: Colors.black54)),
+                ),
               ],
             ),
           ],
         ),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(
-                color: teacher.isActive
-                    ? Colors.green.shade50
-                    : Colors.grey.shade100,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: teacher.isActive ? Colors.green.shade300 : Colors.grey.shade300,
+        trailing: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 100),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: teacher.isActive
+                      ? Colors.green.shade50
+                      : Colors.grey.shade100,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: teacher.isActive ? Colors.green.shade300 : Colors.grey.shade300,
+                  ),
+                ),
+                child: Text(
+                  teacher.isActive ? 'Active' : 'Inactive',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    color: teacher.isActive ? Colors.green.shade700 : Colors.grey.shade600,
+                  ),
                 ),
               ),
-              child: Text(
-                teacher.isActive ? 'Active' : 'Inactive',
-                style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.bold,
-                  color: teacher.isActive ? Colors.green.shade700 : Colors.grey.shade600,
-                ),
-              ),
-            ),
-            const SizedBox(width: 6),
-            const Icon(Icons.chevron_right, color: Colors.black26),
-          ],
+              const SizedBox(width: 6),
+              const Icon(Icons.chevron_right, color: Colors.black26),
+            ],
+          ),
         ),
         onTap: () => context.push('/admin/teachers/${teacher.id}'),
           ),

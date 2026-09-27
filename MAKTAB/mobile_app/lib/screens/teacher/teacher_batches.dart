@@ -45,7 +45,7 @@ class _TeacherBatchesScreenState extends State<TeacherBatchesScreen> {
     } catch (e) {
         if (mounted) {
             setState(() => _isLoading = false);
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error loading data: $e')));
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error loading data: $e', maxLines: 2, overflow: TextOverflow.ellipsis)));
         }
     }
   }
@@ -159,8 +159,8 @@ class _TeacherBatchesScreenState extends State<TeacherBatchesScreen> {
                                     foregroundColor: Colors.white,
                                     child: Icon(Icons.group, size: 18),
                                   ),
-                                  title: Text(item.name, style: const TextStyle(fontWeight: FontWeight.bold)),
-                                  subtitle: Text('Course: ${item.timing} | Year: ${item.name}'),
+                                  title: Text(item.name, style: const TextStyle(fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                  subtitle: Text('Course: ${item.timing} | Year: ${item.name}', maxLines: 2, overflow: TextOverflow.ellipsis),
                                   trailing: const Icon(Icons.chevron_right),
                                   onTap: () => _showDetailSheet(item),
                                 ),

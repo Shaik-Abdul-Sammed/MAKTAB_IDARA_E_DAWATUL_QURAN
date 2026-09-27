@@ -57,7 +57,7 @@ class _ExcelImportScreenState extends State<ExcelImportScreen> with SingleTicker
 
         if (rows.isEmpty && mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('No data found in selected file.')),
+            const SnackBar(content: Text('No data found in selected file.', maxLines: 2, overflow: TextOverflow.ellipsis)),
           );
         }
       }
@@ -65,7 +65,7 @@ class _ExcelImportScreenState extends State<ExcelImportScreen> with SingleTicker
       setState(() => _isParsing = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error parsing file: $e'), backgroundColor: AppColors.error),
+          SnackBar(content: Text('Error parsing file: $e', maxLines: 2, overflow: TextOverflow.ellipsis), backgroundColor: AppColors.error),
         );
       }
     }
@@ -92,7 +92,7 @@ class _ExcelImportScreenState extends State<ExcelImportScreen> with SingleTicker
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Imported ${result.successCount} records successfully!'),
+            content: Text('Imported ${result.successCount} records successfully!', maxLines: 2, overflow: TextOverflow.ellipsis),
             backgroundColor: AppColors.success,
           ),
         );
@@ -101,7 +101,7 @@ class _ExcelImportScreenState extends State<ExcelImportScreen> with SingleTicker
       setState(() => _isImporting = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Import failed: $e'), backgroundColor: AppColors.error),
+          SnackBar(content: Text('Import failed: $e', maxLines: 2, overflow: TextOverflow.ellipsis), backgroundColor: AppColors.error),
         );
       }
     }
@@ -305,7 +305,7 @@ class _ExcelImportScreenState extends State<ExcelImportScreen> with SingleTicker
                                   child: Text('${index + 1}',
                                       style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.primaryTeal)),
                                 ),
-                                title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                                title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14), maxLines: 1, overflow: TextOverflow.ellipsis),
                                 subtitle: Text(subtitle, style: const TextStyle(fontSize: 11, color: AppColors.textMuted), maxLines: 1, overflow: TextOverflow.ellipsis),
                               ),
                             );

@@ -174,8 +174,7 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen>
                   fontWeight:
                       m.isRead ? FontWeight.normal : FontWeight.bold,
                   fontSize: 14,
-                ),
-              ),
+                ), maxLines: 1, overflow: TextOverflow.ellipsis),
               subtitle: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -250,8 +249,7 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen>
                   fontWeight: FontWeight.bold,
                   fontSize: 14,
                   color: color,
-                ),
-              ),
+                ), maxLines: 1, overflow: TextOverflow.ellipsis),
               subtitle: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -315,8 +313,7 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen>
                   fontWeight: FontWeight.bold,
                   fontSize: 14,
                   color: Color(0xFF2E7D32),
-                ),
-              ),
+                ), maxLines: 1, overflow: TextOverflow.ellipsis),
               subtitle: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [

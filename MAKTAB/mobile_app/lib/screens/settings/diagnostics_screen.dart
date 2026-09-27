@@ -46,13 +46,13 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
       await CloudSyncService.instance.rerunProbe();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Startup probe completed')),
+          const SnackBar(content: Text('Startup probe completed', maxLines: 2, overflow: TextOverflow.ellipsis)),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Probe error: $e'), backgroundColor: Colors.red),
+          SnackBar(content: Text('Probe error: $e', maxLines: 2, overflow: TextOverflow.ellipsis), backgroundColor: Colors.red),
         );
       }
     } finally {
@@ -63,7 +63,7 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
   void _copyToClipboard() {
     Clipboard.setData(ClipboardData(text: _summary));
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Diagnostic summary copied to clipboard!')),
+      const SnackBar(content: Text('Diagnostic summary copied to clipboard!', maxLines: 2, overflow: TextOverflow.ellipsis)),
     );
   }
 

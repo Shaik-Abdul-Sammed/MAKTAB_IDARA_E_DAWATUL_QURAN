@@ -112,7 +112,7 @@ class _BatchManagementScreenState extends State<BatchManagementScreen> {
                               ),
                               ...uniqueTeachers.map((t) => DropdownMenuItem<int?>(
                                 value: t.id,
-                                child: Text(t.name),
+                                child: Text(t.name, maxLines: 1, overflow: TextOverflow.ellipsis),
                               )),
                             ],
                             onChanged: (val) {
@@ -172,7 +172,7 @@ class _BatchManagementScreenState extends State<BatchManagementScreen> {
           builder: (context, setStateDialog) {
             return AlertDialog(
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-              title: Text('Edit Batch: ${batch.name}', style: const TextStyle(color: Color(0xFF004D40), fontWeight: FontWeight.bold)),
+              title: Text('Edit Batch: ${batch.name}', style: const TextStyle(color: Color(0xFF004D40), fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
               content: Form(
                 key: formKey,
                 child: SingleChildScrollView(
@@ -221,7 +221,7 @@ class _BatchManagementScreenState extends State<BatchManagementScreen> {
                               ),
                               ...uniqueTeachers.map((t) => DropdownMenuItem<int?>(
                                 value: t.id,
-                                child: Text(t.name),
+                                child: Text(t.name, maxLines: 1, overflow: TextOverflow.ellipsis),
                               )),
                             ],
                             onChanged: (val) {
@@ -318,7 +318,7 @@ class _BatchManagementScreenState extends State<BatchManagementScreen> {
             }
 
             return AlertDialog(
-              title: Text('Manage Students - ${batch.name}', style: const TextStyle(color: Color(0xFF004D40))),
+              title: Text('Manage Students - ${batch.name}', style: const TextStyle(color: Color(0xFF004D40)), maxLines: 1, overflow: TextOverflow.ellipsis),
               content: SizedBox(
                 width: double.maxFinite,
                 height: 400,
@@ -335,8 +335,8 @@ class _BatchManagementScreenState extends State<BatchManagementScreen> {
                                 color: Colors.transparent,
                                 child: CheckboxListTile(
                                   activeColor: const Color(0xFF004D40),
-                                  title: Text(student.name, style: const TextStyle(fontWeight: FontWeight.bold)),
-                                  subtitle: Text('ADM: ${student.admissionNumber}'),
+                                  title: Text(student.name, style: const TextStyle(fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                  subtitle: Text('ADM: ${student.admissionNumber}', maxLines: 2, overflow: TextOverflow.ellipsis),
                                   value: isSelected,
                                   onChanged: (bool? checked) {
                                     setStateDialog(() {
@@ -382,13 +382,13 @@ class _BatchManagementScreenState extends State<BatchManagementScreen> {
                       if (context.mounted) {
                         Navigator.pop(context);
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Students updated successfully'))
+                          const SnackBar(content: Text('Students updated successfully', maxLines: 2, overflow: TextOverflow.ellipsis))
                         );
                       }
                     } catch (e) {
                       if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Error updating students: $e'))
+                          SnackBar(content: Text('Error updating students: $e', maxLines: 2, overflow: TextOverflow.ellipsis))
                         );
                       }
                     } finally {
@@ -461,7 +461,7 @@ class _BatchManagementScreenState extends State<BatchManagementScreen> {
                           await _batchRepository.deleteBatch(batch.id!);
                           if (!context.mounted) return;
                           ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('${batch.name} deleted successfully'))
+                            SnackBar(content: Text('${batch.name} deleted successfully', maxLines: 2, overflow: TextOverflow.ellipsis))
                           );
                           _fetchData();
                         }
@@ -523,7 +523,7 @@ class _BatchManagementScreenState extends State<BatchManagementScreen> {
                                 value: 'edit',
                                 child: ListTile(
                                   leading: Icon(Icons.edit, color: Color(0xFF004D40)),
-                                  title: Text('Edit details'),
+                                  title: Text('Edit details', maxLines: 1, overflow: TextOverflow.ellipsis),
                                   contentPadding: EdgeInsets.zero,
                                 ),
                               ),
@@ -531,7 +531,7 @@ class _BatchManagementScreenState extends State<BatchManagementScreen> {
                                 value: 'manage_students',
                                 child: ListTile(
                                   leading: Icon(Icons.group_add_rounded, color: Color(0xFF004D40)),
-                                  title: Text('Manage Students'),
+                                  title: Text('Manage Students', maxLines: 1, overflow: TextOverflow.ellipsis),
                                   contentPadding: EdgeInsets.zero,
                                 ),
                               ),
@@ -539,7 +539,7 @@ class _BatchManagementScreenState extends State<BatchManagementScreen> {
                                 value: 'delete',
                                 child: ListTile(
                                   leading: Icon(Icons.delete, color: Colors.red),
-                                  title: Text('Delete batch'),
+                                  title: Text('Delete batch', maxLines: 1, overflow: TextOverflow.ellipsis),
                                   contentPadding: EdgeInsets.zero,
                                 ),
                               ),

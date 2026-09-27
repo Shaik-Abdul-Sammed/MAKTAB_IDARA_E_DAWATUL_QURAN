@@ -26,7 +26,7 @@ class _SyllabusHubScreenState extends State<SyllabusHubScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Attached Syllabus PDF: ${result.files.single.name}'),
+          content: Text('Attached Syllabus PDF: ${result.files.single.name}', maxLines: 2, overflow: TextOverflow.ellipsis),
         ),
       );
     }

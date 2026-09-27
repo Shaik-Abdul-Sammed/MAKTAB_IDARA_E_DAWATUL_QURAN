@@ -201,7 +201,7 @@ class _AdminDashboardState extends State<AdminDashboard>
                   _fetchDashboardStats();
                 } else {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('$title — coming soon')),
+                    SnackBar(content: Text('$title — coming soon', maxLines: 2, overflow: TextOverflow.ellipsis)),
                   );
                 }
               },
@@ -628,7 +628,7 @@ class _AdminDashboardState extends State<AdminDashboard>
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
-                      content: Text('Multi-device sync completed!'),
+                      content: Text('Multi-device sync completed!', maxLines: 2, overflow: TextOverflow.ellipsis),
                       backgroundColor: Color(0xFF004D40),
                       duration: Duration(seconds: 2),
                     ),

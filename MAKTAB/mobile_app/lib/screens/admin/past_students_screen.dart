@@ -55,7 +55,7 @@ class _PastStudentsScreenState extends State<PastStudentsScreen> {
         setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error loading past students: $e'),
+            content: Text('Error loading past students: $e', maxLines: 2, overflow: TextOverflow.ellipsis),
             backgroundColor: AppColors.error,
           ),
         );
@@ -117,7 +117,7 @@ class _PastStudentsScreenState extends State<PastStudentsScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('${student.name} has been restored to active list.'),
+            content: Text('${student.name} has been restored to active list.', maxLines: 2, overflow: TextOverflow.ellipsis),
           ),
         );
         _loadData();
@@ -155,7 +155,7 @@ class _PastStudentsScreenState extends State<PastStudentsScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('${student.name} was permanently deleted.'),
+            content: Text('${student.name} was permanently deleted.', maxLines: 2, overflow: TextOverflow.ellipsis),
             backgroundColor: Colors.red,
           ),
         );
@@ -266,12 +266,10 @@ class _PastStudentsScreenState extends State<PastStudentsScreen> {
                                     ),
                                     title: Text(
                                       student.name,
-                                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                                    ),
+                                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16), maxLines: 1, overflow: TextOverflow.ellipsis),
                                     subtitle: Text(
                                       'ADM: ${student.admissionNumber} | Father: ${student.fatherName ?? 'N/A'}\nBatch: ${_getBatchName(student.batchId)}',
-                                      style: const TextStyle(fontSize: 13, height: 1.4),
-                                    ),
+                                      style: const TextStyle(fontSize: 13, height: 1.4), maxLines: 2, overflow: TextOverflow.ellipsis),
                                     trailing: Container(
                                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                       decoration: BoxDecoration(

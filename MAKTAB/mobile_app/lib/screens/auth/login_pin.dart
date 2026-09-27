@@ -16,7 +16,7 @@ class _LoginPinScreenState extends State<LoginPinScreen> {
       if (_pinCode.length == 4) {
         // Simulate login state trigger
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Accessing database...')),
+          const SnackBar(content: Text('Accessing database...', maxLines: 2, overflow: TextOverflow.ellipsis)),
         );
         Navigator.pop(context);
       }

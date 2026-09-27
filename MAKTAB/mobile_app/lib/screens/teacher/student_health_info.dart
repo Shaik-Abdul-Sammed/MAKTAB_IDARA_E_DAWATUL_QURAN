@@ -44,7 +44,7 @@ class _StudentHealthInfoScreenState extends State<StudentHealthInfoScreen> {
     } catch (e) {
         if (mounted) {
             setState(() => _isLoading = false);
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error loading data: $e')));
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error loading data: $e', maxLines: 2, overflow: TextOverflow.ellipsis)));
         }
     }
   }
@@ -56,7 +56,7 @@ class _StudentHealthInfoScreenState extends State<StudentHealthInfoScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Edit Health & Emergency Notes for ${item.name}'),
+        title: Text('Edit Health & Emergency Notes for ${item.name}', maxLines: 1, overflow: TextOverflow.ellipsis),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -83,7 +83,7 @@ class _StudentHealthInfoScreenState extends State<StudentHealthInfoScreen> {
                 Navigator.pop(context);
                 _loadRecords();
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Student health notes updated.')),
+                  const SnackBar(content: Text('Student health notes updated.', maxLines: 2, overflow: TextOverflow.ellipsis)),
                 );
               }
             },
@@ -223,8 +223,8 @@ class _StudentHealthInfoScreenState extends State<StudentHealthInfoScreen> {
                                     foregroundColor: Colors.white,
                                     child: Icon(Icons.health_and_safety, size: 18),
                                   ),
-                                  title: Text(item.name, style: const TextStyle(fontWeight: FontWeight.bold)),
-                                  subtitle: Text(item.teacherNotes?.isEmpty ?? true ? 'No medical info' : item.teacherNotes!),
+                                  title: Text(item.name, style: const TextStyle(fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                  subtitle: Text(item.teacherNotes?.isEmpty ?? true ? 'No medical info' : item.teacherNotes!, maxLines: 2, overflow: TextOverflow.ellipsis),
                                   trailing: const Icon(Icons.chevron_right),
                                   onTap: () => _showDetailSheet(item),
                                 ),

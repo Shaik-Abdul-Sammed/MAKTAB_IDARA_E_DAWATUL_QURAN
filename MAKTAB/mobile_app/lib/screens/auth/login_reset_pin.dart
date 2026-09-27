@@ -22,13 +22,13 @@ class _LoginResetPinScreenState extends State<LoginResetPinScreen> {
           if (await canLaunchUrl(url)) {
             await launchUrl(url);
           } else {
-            if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not launch WhatsApp')));
+            if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not launch WhatsApp', maxLines: 2, overflow: TextOverflow.ellipsis)));
           }
         }
         
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Accessing database...')),
+            const SnackBar(content: Text('Accessing database...', maxLines: 2, overflow: TextOverflow.ellipsis)),
           );
           Navigator.pop(context);
         }

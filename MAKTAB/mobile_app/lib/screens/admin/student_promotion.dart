@@ -77,19 +77,19 @@ class _StudentPromotionScreenState extends State<StudentPromotionScreen> {
   Future<void> _promoteSelectedStudents() async {
     if (_targetBatch == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select a Target Batch first.')),
+        const SnackBar(content: Text('Please select a Target Batch first.', maxLines: 2, overflow: TextOverflow.ellipsis)),
       );
       return;
     }
     if (_selectedStudentIds.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No students selected for promotion.')),
+        const SnackBar(content: Text('No students selected for promotion.', maxLines: 2, overflow: TextOverflow.ellipsis)),
       );
       return;
     }
     if (_sourceBatch?.id == _targetBatch?.id) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Source and Target batch cannot be the same.')),
+        const SnackBar(content: Text('Source and Target batch cannot be the same.', maxLines: 2, overflow: TextOverflow.ellipsis)),
       );
       return;
     }
@@ -118,7 +118,7 @@ class _StudentPromotionScreenState extends State<StudentPromotionScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Successfully promoted ${_selectedStudentIds.length} students!'),
+            content: Text('Successfully promoted ${_selectedStudentIds.length} students!', maxLines: 2, overflow: TextOverflow.ellipsis),
             backgroundColor: Colors.green,
           ),
         );
@@ -182,7 +182,7 @@ class _StudentPromotionScreenState extends State<StudentPromotionScreen> {
                               hint: const Text('Select Batch...'),
                               value: matchedSource,
                               isExpanded: true,
-                              items: uniqueBatches.map((b) => DropdownMenuItem(value: b, child: Text(b.name))).toList(),
+                              items: uniqueBatches.map((b) => DropdownMenuItem(value: b, child: Text(b.name, maxLines: 1, overflow: TextOverflow.ellipsis))).toList(),
                               onChanged: (val) {
                                 if (val != null) _loadStudentsForSourceBatch(val);
                               },
@@ -224,8 +224,8 @@ class _StudentPromotionScreenState extends State<StudentPromotionScreen> {
                                     return Material(
                                       color: Colors.transparent,
                                       child: CheckboxListTile(
-                                        title: Text(student.name, style: const TextStyle(fontWeight: FontWeight.w600)),
-                                        subtitle: Text(student.fatherName ?? 'No Guardian Info'),
+                                        title: Text(student.name, style: const TextStyle(fontWeight: FontWeight.w600), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                        subtitle: Text(student.fatherName ?? 'No Guardian Info', maxLines: 2, overflow: TextOverflow.ellipsis),
                                         value: isSelected,
                                         activeColor: const Color(0xFF004D40),
                                         onChanged: (val) => _toggleStudentSelection(student.id!),
@@ -268,7 +268,7 @@ class _StudentPromotionScreenState extends State<StudentPromotionScreen> {
                                 hint: const Text('Select Destination Batch...'),
                                 value: matchedTarget,
                                 isExpanded: true,
-                                items: availableBatches.map((b) => DropdownMenuItem(value: b, child: Text(b.name))).toList(),
+                                items: availableBatches.map((b) => DropdownMenuItem(value: b, child: Text(b.name, maxLines: 1, overflow: TextOverflow.ellipsis))).toList(),
                                 onChanged: (val) {
                                   setState(() => _targetBatch = val);
                                 },

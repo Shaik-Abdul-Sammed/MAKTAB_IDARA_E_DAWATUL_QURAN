@@ -128,7 +128,7 @@ class _FeeManagementScreenState extends State<FeeManagementScreen> {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Notification sent for ${item.student.name}!'),
+        content: Text('Notification sent for ${item.student.name}!', maxLines: 2, overflow: TextOverflow.ellipsis),
         backgroundColor: AppIcons.primaryTeal,
       ),
     );
@@ -143,6 +143,7 @@ class _FeeManagementScreenState extends State<FeeManagementScreen> {
         studentName: item.student.name,
         admissionNumber: item.student.admissionNumber,
         dueDate: item.dueDate,
+        languageCode: LanguageResolver.forStudent(item.student),
       ),
     );
     final url = Uri.parse('https://wa.me/91$cleanPhone?text=$msg');
@@ -152,13 +153,13 @@ class _FeeManagementScreenState extends State<FeeManagementScreen> {
       } else {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Could not open WhatsApp for $phone')),
+          SnackBar(content: Text('Could not open WhatsApp for $phone', maxLines: 2, overflow: TextOverflow.ellipsis)),
         );
       }
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to launch WhatsApp.')),
+        const SnackBar(content: Text('Failed to launch WhatsApp.', maxLines: 2, overflow: TextOverflow.ellipsis)),
       );
     }
   }
@@ -173,13 +174,13 @@ class _FeeManagementScreenState extends State<FeeManagementScreen> {
       } else {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('UPI App launched for ₹${item.amountDue.toInt()}')),
+          SnackBar(content: Text('UPI App launched for ₹${item.amountDue.toInt()}', maxLines: 2, overflow: TextOverflow.ellipsis)),
         );
       }
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Simulated UPI intent for ₹${item.amountDue.toInt()}')),
+        SnackBar(content: Text('Simulated UPI intent for ₹${item.amountDue.toInt()}', maxLines: 2, overflow: TextOverflow.ellipsis)),
       );
     }
   }
@@ -398,7 +399,7 @@ class _FeeManagementScreenState extends State<FeeManagementScreen> {
     showDialog(
       context: context,
       builder: (ctx) => SimpleDialog(
-        title: Text(loc?.translate('fee_record_payment') ?? 'Record Payment'),
+        title: Text(loc?.translate('fee_record_payment') ?? 'Record Payment', maxLines: 1, overflow: TextOverflow.ellipsis),
         children: _feeItems.map((item) => SimpleDialogOption(
           onPressed: () {
             Navigator.pop(ctx);
@@ -449,7 +450,7 @@ class _FeeManagementScreenState extends State<FeeManagementScreen> {
               if (context.mounted) {
                 Navigator.pop(context);
                 _loadFeeRecords();
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Fee structure updated successfully')));
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Fee structure updated successfully', maxLines: 2, overflow: TextOverflow.ellipsis)));
               }
             },
             style: ElevatedButton.styleFrom(backgroundColor: AppIcons.primaryTeal, foregroundColor: Colors.white),
@@ -501,7 +502,7 @@ class _FeeManagementScreenState extends State<FeeManagementScreen> {
       barrierDismissible: false,
       builder: (context) => StatefulBuilder(
         builder: (context, setStateBuilder) => AlertDialog(
-          title: Text('Log Payment: ${item.student.name}'),
+          title: Text('Log Payment: ${item.student.name}', maxLines: 1, overflow: TextOverflow.ellipsis),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,

@@ -35,7 +35,7 @@ class _ChecklistHistoryScreenState extends State<ChecklistHistoryScreen> {
     } catch (e) {
         if (mounted) {
             setState(() => _isLoading = false);
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error loading data: $e')));
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error loading data: $e', maxLines: 2, overflow: TextOverflow.ellipsis)));
         }
     }
   }
@@ -149,8 +149,8 @@ class _ChecklistHistoryScreenState extends State<ChecklistHistoryScreen> {
                                     foregroundColor: Colors.white,
                                     child: Icon(Icons.fact_check, size: 18),
                                   ),
-                                  title: Text('Date: ${item.date}', style: const TextStyle(fontWeight: FontWeight.bold)),
-                                  subtitle: Text('Batch ID: ${item.batchId} | Answers: ${item.answersJson}'),
+                                  title: Text('Date: ${item.date}', style: const TextStyle(fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                  subtitle: Text('Batch ID: ${item.batchId} | Answers: ${item.answersJson}', maxLines: 2, overflow: TextOverflow.ellipsis),
                                   trailing: const Icon(Icons.chevron_right),
                                   onTap: () => _showDetailSheet(item),
                                 ),

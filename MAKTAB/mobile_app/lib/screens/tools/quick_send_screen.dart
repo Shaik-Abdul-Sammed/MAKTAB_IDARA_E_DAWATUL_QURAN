@@ -476,7 +476,7 @@ class _QuickSendScreenState extends State<QuickSendScreen> {
     final phone = _getRecipientPhone();
     if (phone.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Recipient phone number is missing.')),
+        const SnackBar(content: Text('Recipient phone number is missing.', maxLines: 2, overflow: TextOverflow.ellipsis)),
       );
       return;
     }
@@ -492,7 +492,7 @@ class _QuickSendScreenState extends State<QuickSendScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error generating PDF: $e')),
+          SnackBar(content: Text('Error generating PDF: $e', maxLines: 2, overflow: TextOverflow.ellipsis)),
         );
       }
     }
@@ -686,6 +686,7 @@ class _QuickSendScreenState extends State<QuickSendScreen> {
                   value: s,
                   child: Text(
                     '${s.name} (${s.admissionNumber}) — ${s.guardianPhone ?? s.phone ?? 'No Phone'}',
+                    maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
                 )).toList(),
@@ -706,6 +707,7 @@ class _QuickSendScreenState extends State<QuickSendScreen> {
                   value: t,
                   child: Text(
                     '${t.name} (ID: ${t.teacherId ?? t.id}) — ${t.mobile ?? 'No Mobile'}',
+                    maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
                 )).toList(),
@@ -715,8 +717,8 @@ class _QuickSendScreenState extends State<QuickSendScreen> {
               ListTile(
                 contentPadding: EdgeInsets.zero,
                 leading: const CircleAvatar(backgroundColor: Color(0xFF004D40), child: Icon(Icons.admin_panel_settings, color: Colors.white)),
-                title: Text(_manager?.name ?? 'Maktab Manager'),
-                subtitle: Text(_manager?.mobile ?? 'No Mobile'),
+                title: Text(_manager?.name ?? 'Maktab Manager', maxLines: 1, overflow: TextOverflow.ellipsis),
+                subtitle: Text(_manager?.mobile ?? 'No Mobile', maxLines: 2, overflow: TextOverflow.ellipsis),
               ),
             ],
           ],

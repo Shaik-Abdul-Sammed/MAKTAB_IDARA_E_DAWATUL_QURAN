@@ -219,7 +219,7 @@ class _WhatsAppReminderScreenState extends State<WhatsAppReminderScreen> {
       items: uniqueStudents.map((s) {
         return DropdownMenuItem<Student?>(
           value: s,
-          child: Text('${s.name} (${s.phone ?? 'No phone'})', style: const TextStyle(fontSize: 14)),
+          child: Text('${s.name} (${s.phone ?? 'No phone'})', style: const TextStyle(fontSize: 14), maxLines: 1, overflow: TextOverflow.ellipsis),
         );
       }).toList(),
       onChanged: (val) => setState(() => _selectedStudent = val),

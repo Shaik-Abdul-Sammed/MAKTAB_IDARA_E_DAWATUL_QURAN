@@ -35,7 +35,7 @@ class _BatchProgressReportScreenState extends State<BatchProgressReportScreen> {
     } catch (e) {
         if (mounted) {
             setState(() => _isLoading = false);
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error loading data: $e')));
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error loading data: $e', maxLines: 2, overflow: TextOverflow.ellipsis)));
         }
     }
   }
@@ -149,8 +149,8 @@ class _BatchProgressReportScreenState extends State<BatchProgressReportScreen> {
                                     foregroundColor: Colors.white,
                                     child: Icon(Icons.menu_book, size: 18),
                                   ),
-                                  title: Text('Surah: ${item.surah}', style: const TextStyle(fontWeight: FontWeight.bold)),
-                                  subtitle: Text('Student ID: ${item.studentId} | Ayahs: ${item.ayahFrom} - ${item.ayahTo}'),
+                                  title: Text('Surah: ${item.surah}', style: const TextStyle(fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                  subtitle: Text('Student ID: ${item.studentId} | Ayahs: ${item.ayahFrom} - ${item.ayahTo}', maxLines: 2, overflow: TextOverflow.ellipsis),
                                   trailing: const Icon(Icons.chevron_right),
                                   onTap: () => _showDetailSheet(item),
                                 ),

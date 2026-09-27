@@ -39,7 +39,7 @@ class _ClassAnnouncementsScreenState extends State<ClassAnnouncementsScreen> {
     } catch (e) {
         if (!mounted) return;
         setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error loading data: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error loading data: $e', maxLines: 2, overflow: TextOverflow.ellipsis)));
     }
   }
 
@@ -53,7 +53,7 @@ class _ClassAnnouncementsScreenState extends State<ClassAnnouncementsScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(isEditing ? 'Edit Announcement' : 'New Announcement'),
+        title: Text(isEditing ? 'Edit Announcement' : 'New Announcement', maxLines: 1, overflow: TextOverflow.ellipsis),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -234,8 +234,8 @@ class _ClassAnnouncementsScreenState extends State<ClassAnnouncementsScreen> {
                                 elevation: 1,
                                 child: ListTile(
                                   leading: const CircleAvatar(backgroundColor: Color(0xFF004D40), foregroundColor: Colors.white, child: Icon(Icons.announcement, size: 18)),
-                                  title: Text(item.title, style: const TextStyle(fontWeight: FontWeight.bold)),
-                                  subtitle: Text('Date: ${item.date} | ${item.content}'),
+                                  title: Text(item.title, style: const TextStyle(fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                  subtitle: Text('Date: ${item.date} | ${item.content}', maxLines: 2, overflow: TextOverflow.ellipsis),
                                   trailing: const Icon(Icons.chevron_right),
                                   onTap: () => _showDetailSheet(item),
                                 ),

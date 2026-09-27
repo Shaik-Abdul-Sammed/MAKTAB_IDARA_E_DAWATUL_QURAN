@@ -35,7 +35,7 @@ class _ChecklistMgmtScreenState extends State<ChecklistMgmtScreen> {
     } catch (e) {
         if (mounted) {
             setState(() => _isLoading = false);
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error loading data: $e')));
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error loading data: $e', maxLines: 2, overflow: TextOverflow.ellipsis)));
         }
     }
   }
@@ -149,8 +149,8 @@ class _ChecklistMgmtScreenState extends State<ChecklistMgmtScreen> {
                                     foregroundColor: Colors.white,
                                     child: Icon(Icons.checklist, size: 18),
                                   ),
-                                  title: Text('Date: ${item.date}', style: const TextStyle(fontWeight: FontWeight.bold)),
-                                  subtitle: Text('Teacher ID: ${item.teacherId} | Batch ID: ${item.batchId}'),
+                                  title: Text('Date: ${item.date}', style: const TextStyle(fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                  subtitle: Text('Teacher ID: ${item.teacherId} | Batch ID: ${item.batchId}', maxLines: 2, overflow: TextOverflow.ellipsis),
                                   trailing: const Icon(Icons.chevron_right),
                                   onTap: () => _showDetailSheet(item),
                                 ),

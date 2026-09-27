@@ -17,7 +17,7 @@ class UserProfileScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(loc?.translate('profiles') ?? 'Profile'),
+        title: Text(loc?.translate('profiles') ?? 'Profile', maxLines: 1, overflow: TextOverflow.ellipsis),
         elevation: 0,
         backgroundColor: Color(0xFF004D40),
       ),
@@ -131,8 +131,8 @@ class UserProfileScreen extends StatelessWidget {
               ),
               child: Icon(icon, color: Color(0xFF004D40)),
             ),
-            title: Text(title, style: TextStyle(fontSize: 14, color: Colors.grey)),
-            subtitle: Text(value, style: TextStyle(fontSize: 16, color: Colors.black87, fontWeight: FontWeight.bold)),
+            title: Text(title, style: TextStyle(fontSize: 14, color: Colors.grey), maxLines: 1, overflow: TextOverflow.ellipsis),
+            subtitle: Text(value, style: TextStyle(fontSize: 16, color: Colors.black87, fontWeight: FontWeight.bold), maxLines: 2, overflow: TextOverflow.ellipsis),
           ),
         ),
       ),

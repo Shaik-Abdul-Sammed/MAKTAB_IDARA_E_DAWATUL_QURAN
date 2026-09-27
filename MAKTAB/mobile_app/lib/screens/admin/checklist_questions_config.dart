@@ -35,7 +35,7 @@ class _ChecklistQuestionsConfigScreenState extends State<ChecklistQuestionsConfi
     } catch (e) {
         if (!mounted) return;
         setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error loading data: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error loading data: $e', maxLines: 2, overflow: TextOverflow.ellipsis)));
     }
   }
 
@@ -49,7 +49,7 @@ class _ChecklistQuestionsConfigScreenState extends State<ChecklistQuestionsConfi
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(isEditing ? 'Edit Question' : 'New Question'),
+        title: Text(isEditing ? 'Edit Question' : 'New Question', maxLines: 1, overflow: TextOverflow.ellipsis),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -208,8 +208,8 @@ class _ChecklistQuestionsConfigScreenState extends State<ChecklistQuestionsConfi
                                 elevation: 1,
                                 child: ListTile(
                                   leading: const CircleAvatar(backgroundColor: Color(0xFF004D40), foregroundColor: Colors.white, child: Icon(Icons.question_answer, size: 18)),
-                                  title: Text(item.text, style: const TextStyle(fontWeight: FontWeight.bold)),
-                                  subtitle: Text('Category: ${item.category} | Active: ${item.isActive == 1 ? "Yes" : "No"}'),
+                                  title: Text(item.text, style: const TextStyle(fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                  subtitle: Text('Category: ${item.category} | Active: ${item.isActive == 1 ? "Yes" : "No"}', maxLines: 2, overflow: TextOverflow.ellipsis),
                                   trailing: const Icon(Icons.chevron_right),
                                   onTap: () => _showDetailSheet(item),
                                 ),

@@ -10,6 +10,7 @@ import '../../repositories/student_repository.dart';
 import '../../utils/receipt_templates.dart';
 import '../../utils/receipt_pdf_generator.dart';
 import '../../utils/whatsapp_utility.dart';
+import '../../utils/language_resolver.dart';
 import '../../widgets/receipt_preview_dialog.dart';
 
 class FeePaymentsListWidget extends StatefulWidget {
@@ -164,7 +165,7 @@ class _FeePaymentsListWidgetState extends State<FeePaymentsListWidget> {
     if (!mounted) return;
     if (students.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No students found.')),
+        const SnackBar(content: Text('No students found.', maxLines: 2, overflow: TextOverflow.ellipsis)),
       );
       return;
     }
@@ -191,7 +192,7 @@ class _FeePaymentsListWidgetState extends State<FeePaymentsListWidget> {
       barrierDismissible: false,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setLocal) => AlertDialog(
-          title: Text(isEdit ? 'Edit Payment' : 'Record Payment'),
+          title: Text(isEdit ? 'Edit Payment' : 'Record Payment', maxLines: 1, overflow: TextOverflow.ellipsis),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -215,8 +216,11 @@ class _FeePaymentsListWidgetState extends State<FeePaymentsListWidget> {
                         items: uniqueStudents
                             .map((s) => DropdownMenuItem<Student?>(
                                   value: s,
-                                  child: Text('${s.name} (${s.admissionNumber})',
-                                      overflow: TextOverflow.ellipsis),
+                                  child: Text(
+                                    '${s.name} (${s.admissionNumber})',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
                                 ))
                             .toList(),
                         onChanged: (s) => setLocal(() => selectedStudent = s),
@@ -279,13 +283,13 @@ class _FeePaymentsListWidgetState extends State<FeePaymentsListWidget> {
                 final amt = int.tryParse(amountCtrl.text.trim());
                 if (amt == null || amt <= 0) {
                   ScaffoldMessenger.of(ctx).showSnackBar(
-                    const SnackBar(content: Text('Enter a valid amount.')),
+                    const SnackBar(content: Text('Enter a valid amount.', maxLines: 2, overflow: TextOverflow.ellipsis)),
                   );
                   return;
                 }
                 if (!isEdit && selectedStudent == null) {
                   ScaffoldMessenger.of(ctx).showSnackBar(
-                    const SnackBar(content: Text('Select a student.')),
+                    const SnackBar(content: Text('Select a student.', maxLines: 2, overflow: TextOverflow.ellipsis)),
                   );
                   return;
                 }
@@ -358,7 +362,8 @@ class _FeePaymentsListWidgetState extends State<FeePaymentsListWidget> {
     final mode = (row['mode'] as String?) ?? '-';
     final notes = row['notes'] as String?;
     final phone = row['student_phone'] as String? ?? '';
-    final lang = (row['student_lang'] as String?) ?? 'en';
+    final rawLang = (row['student_lang'] as String?) ?? 'en';
+    final lang = LanguageResolver.isSupported(rawLang) ? rawLang : 'en';
     final ts = row['timestamp'] as String? ?? '';
     final parsed = DateTime.tryParse(ts);
     final formattedTime = parsed != null ? DateFormat('dd MMM yyyy, hh:mm a').format(parsed) : ts;

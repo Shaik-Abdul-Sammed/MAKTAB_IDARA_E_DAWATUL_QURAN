@@ -29,19 +29,19 @@ class _BackupHistoryScreenState extends State<BackupHistoryScreen> {
     if (!mounted) return;
     if (path != null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Backup created. Opening export options...'), backgroundColor: Color(0xFF004D40)),
+        const SnackBar(content: Text('Backup created. Opening export options...', maxLines: 2, overflow: TextOverflow.ellipsis), backgroundColor: Color(0xFF004D40)),
       );
       try {
         await SharePlus.instance.share(ShareParams(files: [XFile(path)], text: 'Maktab Database Backup'));
       } catch (e) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error sharing backup: $e'), backgroundColor: Colors.red),
+          SnackBar(content: Text('Error sharing backup: $e', maxLines: 2, overflow: TextOverflow.ellipsis), backgroundColor: Colors.red),
         );
       }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to create backup'), backgroundColor: Colors.red),
+        const SnackBar(content: Text('Failed to create backup', maxLines: 2, overflow: TextOverflow.ellipsis), backgroundColor: Colors.red),
       );
     }
   }
@@ -59,11 +59,11 @@ class _BackupHistoryScreenState extends State<BackupHistoryScreen> {
       if (!mounted) return;
       if (success) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Backup restored successfully!'), backgroundColor: Color(0xFF004D40)),
+          const SnackBar(content: Text('Backup restored successfully!', maxLines: 2, overflow: TextOverflow.ellipsis), backgroundColor: Color(0xFF004D40)),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to restore backup ZIP file.'), backgroundColor: Colors.red),
+          const SnackBar(content: Text('Failed to restore backup ZIP file.', maxLines: 2, overflow: TextOverflow.ellipsis), backgroundColor: Colors.red),
         );
       }
     }

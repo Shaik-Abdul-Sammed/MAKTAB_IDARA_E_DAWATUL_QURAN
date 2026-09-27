@@ -42,13 +42,13 @@ class _CalendarSyncScreenState extends State<CalendarSyncScreen> {
       } else {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Calendar event created: ${ev.title}')),
+          SnackBar(content: Text('Calendar event created: ${ev.title}', maxLines: 2, overflow: TextOverflow.ellipsis)),
         );
       }
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Event added: ${ev.title}')),
+        SnackBar(content: Text('Event added: ${ev.title}', maxLines: 2, overflow: TextOverflow.ellipsis)),
       );
     }
   }

@@ -79,7 +79,7 @@ class _TeacherAddScreenState extends State<TeacherAddScreen> {
       if (!granted) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Contacts permission denied.')),
+          const SnackBar(content: Text('Contacts permission denied.', maxLines: 2, overflow: TextOverflow.ellipsis)),
         );
         return;
       }
@@ -108,12 +108,12 @@ class _TeacherAddScreenState extends State<TeacherAddScreen> {
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Contact imported: $name ($phone)')),
+        SnackBar(content: Text('Contact imported: $name ($phone)', maxLines: 2, overflow: TextOverflow.ellipsis)),
       );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to import contact: $e')),
+        SnackBar(content: Text('Failed to import contact: $e', maxLines: 2, overflow: TextOverflow.ellipsis)),
       );
     }
   }
@@ -149,7 +149,7 @@ class _TeacherAddScreenState extends State<TeacherAddScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Teacher added successfully!'),
+          content: Text('Teacher added successfully!', maxLines: 2, overflow: TextOverflow.ellipsis),
           backgroundColor: Color(0xFF004D40),
         ),
       );
@@ -195,7 +195,7 @@ class _TeacherAddScreenState extends State<TeacherAddScreen> {
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(_provider.errorMessage),
+          content: Text(_provider.errorMessage, maxLines: 2, overflow: TextOverflow.ellipsis),
           backgroundColor: Colors.red.shade700,
           action: SnackBarAction(label: 'Retry', textColor: Colors.white, onPressed: _submit),
         ),

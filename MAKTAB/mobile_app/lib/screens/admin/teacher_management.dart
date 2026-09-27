@@ -171,7 +171,7 @@ class _TeacherManagementScreenState extends State<TeacherManagementScreen> {
                     children: _allBatches.map((batch) {
                       final isSelected = selectedBatchIds.contains(batch.id);
                       return ChoiceChip(
-                        label: Text(batch.name),
+                        label: Text(batch.name, maxLines: 1, overflow: TextOverflow.ellipsis),
                         selected: isSelected,
                         onSelected: (selected) {
                           setState(() {
@@ -362,7 +362,7 @@ class _TeacherManagementScreenState extends State<TeacherManagementScreen> {
                     children: _allBatches.map((batch) {
                       final isSelected = selectedBatchIds.contains(batch.id);
                       return ChoiceChip(
-                        label: Text(batch.name),
+                        label: Text(batch.name, maxLines: 1, overflow: TextOverflow.ellipsis),
                         selected: isSelected,
                         onSelected: (selected) {
                           setState(() {
@@ -440,7 +440,7 @@ class _TeacherManagementScreenState extends State<TeacherManagementScreen> {
       builder: (context) {
         return AlertDialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: Text('Reset PIN for ${teacher.name}', style: const TextStyle(color: Color(0xFF004D40), fontWeight: FontWeight.bold)),
+          title: Text('Reset PIN for ${teacher.name}', style: const TextStyle(color: Color(0xFF004D40), fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
           content: Form(
             key: formKey,
             child: TextFormField(
@@ -475,7 +475,7 @@ class _TeacherManagementScreenState extends State<TeacherManagementScreen> {
                   if (context.mounted) {
                     Navigator.pop(context);
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('PIN successfully updated for ${teacher.name}'))
+                      SnackBar(content: Text('PIN successfully updated for ${teacher.name}', maxLines: 2, overflow: TextOverflow.ellipsis))
                     );
                     
                     if (teacher.mobile != null && teacher.mobile!.isNotEmpty) {
@@ -546,7 +546,7 @@ class _TeacherManagementScreenState extends State<TeacherManagementScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF9FBE7), // Cream background
       appBar: AppBar(
-        title: Text(loc?.translate('teacher_mgmt_title') ?? 'Teacher Management', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        title: Text(loc?.translate('teacher_mgmt_title') ?? 'Teacher Management', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
         backgroundColor: const Color(0xFF004D40),
         iconTheme: const IconThemeData(color: Colors.white),
         centerTitle: true,
@@ -597,7 +597,7 @@ class _TeacherManagementScreenState extends State<TeacherManagementScreen> {
                           await _userRepository.deleteUser(teacher.id!);
                           if (!context.mounted) return;
                           ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('${teacher.name} deleted successfully'))
+                            SnackBar(content: Text('${teacher.name} deleted successfully', maxLines: 2, overflow: TextOverflow.ellipsis))
                           );
                           _fetchTeachers();
                         }
@@ -682,7 +682,7 @@ class _TeacherManagementScreenState extends State<TeacherManagementScreen> {
                                           final success = await auth.sendPasswordReset(teacher.mobile!);
                                           if (context.mounted) {
                                             ScaffoldMessenger.of(context).showSnackBar(
-                                              SnackBar(content: Text(success ? 'Password reset link sent to ${teacher.mobile}' : 'Failed to send reset link')),
+                                              SnackBar(content: Text(success ? 'Password reset link sent to ${teacher.mobile}' : 'Failed to send reset link', maxLines: 2, overflow: TextOverflow.ellipsis)),
                                             );
                                           }
                                         } else {
@@ -697,7 +697,7 @@ class _TeacherManagementScreenState extends State<TeacherManagementScreen> {
                                         value: 'edit',
                                         child: ListTile(
                                           leading: Icon(Icons.edit, color: Color(0xFF004D40)),
-                                          title: Text('Edit Details'),
+                                          title: Text('Edit Details', maxLines: 1, overflow: TextOverflow.ellipsis),
                                           contentPadding: EdgeInsets.zero,
                                         ),
                                       ),
@@ -705,7 +705,7 @@ class _TeacherManagementScreenState extends State<TeacherManagementScreen> {
                                         value: 'reset_password',
                                         child: ListTile(
                                           leading: Icon(Icons.mark_email_unread, color: Color(0xFF004D40)),
-                                          title: Text('Send Password Reset Link'),
+                                          title: Text('Send Password Reset Link', maxLines: 1, overflow: TextOverflow.ellipsis),
                                           contentPadding: EdgeInsets.zero,
                                         ),
                                       ),

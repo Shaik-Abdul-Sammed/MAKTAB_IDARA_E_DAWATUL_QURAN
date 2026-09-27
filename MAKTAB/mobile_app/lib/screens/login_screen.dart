@@ -119,7 +119,7 @@ class _LoginScreenState extends State<LoginScreen> {
       if (auth.lastErrorIsRetryable) {
         messenger.showSnackBar(
           SnackBar(
-            content: Text(auth.lastAuthError.isNotEmpty ? auth.lastAuthError : 'Cannot reach server. Check your internet connection and try again.'),
+            content: Text(auth.lastAuthError.isNotEmpty ? auth.lastAuthError : 'Cannot reach server. Check your internet connection and try again.', maxLines: 2, overflow: TextOverflow.ellipsis),
             action: SnackBarAction(label: 'Retry', onPressed: _handleLogin),
             duration: const Duration(seconds: 8),
           ),
@@ -127,7 +127,7 @@ class _LoginScreenState extends State<LoginScreen> {
       } else {
         messenger.showSnackBar(
           SnackBar(
-            content: Text(auth.lastAuthError.isNotEmpty ? auth.lastAuthError : 'Authentication failed. Check credentials.'),
+            content: Text(auth.lastAuthError.isNotEmpty ? auth.lastAuthError : 'Authentication failed. Check credentials.', maxLines: 2, overflow: TextOverflow.ellipsis),
             backgroundColor: Colors.redAccent,
           ),
         );
@@ -190,7 +190,7 @@ class _LoginScreenState extends State<LoginScreen> {
               final email = resetEmailController.text.trim();
               if (email.isEmpty || !email.contains('@')) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Please enter a valid email address.')),
+                  const SnackBar(content: Text('Please enter a valid email address.', maxLines: 2, overflow: TextOverflow.ellipsis)),
                 );
                 return;
               }
@@ -201,14 +201,14 @@ class _LoginScreenState extends State<LoginScreen> {
               if (success) {
                 messenger.showSnackBar(
                   SnackBar(
-                    content: Text('Password reset link sent to $email. Check your inbox.'),
+                    content: Text('Password reset link sent to $email. Check your inbox.', maxLines: 2, overflow: TextOverflow.ellipsis),
                     backgroundColor: Colors.green,
                   ),
                 );
               } else {
                 messenger.showSnackBar(
                   SnackBar(
-                    content: Text(auth.lastAuthError.isNotEmpty ? auth.lastAuthError : 'Failed to send reset email.'),
+                    content: Text(auth.lastAuthError.isNotEmpty ? auth.lastAuthError : 'Failed to send reset email.', maxLines: 2, overflow: TextOverflow.ellipsis),
                     backgroundColor: Colors.redAccent,
                   ),
                 );
@@ -277,7 +277,7 @@ class _LoginScreenState extends State<LoginScreen> {
     if (authorized != true) {
       if (!mounted) return;
       if (dobController.text.isNotEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Authorization Failed. Incorrect Date of Birth.')));
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Authorization Failed. Incorrect Date of Birth.', maxLines: 2, overflow: TextOverflow.ellipsis)));
       }
       return;
     }
@@ -294,15 +294,15 @@ class _LoginScreenState extends State<LoginScreen> {
         
         if (!mounted) return;
         if (success) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Backup restored! Please log in.')));
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Backup restored! Please log in.', maxLines: 2, overflow: TextOverflow.ellipsis)));
           Provider.of<AuthProvider>(context, listen: false).initialize();
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to restore backup')));
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to restore backup', maxLines: 2, overflow: TextOverflow.ellipsis)));
         }
       }
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error restoring backup: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error restoring backup: $e', maxLines: 2, overflow: TextOverflow.ellipsis)));
     }
   }
 

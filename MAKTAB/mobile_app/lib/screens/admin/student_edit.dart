@@ -156,7 +156,7 @@ class _StudentEditScreenState extends State<StudentEditScreen> {
     if (_provider.status == StudentFormStatus.success) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Student profile updated!'),
+          content: Text('Student profile updated!', maxLines: 2, overflow: TextOverflow.ellipsis),
           backgroundColor: Color(0xFF004D40),
         ),
       );
@@ -164,7 +164,7 @@ class _StudentEditScreenState extends State<StudentEditScreen> {
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(_provider.errorMessage),
+          content: Text(_provider.errorMessage, maxLines: 2, overflow: TextOverflow.ellipsis),
           backgroundColor: Colors.red.shade700,
           action: SnackBarAction(label: 'Retry', textColor: Colors.white, onPressed: _submit),
         ),
@@ -441,7 +441,7 @@ class _StudentEditScreenState extends State<StudentEditScreen> {
         ...uniqueBatches.map((b) {
           return DropdownMenuItem<int?>(
             value: b.id,
-            child: Text(b.name, style: const TextStyle(fontSize: 14)),
+            child: Text(b.name, style: const TextStyle(fontSize: 14), maxLines: 1, overflow: TextOverflow.ellipsis),
           );
         }),
       ],

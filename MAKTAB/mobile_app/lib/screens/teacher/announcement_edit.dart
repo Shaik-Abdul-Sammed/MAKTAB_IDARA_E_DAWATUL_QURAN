@@ -33,7 +33,7 @@ class _AnnouncementEditScreenState extends State<AnnouncementEditScreen> {
       setState(() => _isSaving = false);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Changes saved securely to local storage'),
+          content: Text('Changes saved securely to local storage', maxLines: 2, overflow: TextOverflow.ellipsis),
           backgroundColor: Color(0xFF004D40),
         ),
       );

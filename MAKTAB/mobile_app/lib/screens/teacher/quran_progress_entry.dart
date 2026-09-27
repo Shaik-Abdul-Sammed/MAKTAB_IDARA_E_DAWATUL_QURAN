@@ -106,7 +106,7 @@ class _QuranProgressEntryScreenState extends State<QuranProgressEntryScreen> {
     if (!available) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Microphone unavailable.')),
+          const SnackBar(content: Text('Microphone unavailable.', maxLines: 2, overflow: TextOverflow.ellipsis)),
         );
       }
       return;
@@ -164,7 +164,7 @@ class _QuranProgressEntryScreenState extends State<QuranProgressEntryScreen> {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Recitation progress updated successfully!'),
+            content: Text('Recitation progress updated successfully!', maxLines: 2, overflow: TextOverflow.ellipsis),
             backgroundColor: Color(0xFF004D40),
           ),
         );
@@ -188,7 +188,7 @@ class _QuranProgressEntryScreenState extends State<QuranProgressEntryScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Recitation progress logged successfully!'),
+          content: Text('Recitation progress logged successfully!', maxLines: 2, overflow: TextOverflow.ellipsis),
           backgroundColor: Color(0xFF004D40),
         ),
       );
@@ -198,7 +198,7 @@ class _QuranProgressEntryScreenState extends State<QuranProgressEntryScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Failed to save recitation progress: $e'),
+          content: Text('Failed to save recitation progress: $e', maxLines: 2, overflow: TextOverflow.ellipsis),
           backgroundColor: Colors.redAccent,
         ),
       );

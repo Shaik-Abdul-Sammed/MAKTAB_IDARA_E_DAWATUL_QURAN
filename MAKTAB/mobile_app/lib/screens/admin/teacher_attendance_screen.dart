@@ -122,7 +122,7 @@ class _TeacherAttendanceScreenState extends State<TeacherAttendanceScreen> {
         setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-              content: Text('Error loading teachers: $e'),
+              content: Text('Error loading teachers: $e', maxLines: 2, overflow: TextOverflow.ellipsis),
               backgroundColor: AppColors.error),
         );
       }
@@ -206,7 +206,7 @@ class _TeacherAttendanceScreenState extends State<TeacherAttendanceScreen> {
         setState(() => _isSaving = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-              content: Text('Error saving attendance: $e'),
+              content: Text('Error saving attendance: $e', maxLines: 2, overflow: TextOverflow.ellipsis),
               backgroundColor: AppColors.error),
         );
       }

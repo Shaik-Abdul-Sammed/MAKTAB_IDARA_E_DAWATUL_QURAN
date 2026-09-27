@@ -67,7 +67,7 @@ class AttendanceSummaryReportScreen extends StatelessWidget {
                 onPressed: () {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
-                      content: Text('Reports compiled successfully! Exporting file to documents.'),
+                      content: Text('Reports compiled successfully! Exporting file to documents.', maxLines: 2, overflow: TextOverflow.ellipsis),
                       backgroundColor: Color(0xFF004D40),
                     ),
                   );

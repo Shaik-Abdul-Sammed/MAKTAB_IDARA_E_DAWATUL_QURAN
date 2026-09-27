@@ -102,7 +102,7 @@ class _BulkFeeMessagingDialogState extends State<BulkFeeMessagingDialog> {
             if (mounted) {
               setState(() => _isLoading = false);
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Could not load data.')),
+                const SnackBar(content: Text('Could not load data.', maxLines: 2, overflow: TextOverflow.ellipsis)),
               );
             }
           }
@@ -156,7 +156,7 @@ class _BulkFeeMessagingDialogState extends State<BulkFeeMessagingDialog> {
     final selected = _items.where((i) => i.isSelected).toList();
     if (selected.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No students selected for message broadcast.')),
+        const SnackBar(content: Text('No students selected for message broadcast.', maxLines: 2, overflow: TextOverflow.ellipsis)),
       );
       return;
     }
@@ -202,7 +202,7 @@ class _BulkFeeMessagingDialogState extends State<BulkFeeMessagingDialog> {
               context: context,
               barrierDismissible: false,
               builder: (ctx) => AlertDialog(
-                title: Text('WhatsApp Queue (${i + 1}/${selected.length})'),
+                title: Text('WhatsApp Queue (${i + 1}/${selected.length})', maxLines: 1, overflow: TextOverflow.ellipsis),
                 content: Text(
                   'Sent message to ${item.student.name}.\nNext student: ${selected[i + 1].student.name}',
                 ),
@@ -226,7 +226,7 @@ class _BulkFeeMessagingDialogState extends State<BulkFeeMessagingDialog> {
         debugPrint('[BulkFeeMessagingDialog._startWhatsAppQueue] load failed: $e\n$st');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Could not load data.')),
+            const SnackBar(content: Text('Could not load data.', maxLines: 2, overflow: TextOverflow.ellipsis)),
           );
         }
       }
@@ -235,7 +235,7 @@ class _BulkFeeMessagingDialogState extends State<BulkFeeMessagingDialog> {
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Completed WhatsApp Queue: Sent $sentCount reminders!'),
+          content: Text('Completed WhatsApp Queue: Sent $sentCount reminders!', maxLines: 2, overflow: TextOverflow.ellipsis),
           backgroundColor: const Color(0xFF004D40),
         ),
       );
@@ -246,7 +246,7 @@ class _BulkFeeMessagingDialogState extends State<BulkFeeMessagingDialog> {
     final selected = _items.where((i) => i.isSelected).toList();
     if (selected.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No students selected for notification.')),
+        const SnackBar(content: Text('No students selected for notification.', maxLines: 2, overflow: TextOverflow.ellipsis)),
       );
       return;
     }
@@ -263,7 +263,7 @@ class _BulkFeeMessagingDialogState extends State<BulkFeeMessagingDialog> {
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Sent $count local fee reminder notifications!'),
+          content: Text('Sent $count local fee reminder notifications!', maxLines: 2, overflow: TextOverflow.ellipsis),
           backgroundColor: const Color(0xFF004D40),
         ),
       );
@@ -366,7 +366,7 @@ class _BulkFeeMessagingDialogState extends State<BulkFeeMessagingDialog> {
                         items: [
                           const DropdownMenuItem(value: null, child: Text('All Batches', style: TextStyle(fontSize: 12))),
                           ...uniqueBatches.map(
-                            (b) => DropdownMenuItem(value: b.id, child: Text(b.name, style: const TextStyle(fontSize: 12))),
+                            (b) => DropdownMenuItem(value: b.id, child: Text(b.name, style: const TextStyle(fontSize: 12), maxLines: 1, overflow: TextOverflow.ellipsis)),
                           ),
                         ],
                         onChanged: (val) {
@@ -520,14 +520,13 @@ class _BulkFeeMessagingDialogState extends State<BulkFeeMessagingDialog> {
                             return CheckboxListTile(
                               value: item.isSelected,
                               dense: true,
-                              title: Text(s.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                              title: Text(s.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13), maxLines: 1, overflow: TextOverflow.ellipsis),
                               subtitle: Text(
                                 '[Adm: ${s.admissionNumber}] • ${item.batchName} • $phone\nStatus: ${item.status} (₹${item.amountDue.toInt()})',
                                 style: TextStyle(
                                   fontSize: 11,
                                   color: item.status == 'Overdue' ? Colors.red.shade700 : Colors.black87,
-                                ),
-                              ),
+                                ), maxLines: 2, overflow: TextOverflow.ellipsis),
                               activeColor: const Color(0xFF004D40),
                               onChanged: (val) {
                                 setState(() {

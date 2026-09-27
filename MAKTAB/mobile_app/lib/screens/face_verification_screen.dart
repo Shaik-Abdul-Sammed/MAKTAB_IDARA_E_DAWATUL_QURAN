@@ -106,7 +106,7 @@ class _FaceVerificationScreenState extends State<FaceVerificationScreen> {
   Future<void> _toggleCamera() async {
     if (_availableCameras.length < 2) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No other cameras found.')),
+        const SnackBar(content: Text('No other cameras found.', maxLines: 2, overflow: TextOverflow.ellipsis)),
       );
       return;
     }
@@ -124,7 +124,7 @@ class _FaceVerificationScreenState extends State<FaceVerificationScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error switching camera: $e')),
+        SnackBar(content: Text('Error switching camera: $e', maxLines: 2, overflow: TextOverflow.ellipsis)),
       );
     }
   }

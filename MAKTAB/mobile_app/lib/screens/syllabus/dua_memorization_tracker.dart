@@ -93,7 +93,7 @@ class DuaMemorizationTrackerScreen extends StatelessWidget {
                     child: ElevatedButton.icon(
                       onPressed: () {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Trigger action flow')),
+                          const SnackBar(content: Text('Trigger action flow', maxLines: 2, overflow: TextOverflow.ellipsis)),
                         );
                       },
                       icon: const Icon(Icons.edit),

@@ -145,7 +145,7 @@ class _TeacherFeesScreenState extends State<TeacherFeesScreen> {
     } else {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No UPI application found on device.')),
+          const SnackBar(content: Text('No UPI application found on device.', maxLines: 2, overflow: TextOverflow.ellipsis)),
         );
       }
     }
@@ -159,6 +159,7 @@ class _TeacherFeesScreenState extends State<TeacherFeesScreen> {
       studentName: s.name,
       admissionNumber: s.admissionNumber,
       dueDate: item.dueDate,
+      languageCode: LanguageResolver.forStudent(s),
     );
     await WhatsAppUtility.launchWhatsApp(phone, msg, context: context);
   }
@@ -179,7 +180,7 @@ class _TeacherFeesScreenState extends State<TeacherFeesScreen> {
     );
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Notification sent for ${s.name}')),
+        SnackBar(content: Text('Notification sent for ${s.name}', maxLines: 2, overflow: TextOverflow.ellipsis)),
       );
     }
   }
@@ -195,7 +196,7 @@ class _TeacherFeesScreenState extends State<TeacherFeesScreen> {
       barrierDismissible: false,
       builder: (context) => StatefulBuilder(
         builder: (context, setStateBuilder) => AlertDialog(
-          title: Text('Record Fee Payment: ${item.student.name}'),
+          title: Text('Record Fee Payment: ${item.student.name}', maxLines: 1, overflow: TextOverflow.ellipsis),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -360,7 +361,7 @@ class _TeacherFeesScreenState extends State<TeacherFeesScreen> {
               if (context.mounted) {
                 Navigator.pop(context);
                 _loadFeeRecords();
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Fee structure updated successfully')));
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Fee structure updated successfully', maxLines: 2, overflow: TextOverflow.ellipsis)));
               }
             },
             style: ElevatedButton.styleFrom(backgroundColor: AppIcons.primaryTeal, foregroundColor: Colors.white),
@@ -688,7 +689,7 @@ class _TeacherFeesScreenState extends State<TeacherFeesScreen> {
     showDialog(
       context: context,
       builder: (ctx) => SimpleDialog(
-        title: Text(loc?.translate('fee_record_payment') ?? 'Record Payment'),
+        title: Text(loc?.translate('fee_record_payment') ?? 'Record Payment', maxLines: 1, overflow: TextOverflow.ellipsis),
         children: _feeItems.map((item) => SimpleDialogOption(
           onPressed: () {
             Navigator.pop(ctx);

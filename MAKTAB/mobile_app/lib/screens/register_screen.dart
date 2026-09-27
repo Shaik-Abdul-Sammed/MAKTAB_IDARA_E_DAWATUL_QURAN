@@ -88,7 +88,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Account created! Please log in.'),
+            content: Text('Account created! Please log in.', maxLines: 2, overflow: TextOverflow.ellipsis),
             backgroundColor: Color(0xFF004D40),
           ),
         );
@@ -96,7 +96,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Registration failed. Please try again.'),
+            content: Text('Registration failed. Please try again.', maxLines: 2, overflow: TextOverflow.ellipsis),
             backgroundColor: Colors.red,
           ),
         );
@@ -104,7 +104,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+        SnackBar(content: Text('Error: $e', maxLines: 2, overflow: TextOverflow.ellipsis), backgroundColor: Colors.red),
       );
     } finally {
       if (mounted) setState(() => _isLoading = false);

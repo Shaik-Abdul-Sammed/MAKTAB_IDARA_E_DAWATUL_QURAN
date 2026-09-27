@@ -50,7 +50,7 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
   Future<void> _callParent() async {
     final phone = widget.student.phone;
     if (phone == null || phone.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No phone number on file.')));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No phone number on file.', maxLines: 2, overflow: TextOverflow.ellipsis)));
       return;
     }
 
@@ -69,14 +69,14 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
         await launchUrl(url);
       } else {
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Calling $phone...')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Calling $phone...', maxLines: 2, overflow: TextOverflow.ellipsis)));
       }
     } catch (e) {
       debugPrint('[StudentProfileScreen._callParent] launch failed: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Could not open the app. Please try again.'),
+            content: Text('Could not open the app. Please try again.', maxLines: 2, overflow: TextOverflow.ellipsis),
             backgroundColor: Colors.redAccent,
           ),
         );
@@ -87,7 +87,7 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
   Future<void> _openWhatsApp() async {
     final phone = widget.student.phone;
     if (phone == null || phone.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No phone number on file.')));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No phone number on file.', maxLines: 2, overflow: TextOverflow.ellipsis)));
       return;
     }
     final cleanPhone = phone.replaceAll(RegExp(r'\D'), '');
@@ -98,14 +98,14 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
         await launchUrl(url, mode: LaunchMode.externalApplication);
       } else {
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Could not open WhatsApp for $phone')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Could not open WhatsApp for $phone', maxLines: 2, overflow: TextOverflow.ellipsis)));
       }
     } catch (e) {
       debugPrint('[StudentProfileScreen._openWhatsApp] launch failed: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Could not open the app. Please try again.'),
+            content: Text('Could not open the app. Please try again.', maxLines: 2, overflow: TextOverflow.ellipsis),
             backgroundColor: Colors.redAccent,
           ),
         );
@@ -176,7 +176,7 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
     if (updated == true && mounted) {
       setState(() {});
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Student details updated successfully!'), backgroundColor: Color(0xFF004D40)),
+        const SnackBar(content: Text('Student details updated successfully!', maxLines: 2, overflow: TextOverflow.ellipsis), backgroundColor: Color(0xFF004D40)),
       );
     }
   }
@@ -347,8 +347,8 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
               ),
               child: Icon(icon, color: const Color(0xFF004D40)),
             ),
-            title: Text(title, style: const TextStyle(fontSize: 12, color: Colors.grey)),
-            subtitle: Text(value, style: const TextStyle(fontSize: 15, color: Colors.black87, fontWeight: FontWeight.bold)),
+            title: Text(title, style: const TextStyle(fontSize: 12, color: Colors.grey), maxLines: 1, overflow: TextOverflow.ellipsis),
+            subtitle: Text(value, style: const TextStyle(fontSize: 15, color: Colors.black87, fontWeight: FontWeight.bold), maxLines: 2, overflow: TextOverflow.ellipsis),
           ),
         ),
       ),

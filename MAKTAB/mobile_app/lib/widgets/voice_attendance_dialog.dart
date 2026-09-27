@@ -170,7 +170,7 @@ class _VoiceAttendanceDialogState extends State<VoiceAttendanceDialog> {
       if ((_statuses.isEmpty || result.studentStatuses.isEmpty) && speechText.isNotEmpty) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-            content: Text('No students matched. Try speaking slowly and clearly, or tap a name to mark manually.'),
+            content: Text('No students matched. Try speaking slowly and clearly, or tap a name to mark manually.', maxLines: 2, overflow: TextOverflow.ellipsis),
             duration: Duration(seconds: 4),
           ));
         }
@@ -294,7 +294,7 @@ class _VoiceAttendanceDialogState extends State<VoiceAttendanceDialog> {
                     return ListTile(
                       dense: true,
                       contentPadding: const EdgeInsets.symmetric(horizontal: 8),
-                      title: Text(item.name, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                      title: Text(item.name, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13), maxLines: 1, overflow: TextOverflow.ellipsis),
                       trailing: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(

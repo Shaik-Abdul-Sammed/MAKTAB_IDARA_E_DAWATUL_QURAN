@@ -91,7 +91,7 @@ class _TeacherAttendanceHistoryScreenState
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-              content: Text('Error loading teachers: $e'),
+              content: Text('Error loading teachers: $e', maxLines: 2, overflow: TextOverflow.ellipsis),
               backgroundColor: AppColors.error),
         );
       }
@@ -115,7 +115,7 @@ class _TeacherAttendanceHistoryScreenState
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-              content: Text('Error loading history: $e'),
+              content: Text('Error loading history: $e', maxLines: 2, overflow: TextOverflow.ellipsis),
               backgroundColor: AppColors.error),
         );
       }
@@ -316,8 +316,7 @@ class _TeacherAttendanceHistoryScreenState
                                       teacher.name,
                                       style: const TextStyle(
                                           fontWeight: FontWeight.bold,
-                                          color: Color(0xFF1A1A1A)),
-                                    ),
+                                          color: Color(0xFF1A1A1A)), maxLines: 1, overflow: TextOverflow.ellipsis),
                                   );
                                 }).toList(),
                                 onChanged: _onTeacherChanged,
@@ -546,8 +545,7 @@ class _TeacherAttendanceHistoryScreenState
                                         fontWeight: FontWeight.bold,
                                         fontSize: 14,
                                         color: Color(0xFF1A1A1A),
-                                      ),
-                                    ),
+                                      ), maxLines: 1, overflow: TextOverflow.ellipsis),
                                     subtitle: record.remarks != null &&
                                             record.remarks!.isNotEmpty
                                         ? Text(

@@ -124,7 +124,7 @@ class _StudentManagementScreenState extends State<StudentManagementScreen> {
                               items: uniqueBatches.map((batch) {
                                 return DropdownMenuItem<int?>(
                                   value: batch.id,
-                                  child: Text(batch.name),
+                                  child: Text(batch.name, maxLines: 1, overflow: TextOverflow.ellipsis),
                                 );
                               }).toList(),
                               onChanged: (val) {
@@ -190,7 +190,7 @@ class _StudentManagementScreenState extends State<StudentManagementScreen> {
           builder: (context, setDialogState) {
             return AlertDialog(
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-              title: Text('Edit Student: ${student.name}', style: const TextStyle(color: Color(0xFF004D40), fontWeight: FontWeight.bold)),
+              title: Text('Edit Student: ${student.name}', style: const TextStyle(color: Color(0xFF004D40), fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
               content: Form(
                 key: formKey,
                 child: SingleChildScrollView(
@@ -254,7 +254,7 @@ class _StudentManagementScreenState extends State<StudentManagementScreen> {
                             items: uniqueBatches.map((batch) {
                               return DropdownMenuItem<int?>(
                                 value: batch.id,
-                                child: Text(batch.name),
+                                child: Text(batch.name, maxLines: 1, overflow: TextOverflow.ellipsis),
                               );
                             }).toList(),
                             onChanged: (val) {
@@ -459,7 +459,7 @@ class _StudentManagementScreenState extends State<StudentManagementScreen> {
                                   await _studentRepository.deleteStudent(student.id!);
                                   if (!context.mounted) return;
                                   ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(content: Text('${student.name} deleted successfully'))
+                                    SnackBar(content: Text('${student.name} deleted successfully', maxLines: 2, overflow: TextOverflow.ellipsis))
                                   );
                                   _fetchData();
                                 }
@@ -478,7 +478,7 @@ class _StudentManagementScreenState extends State<StudentManagementScreen> {
                                     foregroundColor: Colors.white,
                                     child: Text(student.name.isNotEmpty ? student.name[0].toUpperCase() : 'S'),
                                   ),
-                                  title: Text(student.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Color(0xFF004D40))),
+                                  title: Text(student.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Color(0xFF004D40)), maxLines: 1, overflow: TextOverflow.ellipsis),
                                   subtitle: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [

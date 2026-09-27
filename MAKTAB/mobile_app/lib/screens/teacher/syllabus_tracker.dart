@@ -35,7 +35,7 @@ class _SyllabusTrackerScreenState extends State<SyllabusTrackerScreen> {
     } catch (e) {
         if (!mounted) return;
         setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error loading data: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error loading data: $e', maxLines: 2, overflow: TextOverflow.ellipsis)));
     }
   }
 
@@ -50,7 +50,7 @@ class _SyllabusTrackerScreenState extends State<SyllabusTrackerScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(isEditing ? 'Edit Syllabus Item' : 'New Syllabus Item'),
+        title: Text(isEditing ? 'Edit Syllabus Item' : 'New Syllabus Item', maxLines: 1, overflow: TextOverflow.ellipsis),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -211,8 +211,8 @@ class _SyllabusTrackerScreenState extends State<SyllabusTrackerScreen> {
                                 elevation: 1,
                                 child: ListTile(
                                   leading: const CircleAvatar(backgroundColor: Color(0xFF004D40), foregroundColor: Colors.white, child: Icon(Icons.menu_book, size: 18)),
-                                  title: Text(item.topic, style: const TextStyle(fontWeight: FontWeight.bold)),
-                                  subtitle: Text('Status: ${item.status} | ${item.description}'),
+                                  title: Text(item.topic, style: const TextStyle(fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                  subtitle: Text('Status: ${item.status} | ${item.description}', maxLines: 2, overflow: TextOverflow.ellipsis),
                                   trailing: const Icon(Icons.chevron_right),
                                   onTap: () => _showDetailSheet(item),
                                 ),

@@ -61,13 +61,13 @@ class _TeacherDetailsScreenState extends State<TeacherDetailsScreen> {
         await _provider.deleteCurrentTeacher();
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Teacher deleted.'), backgroundColor: Color(0xFF004D40)),
+          const SnackBar(content: Text('Teacher deleted.', maxLines: 2, overflow: TextOverflow.ellipsis), backgroundColor: Color(0xFF004D40)),
         );
         context.pop();
       } catch (_) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to delete. Please retry.'), backgroundColor: Colors.red),
+          const SnackBar(content: Text('Failed to delete. Please retry.', maxLines: 2, overflow: TextOverflow.ellipsis), backgroundColor: Colors.red),
         );
       }
     }
@@ -80,14 +80,14 @@ class _TeacherDetailsScreenState extends State<TeacherDetailsScreen> {
       final isActive = _provider.teacher?.isActive ?? false;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(isActive ? 'Teacher activated.' : 'Teacher deactivated.'),
+          content: Text(isActive ? 'Teacher activated.' : 'Teacher deactivated.', maxLines: 2, overflow: TextOverflow.ellipsis),
           backgroundColor: isActive ? Colors.green.shade700 : Colors.orange.shade700,
         ),
       );
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to update status.'), backgroundColor: Colors.red),
+        const SnackBar(content: Text('Failed to update status.', maxLines: 2, overflow: TextOverflow.ellipsis), backgroundColor: Colors.red),
       );
     }
   }
@@ -108,7 +108,7 @@ class _TeacherDetailsScreenState extends State<TeacherDetailsScreen> {
       builder: (context) {
         return AlertDialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: Text('Reset PIN for ${teacher.name}', style: const TextStyle(color: Color(0xFF004D40), fontWeight: FontWeight.bold)),
+          title: Text('Reset PIN for ${teacher.name}', style: const TextStyle(color: Color(0xFF004D40), fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
           content: Form(
             key: formKey,
             child: TextFormField(
@@ -144,7 +144,7 @@ class _TeacherDetailsScreenState extends State<TeacherDetailsScreen> {
                   if (context.mounted) {
                     Navigator.pop(context);
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('PIN successfully updated for ${teacher.name}'))
+                      SnackBar(content: Text('PIN successfully updated for ${teacher.name}', maxLines: 2, overflow: TextOverflow.ellipsis))
                     );
                     
                     if (teacher.mobile != null && teacher.mobile!.isNotEmpty) {

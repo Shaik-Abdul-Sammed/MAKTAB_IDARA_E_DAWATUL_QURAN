@@ -116,7 +116,7 @@ class _TeacherSalaryManagementScreenState extends State<TeacherSalaryManagementS
   Future<void> _launchUpiPayment(User teacher, int remainingAmount) async {
     if (teacher.upiId == null || teacher.upiId!.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Teacher has no UPI ID configured. Edit salary profile first.')),
+        const SnackBar(content: Text('Teacher has no UPI ID configured. Edit salary profile first.', maxLines: 2, overflow: TextOverflow.ellipsis)),
       );
       return;
     }
@@ -136,7 +136,7 @@ class _TeacherSalaryManagementScreenState extends State<TeacherSalaryManagementS
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Could not open the app. Please try again.'),
+            content: Text('Could not open the app. Please try again.', maxLines: 2, overflow: TextOverflow.ellipsis),
             backgroundColor: Colors.redAccent,
           ),
         );
@@ -209,7 +209,7 @@ class _TeacherSalaryManagementScreenState extends State<TeacherSalaryManagementS
 
             return AlertDialog(
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-              title: Text('Record Salary Payment — ${teacher.name}', style: const TextStyle(fontSize: 18, color: Color(0xFF004D40), fontWeight: FontWeight.bold)),
+              title: Text('Record Salary Payment — ${teacher.name}', style: const TextStyle(fontSize: 18, color: Color(0xFF004D40), fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
               content: SingleChildScrollView(
                 child: Form(
                   key: formKey,
@@ -496,7 +496,7 @@ class _TeacherSalaryManagementScreenState extends State<TeacherSalaryManagementS
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text('Edit Salary Config — ${teacher.name}', style: const TextStyle(color: Color(0xFF004D40), fontWeight: FontWeight.bold)),
+        title: Text('Edit Salary Config — ${teacher.name}', style: const TextStyle(color: Color(0xFF004D40), fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -565,8 +565,7 @@ class _TeacherSalaryManagementScreenState extends State<TeacherSalaryManagementS
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
               title: Text(
                 'Edit Salary Payment — ${teacher.name}',
-                style: const TextStyle(fontSize: 18, color: Color(0xFF004D40), fontWeight: FontWeight.bold),
-              ),
+                style: const TextStyle(fontSize: 18, color: Color(0xFF004D40), fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
               content: SingleChildScrollView(
                 child: Form(
                   key: formKey,
@@ -640,7 +639,7 @@ class _TeacherSalaryManagementScreenState extends State<TeacherSalaryManagementS
                       if (context.mounted) {
                         Navigator.pop(dialogCtx);
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Payment updated successfully')),
+                          const SnackBar(content: Text('Payment updated successfully', maxLines: 2, overflow: TextOverflow.ellipsis)),
                         );
                         _loadSalaryData();
                       }
@@ -679,7 +678,7 @@ class _TeacherSalaryManagementScreenState extends State<TeacherSalaryManagementS
       await _salaryRepository.deletePayment(payment.id!);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Payment deleted successfully')),
+          const SnackBar(content: Text('Payment deleted successfully', maxLines: 2, overflow: TextOverflow.ellipsis)),
         );
         _loadSalaryData();
       }
@@ -749,7 +748,7 @@ class _TeacherSalaryManagementScreenState extends State<TeacherSalaryManagementS
     final loc = AppLocalizations.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: Text(loc?.translate('salary_mgmt_title') ?? 'Salary & Payment Management'),
+        title: Text(loc?.translate('salary_mgmt_title') ?? 'Salary & Payment Management', maxLines: 1, overflow: TextOverflow.ellipsis),
                 flexibleSpace: Container(
           decoration: const BoxDecoration(gradient: AppColors.primaryGradient),
         ),

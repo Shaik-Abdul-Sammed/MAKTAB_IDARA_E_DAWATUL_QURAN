@@ -66,13 +66,13 @@ class _BatchDetailsScreenState extends State<BatchDetailsScreen> {
         await _provider.deleteCurrentBatch();
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Batch deleted.'), backgroundColor: Color(0xFF004D40)),
+          const SnackBar(content: Text('Batch deleted.', maxLines: 2, overflow: TextOverflow.ellipsis), backgroundColor: Color(0xFF004D40)),
         );
         context.pop();
       } catch (_) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to delete batch.'), backgroundColor: Colors.red),
+          const SnackBar(content: Text('Failed to delete batch.', maxLines: 2, overflow: TextOverflow.ellipsis), backgroundColor: Colors.red),
         );
       }
     }
@@ -80,7 +80,7 @@ class _BatchDetailsScreenState extends State<BatchDetailsScreen> {
 
   Future<void> _broadcastWhatsApp(Batch batch, List<Student> students) async {
     if (students.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No students in batch.')));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No students in batch.', maxLines: 2, overflow: TextOverflow.ellipsis)));
       return;
     }
     final sender = context.read<AuthProvider>().currentUser?.name ?? 'Maktab Management';
@@ -303,8 +303,8 @@ class _BatchDetailContent extends StatelessWidget {
                   style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                 ),
               ),
-              title: Text(teacher!.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-              subtitle: Text(teacher!.mobile ?? 'No phone number', style: const TextStyle(fontSize: 12, color: Colors.black54)),
+              title: Text(teacher!.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15), maxLines: 1, overflow: TextOverflow.ellipsis),
+              subtitle: Text(teacher!.mobile ?? 'No phone number', style: const TextStyle(fontSize: 12, color: Colors.black54), maxLines: 2, overflow: TextOverflow.ellipsis),
               trailing: IconButton(
                 icon: const Icon(Icons.open_in_new, color: Color(0xFF004D40), size: 20),
                 onPressed: () => context.push('/admin/teachers/${teacher!.id}'),
@@ -385,8 +385,8 @@ class _BatchDetailContent extends StatelessWidget {
                       child: Text(s.name.isNotEmpty ? s.name[0].toUpperCase() : 'S',
                           style: const TextStyle(color: Color(0xFF004D40), fontWeight: FontWeight.bold, fontSize: 12)),
                     ),
-                    title: Text(s.name, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
-                    subtitle: Text('ADM: ${s.admissionNumber}', style: const TextStyle(fontSize: 11, color: Colors.black45)),
+                    title: Text(s.name, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13), maxLines: 1, overflow: TextOverflow.ellipsis),
+                    subtitle: Text('ADM: ${s.admissionNumber}', style: const TextStyle(fontSize: 11, color: Colors.black45), maxLines: 2, overflow: TextOverflow.ellipsis),
                     trailing: const Icon(Icons.chevron_right, size: 18, color: Colors.black26),
                     onTap: () => context.push('/admin/students/${s.id}'),
                   ),

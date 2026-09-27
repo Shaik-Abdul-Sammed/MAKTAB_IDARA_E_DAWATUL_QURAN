@@ -35,7 +35,7 @@ class _BatchAttendanceSelectionScreenState extends State<BatchAttendanceSelectio
     } catch (e) {
       if (mounted) {
         setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error loading batches: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error loading batches: $e', maxLines: 2, overflow: TextOverflow.ellipsis)));
       }
     }
   }

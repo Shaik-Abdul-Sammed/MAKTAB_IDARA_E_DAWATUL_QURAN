@@ -242,8 +242,7 @@ class _TeacherAssignedBatchesScreenState
                                         style: const TextStyle(
                                           fontWeight: FontWeight.bold,
                                           color: AppColors.primaryTeal,
-                                        ),
-                                      ),
+                                        ), maxLines: 1, overflow: TextOverflow.ellipsis),
                                       subtitle: Column(
                                         crossAxisAlignment:
                                             CrossAxisAlignment.start,

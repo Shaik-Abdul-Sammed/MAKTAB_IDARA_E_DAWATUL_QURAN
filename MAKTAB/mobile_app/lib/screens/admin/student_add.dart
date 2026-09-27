@@ -80,7 +80,7 @@ class _StudentAddScreenState extends State<StudentAddScreen> {
       debugPrint('[StudentAddScreen._loadDefaultAdmissionNumber] load failed: $e\n$st');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not load data.')),
+          const SnackBar(content: Text('Could not load data.', maxLines: 2, overflow: TextOverflow.ellipsis)),
         );
       }
     }
@@ -251,7 +251,7 @@ class _StudentAddScreenState extends State<StudentAddScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Student registered successfully!'),
+          content: Text('Student registered successfully!', maxLines: 2, overflow: TextOverflow.ellipsis),
           backgroundColor: Color(0xFF004D40),
         ),
       );
@@ -259,7 +259,7 @@ class _StudentAddScreenState extends State<StudentAddScreen> {
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(_provider.errorMessage),
+          content: Text(_provider.errorMessage, maxLines: 2, overflow: TextOverflow.ellipsis),
           backgroundColor: Colors.red.shade700,
           action: SnackBarAction(label: 'Retry', textColor: Colors.white, onPressed: _submit),
         ),
@@ -273,7 +273,7 @@ class _StudentAddScreenState extends State<StudentAddScreen> {
       if (!granted) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Contacts permission denied.')),
+          const SnackBar(content: Text('Contacts permission denied.', maxLines: 2, overflow: TextOverflow.ellipsis)),
         );
         return;
       }
@@ -300,12 +300,12 @@ class _StudentAddScreenState extends State<StudentAddScreen> {
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Contact imported: $name ($phone)')),
+        SnackBar(content: Text('Contact imported: $name ($phone)', maxLines: 2, overflow: TextOverflow.ellipsis)),
       );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to import contact: $e')),
+        SnackBar(content: Text('Failed to import contact: $e', maxLines: 2, overflow: TextOverflow.ellipsis)),
       );
     }
   }
@@ -546,7 +546,7 @@ class _StudentAddScreenState extends State<StudentAddScreen> {
       items: uniqueBatches.map((b) {
         return DropdownMenuItem<int?>(
           value: b.id,
-          child: Text(b.name, style: const TextStyle(fontSize: 14)),
+          child: Text(b.name, style: const TextStyle(fontSize: 14), maxLines: 1, overflow: TextOverflow.ellipsis),
         );
       }).toList(),
       onChanged: (val) => setState(() => _selectedBatchId = val),

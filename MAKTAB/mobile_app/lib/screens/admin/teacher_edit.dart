@@ -80,7 +80,7 @@ class _TeacherEditScreenState extends State<TeacherEditScreen> {
       if (result == TeacherUpdateResult.authFailed) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('PIN saved, but Firebase Auth password could not be updated. Teacher may need re-provisioning. Check the manager banner.'),
+            content: Text('PIN saved, but Firebase Auth password could not be updated. Teacher may need re-provisioning. Check the manager banner.', maxLines: 2, overflow: TextOverflow.ellipsis),
             backgroundColor: Colors.orange,
             duration: Duration(seconds: 6),
           ),
@@ -88,7 +88,7 @@ class _TeacherEditScreenState extends State<TeacherEditScreen> {
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Teacher updated successfully!'),
+            content: Text('Teacher updated successfully!', maxLines: 2, overflow: TextOverflow.ellipsis),
             backgroundColor: Color(0xFF004D40),
           ),
         );
@@ -97,7 +97,7 @@ class _TeacherEditScreenState extends State<TeacherEditScreen> {
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(_provider.errorMessage),
+          content: Text(_provider.errorMessage, maxLines: 2, overflow: TextOverflow.ellipsis),
           backgroundColor: Colors.red.shade700,
           action: SnackBarAction(label: 'Retry', textColor: Colors.white, onPressed: _submit),
         ),

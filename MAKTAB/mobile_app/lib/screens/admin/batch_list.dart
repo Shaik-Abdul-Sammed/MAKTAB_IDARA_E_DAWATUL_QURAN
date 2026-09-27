@@ -61,7 +61,7 @@ class _BatchListScreenState extends State<BatchListScreen> {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Batch "${batch.name}" deleted.'),
+            content: Text('Batch "${batch.name}" deleted.', maxLines: 2, overflow: TextOverflow.ellipsis),
             backgroundColor: Colors.green.shade700,
           ),
         );
@@ -467,30 +467,35 @@ class _BatchTile extends StatelessWidget {
             ),
           ],
         ),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(
-                color: teacherName != 'Unassigned' ? Colors.green.shade50 : Colors.orange.shade50,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: teacherName != 'Unassigned' ? Colors.green.shade300 : Colors.orange.shade300,
+        trailing: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 120),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: teacherName != 'Unassigned' ? Colors.green.shade50 : Colors.orange.shade50,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: teacherName != 'Unassigned' ? Colors.green.shade300 : Colors.orange.shade300,
+                  ),
+                ),
+                child: Text(
+                  teacherName != 'Unassigned' ? 'Assigned' : 'Unassigned',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    color: teacherName != 'Unassigned' ? Colors.green.shade700 : Colors.orange.shade700,
+                  ),
                 ),
               ),
-              child: Text(
-                teacherName != 'Unassigned' ? 'Assigned' : 'Unassigned',
-                style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.bold,
-                  color: teacherName != 'Unassigned' ? Colors.green.shade700 : Colors.orange.shade700,
-                ),
-              ),
-            ),
-            const SizedBox(width: 6),
-            const Icon(Icons.chevron_right, color: Colors.black26),
-          ],
+              const SizedBox(width: 6),
+              const Icon(Icons.chevron_right, color: Colors.black26),
+            ],
+          ),
         ),
         onTap: () => context.push('/admin/batches/${batch.id}'),
           ),

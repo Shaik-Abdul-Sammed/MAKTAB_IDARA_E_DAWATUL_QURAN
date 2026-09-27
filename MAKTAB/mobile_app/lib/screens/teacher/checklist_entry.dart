@@ -42,7 +42,7 @@ class _ChecklistEntryScreenState extends State<ChecklistEntryScreen> {
     } catch (e) {
       if (mounted) {
         setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error loading data: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error loading data: $e', maxLines: 2, overflow: TextOverflow.ellipsis)));
       }
     }
   }
@@ -72,7 +72,7 @@ class _ChecklistEntryScreenState extends State<ChecklistEntryScreen> {
                 });
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text('Voice Matched ${newCompleted.length} items: "${val.recognizedWords}"'),
+                    content: Text('Voice Matched ${newCompleted.length} items: "${val.recognizedWords}"', maxLines: 2, overflow: TextOverflow.ellipsis),
                     duration: const Duration(seconds: 2),
                   ),
                 );
@@ -83,7 +83,7 @@ class _ChecklistEntryScreenState extends State<ChecklistEntryScreen> {
       } else {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Speech recognition not available on this device.')),
+            const SnackBar(content: Text('Speech recognition not available on this device.', maxLines: 2, overflow: TextOverflow.ellipsis)),
           );
         }
       }
@@ -233,9 +233,8 @@ class _ChecklistEntryScreenState extends State<ChecklistEntryScreen> {
                                           fontWeight: FontWeight.bold,
                                           decoration: isDone ? TextDecoration.lineThrough : null,
                                           color: isDone ? Colors.green.shade900 : Colors.black87,
-                                        ),
-                                      ),
-                                      subtitle: Text('Category: ${item.category}'),
+                                        ), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                      subtitle: Text('Category: ${item.category}', maxLines: 2, overflow: TextOverflow.ellipsis),
                                       secondary: IconButton(
                                         icon: const Icon(Icons.info_outline_rounded, size: 20, color: Color(0xFF004D40)),
                                         onPressed: () => _showDetailSheet(item),

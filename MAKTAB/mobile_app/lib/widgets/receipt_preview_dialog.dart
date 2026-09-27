@@ -23,7 +23,7 @@ class ReceiptPreviewDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text(title),
+      title: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -54,7 +54,7 @@ class ReceiptPreviewDialog extends StatelessWidget {
           onPressed: () {
             Clipboard.setData(ClipboardData(text: receiptText));
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Receipt copied')),
+              const SnackBar(content: Text('Receipt copied', maxLines: 2, overflow: TextOverflow.ellipsis)),
             );
           },
           child: const Text('Copy'),
@@ -79,7 +79,7 @@ class ReceiptPreviewDialog extends StatelessWidget {
               } catch (e) {
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('PDF error: $e')),
+                    SnackBar(content: Text('PDF error: $e', maxLines: 2, overflow: TextOverflow.ellipsis)),
                   );
                 }
               }

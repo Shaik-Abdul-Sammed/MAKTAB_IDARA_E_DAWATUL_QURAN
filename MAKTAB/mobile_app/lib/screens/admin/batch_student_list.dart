@@ -36,7 +36,7 @@ class _BatchStudentListScreenState extends State<BatchStudentListScreen> {
     } catch (e) {
       if (mounted) {
         setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error loading data: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error loading data: $e', maxLines: 2, overflow: TextOverflow.ellipsis)));
       }
     }
   }
@@ -199,8 +199,8 @@ class _BatchStudentListScreenState extends State<BatchStudentListScreen> {
                                     foregroundColor: Colors.white,
                                     child: Icon(Icons.person, size: 18),
                                   ),
-                                  title: Text(item.name, style: const TextStyle(fontWeight: FontWeight.bold)),
-                                  subtitle: Text('Enrollment No: ${item.admissionNumber}'),
+                                  title: Text(item.name, style: const TextStyle(fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                  subtitle: Text('Enrollment No: ${item.admissionNumber}', maxLines: 2, overflow: TextOverflow.ellipsis),
                                   trailing: const Icon(Icons.chevron_right),
                                   onTap: () => _showDetailSheet(item),
                                 ),

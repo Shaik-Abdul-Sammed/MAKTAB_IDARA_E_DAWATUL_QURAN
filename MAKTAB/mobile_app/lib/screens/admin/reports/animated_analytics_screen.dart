@@ -69,7 +69,7 @@ class _AnimatedAnalyticsScreenState extends State<AnimatedAnalyticsScreen> with 
       debugPrint('[AnimatedAnalyticsScreen._fetchData] load failed: $e\n$st');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not load data.')),
+          const SnackBar(content: Text('Could not load data.', maxLines: 2, overflow: TextOverflow.ellipsis)),
         );
       }
     }

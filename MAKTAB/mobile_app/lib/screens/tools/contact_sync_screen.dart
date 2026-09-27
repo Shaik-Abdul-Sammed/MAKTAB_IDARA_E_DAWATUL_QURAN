@@ -57,13 +57,13 @@ class _ContactSyncScreenState extends State<ContactSyncScreen> {
       } else {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Calling $phone...')),
+          SnackBar(content: Text('Calling $phone...', maxLines: 2, overflow: TextOverflow.ellipsis)),
         );
       }
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Dialer intent launched for $phone')),
+        SnackBar(content: Text('Dialer intent launched for $phone', maxLines: 2, overflow: TextOverflow.ellipsis)),
       );
     }
   }
@@ -81,7 +81,7 @@ class _ContactSyncScreenState extends State<ContactSyncScreen> {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Contact vCard created for ${s.name} ($phone)'),
+        content: Text('Contact vCard created for ${s.name} ($phone)', maxLines: 2, overflow: TextOverflow.ellipsis),
       ),
     );
   }

@@ -59,13 +59,13 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
         await _provider.deleteCurrentStudent();
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Student profile deleted.'), backgroundColor: Color(0xFF004D40)),
+          const SnackBar(content: Text('Student profile deleted.', maxLines: 2, overflow: TextOverflow.ellipsis), backgroundColor: Color(0xFF004D40)),
         );
         context.pop();
       } catch (_) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to delete student.'), backgroundColor: Colors.red),
+          const SnackBar(content: Text('Failed to delete student.', maxLines: 2, overflow: TextOverflow.ellipsis), backgroundColor: Colors.red),
         );
       }
     }
@@ -155,14 +155,14 @@ class _StudentDetailContent extends StatelessWidget {
   Future<void> _sendFeeReminder(BuildContext context) async {
     if (student.phone == null || student.phone!.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No contact number available to send reminder.')),
+        const SnackBar(content: Text('No contact number available to send reminder.', maxLines: 2, overflow: TextOverflow.ellipsis)),
       );
       return;
     }
     final amount = student.feesAmount ?? 0;
     if (amount <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No fee amount set for this student.')),
+        const SnackBar(content: Text('No fee amount set for this student.', maxLines: 2, overflow: TextOverflow.ellipsis)),
       );
       return;
     }
@@ -206,7 +206,7 @@ class _StudentDetailContent extends StatelessWidget {
       } else {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Could not launch messaging app.')),
+            const SnackBar(content: Text('Could not launch messaging app.', maxLines: 2, overflow: TextOverflow.ellipsis)),
           );
         }
       }
@@ -317,8 +317,8 @@ class _StudentDetailContent extends StatelessWidget {
                   backgroundColor: Color(0xFFE8F5E9),
                   child: Icon(Icons.currency_rupee, color: Color(0xFF004D40), size: 18),
                 ),
-                title: Text('₹${p.amount}', style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF004D40))),
-                subtitle: Text('${p.mode}\\n${_formatDateTime(p.timestamp)}', style: const TextStyle(fontSize: 12)),
+                title: Text('₹${p.amount}', style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF004D40)), maxLines: 1, overflow: TextOverflow.ellipsis),
+                subtitle: Text('${p.mode}\\n${_formatDateTime(p.timestamp)}', style: const TextStyle(fontSize: 12), maxLines: 2, overflow: TextOverflow.ellipsis),
                 isThreeLine: true,
                 trailing: IconButton(
                   icon: const Icon(Icons.delete_outline, color: Colors.red),

@@ -224,7 +224,7 @@ class _ReportsDashboardState extends State<ReportsDashboard> {
                         underline: const SizedBox(),
                         items: uniqueBatches.map((b) => DropdownMenuItem(
                           value: b,
-                          child: Text(b.name, style: const TextStyle(fontWeight: FontWeight.bold)),
+                          child: Text(b.name, style: const TextStyle(fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
                         )).toList(),
                         onChanged: (val) {
                           setState(() {
@@ -255,8 +255,8 @@ class _ReportsDashboardState extends State<ReportsDashboard> {
                           return Card(
                             margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                             child: ListTile(
-                              title: Text(student.name, style: const TextStyle(fontWeight: FontWeight.bold)),
-                              subtitle: Text('Adm No: ${student.admissionNumber}'),
+                              title: Text(student.name, style: const TextStyle(fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
+                              subtitle: Text('Adm No: ${student.admissionNumber}', maxLines: 2, overflow: TextOverflow.ellipsis),
                               trailing: IconButton(
                                 icon: const Icon(Icons.auto_awesome, color: Colors.purple),
                                 onPressed: () => _showAiSummaryDialog(student),

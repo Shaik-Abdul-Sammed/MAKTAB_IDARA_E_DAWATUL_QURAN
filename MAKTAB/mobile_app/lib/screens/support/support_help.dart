@@ -17,14 +17,14 @@ class _SupportHelpScreenState extends State<SupportHelpScreen> {
         await launchUrl(url, mode: LaunchMode.externalApplication);
       } else {
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Opening WhatsApp Support...')));
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Opening WhatsApp Support...', maxLines: 2, overflow: TextOverflow.ellipsis)));
       }
     } catch (e) {
       debugPrint('[SupportHelpScreen._openWhatsAppSupport] launch failed: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Could not open the app. Please try again.'),
+            content: Text('Could not open the app. Please try again.', maxLines: 2, overflow: TextOverflow.ellipsis),
             backgroundColor: Colors.redAccent,
           ),
         );
@@ -39,14 +39,14 @@ class _SupportHelpScreenState extends State<SupportHelpScreen> {
         await launchUrl(url);
       } else {
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Opening Email app...')));
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Opening Email app...', maxLines: 2, overflow: TextOverflow.ellipsis)));
       }
     } catch (e) {
       debugPrint('[SupportHelpScreen._emailSupport] launch failed: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Could not open the app. Please try again.'),
+            content: Text('Could not open the app. Please try again.', maxLines: 2, overflow: TextOverflow.ellipsis),
             backgroundColor: Colors.redAccent,
           ),
         );

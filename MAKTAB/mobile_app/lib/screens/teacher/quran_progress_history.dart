@@ -48,7 +48,7 @@ class _QuranProgressHistoryScreenState extends State<QuranProgressHistoryScreen>
     } catch (e) {
       if (mounted) {
         setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error loading data: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error loading data: $e', maxLines: 2, overflow: TextOverflow.ellipsis)));
       }
     }
   }
@@ -61,7 +61,7 @@ class _QuranProgressHistoryScreenState extends State<QuranProgressHistoryScreen>
     if (phone.trim().isEmpty) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No parent contact number on record.')),
+          const SnackBar(content: Text('No parent contact number on record.', maxLines: 2, overflow: TextOverflow.ellipsis)),
         );
       }
       return;
@@ -102,7 +102,7 @@ class _QuranProgressHistoryScreenState extends State<QuranProgressHistoryScreen>
     if (todayEntries.isEmpty) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No Sabaq entries recorded for today.')),
+          const SnackBar(content: Text('No Sabaq entries recorded for today.', maxLines: 2, overflow: TextOverflow.ellipsis)),
         );
       }
       return;
@@ -128,7 +128,7 @@ class _QuranProgressHistoryScreenState extends State<QuranProgressHistoryScreen>
     if (groupedByPhone.isEmpty) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No valid parent phone numbers found for today\'s entries.')),
+          const SnackBar(content: Text('No valid parent phone numbers found for today\'s entries.', maxLines: 2, overflow: TextOverflow.ellipsis)),
         );
       }
       return;
@@ -405,7 +405,7 @@ $maktabName
                                             ),
                                           ],
                                         ),
-                                        subtitle: Text('Date: ${item.date} | Ayah: ${item.ayahFrom}–${item.ayahTo} | Grade: ${item.grade}'),
+                                        subtitle: Text('Date: ${item.date} | Ayah: ${item.ayahFrom}–${item.ayahTo} | Grade: ${item.grade}', maxLines: 2, overflow: TextOverflow.ellipsis),
                                         trailing: Row(
                                           mainAxisSize: MainAxisSize.min,
                                           children: [

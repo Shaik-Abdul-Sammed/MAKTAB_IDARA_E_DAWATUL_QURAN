@@ -21,7 +21,7 @@ class _ExportConfigScreenState extends State<ExportConfigScreen> {
 
   void _save() {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('PDF Header & Branding Settings Saved!'), backgroundColor: Color(0xFF004D40)),
+      const SnackBar(content: Text('PDF Header & Branding Settings Saved!', maxLines: 2, overflow: TextOverflow.ellipsis), backgroundColor: Color(0xFF004D40)),
     );
   }
 

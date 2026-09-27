@@ -247,24 +247,29 @@ class _AdminMessagesScreenState extends State<AdminMessagesScreen> {
                                   ),
                                 ),
                               ),
-                              trailing: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  if (unreadCount > 0)
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-                                      decoration: BoxDecoration(
-                                        color: Colors.redAccent,
-                                        borderRadius: BorderRadius.circular(10),
+                              trailing: ConstrainedBox(
+                                constraints: const BoxConstraints(maxWidth: 80),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    if (unreadCount > 0)
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                                        decoration: BoxDecoration(
+                                          color: Colors.redAccent,
+                                          borderRadius: BorderRadius.circular(10),
+                                        ),
+                                        child: Text(
+                                          '$unreadCount',
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                                        ),
                                       ),
-                                      child: Text(
-                                        '$unreadCount',
-                                        style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
-                                      ),
-                                    ),
-                                  const SizedBox(width: 4),
-                                  const Icon(Icons.chevron_right, color: Colors.grey),
-                                ],
+                                    const SizedBox(width: 4),
+                                    const Icon(Icons.chevron_right, color: Colors.grey),
+                                  ],
+                                ),
                               ),
                               onTap: () async {
                                 final name = Uri.encodeComponent(teacher.name);

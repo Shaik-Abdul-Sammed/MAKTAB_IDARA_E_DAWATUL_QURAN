@@ -187,7 +187,7 @@ class _PasswordVaultScreenState extends State<PasswordVaultScreen>
       await _load();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('"${entry.label}" deleted'),
+          content: Text('"${entry.label}" deleted', maxLines: 2, overflow: TextOverflow.ellipsis),
           backgroundColor: Colors.red.shade700,
           duration: const Duration(seconds: 2),
         ));
@@ -319,7 +319,7 @@ class _PasswordVaultScreenState extends State<PasswordVaultScreen>
                 await _save(entry);
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                    content: Text(existing == null ? '"${entry.label}" saved!' : '"${entry.label}" updated!'),
+                    content: Text(existing == null ? '"${entry.label}" saved!' : '"${entry.label}" updated!', maxLines: 2, overflow: TextOverflow.ellipsis),
                     backgroundColor: _teal,
                     duration: const Duration(seconds: 2),
                   ));

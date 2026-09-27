@@ -137,7 +137,7 @@ class _AttendanceEntryScreenState extends State<AttendanceEntryScreen>
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Failed to save attendance: $e'),
+          content: Text('Failed to save attendance: $e', maxLines: 2, overflow: TextOverflow.ellipsis),
           backgroundColor: Colors.red,
         ),
       );
@@ -565,7 +565,7 @@ class _AttendanceEntryScreenState extends State<AttendanceEntryScreen>
                           hint: Text(loc?.translate('search') ?? 'Select', style: const TextStyle(fontSize: 12)),
                           items: [
                             if (_batchTiming != null && _batchTiming!.isNotEmpty)
-                              DropdownMenuItem(value: _batchTiming!, child: Text('$_batchTiming (${loc?.translate('batches') ?? 'Batch'})', style: const TextStyle(fontSize: 12))),
+                              DropdownMenuItem(value: _batchTiming!, child: Text('$_batchTiming (${loc?.translate('batches') ?? 'Batch'})', style: const TextStyle(fontSize: 12), maxLines: 1, overflow: TextOverflow.ellipsis)),
                             ...['Morning', 'Afternoon', 'Evening']
                                 .where((t) => t != _batchTiming)
                                 .map((t) => DropdownMenuItem(value: t, child: Text(loc?.translate(t.toLowerCase()) ?? t, style: const TextStyle(fontSize: 12)))),

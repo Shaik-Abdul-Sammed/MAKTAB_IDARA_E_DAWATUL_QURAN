@@ -55,9 +55,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     if (!mounted) return;
     if (path != null) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Backup saved at $path')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Backup saved at $path', maxLines: 2, overflow: TextOverflow.ellipsis)));
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to create backup')));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to create backup', maxLines: 2, overflow: TextOverflow.ellipsis)));
     }
   }
 
@@ -74,10 +74,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
       if (!mounted) return;
       if (success) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Backup restored! Please log in again.')));
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Backup restored! Please log in again.', maxLines: 2, overflow: TextOverflow.ellipsis)));
         Provider.of<AuthProvider>(context, listen: false).logout();
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to restore backup')));
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to restore backup', maxLines: 2, overflow: TextOverflow.ellipsis)));
       }
     }
   }
@@ -88,7 +88,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF9FBE7),
       appBar: AppBar(
-        title: Text(loc?.translate('settings_screen_title') ?? 'Settings & Configuration'),
+        title: Text(loc?.translate('settings_screen_title') ?? 'Settings & Configuration', maxLines: 1, overflow: TextOverflow.ellipsis),
                 flexibleSpace: Container(
           decoration: const BoxDecoration(gradient: AppColors.primaryGradient),
         ),
@@ -107,7 +107,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       _buildSectionHeader(loc?.translate('settings_tools_integrations') ?? 'Tools & Integrations'),
                       ListTile(
                         leading: const Icon(Icons.account_balance_wallet_rounded, color: Color(0xFF004D40)),
-                        title: Text(loc?.translate('settings_fee_management_upi') ?? 'Fee Management & UPI'),
+                        title: Text(loc?.translate('settings_fee_management_upi') ?? 'Fee Management & UPI', maxLines: 1, overflow: TextOverflow.ellipsis),
                         subtitle: const Text('Track pending fees and collect via UPI'),
                         trailing: const Icon(Icons.chevron_right),
                         onTap: () => context.push('/admin/fees'),
@@ -115,7 +115,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       const Divider(height: 1),
                       ListTile(
                         leading: const Icon(Icons.chat_rounded, color: Colors.green),
-                        title: Text(loc?.translate('settings_whatsapp_broadcasts') ?? 'WhatsApp Broadcasts'),
+                        title: Text(loc?.translate('settings_whatsapp_broadcasts') ?? 'WhatsApp Broadcasts', maxLines: 1, overflow: TextOverflow.ellipsis),
                         subtitle: const Text('Send template messages to parents'),
                         trailing: const Icon(Icons.chevron_right),
                         onTap: () => context.push('/admin/tools/whatsapp'),
@@ -123,7 +123,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       const Divider(height: 1),
                       ListTile(
                         leading: const Icon(Icons.calendar_month_rounded, color: Color(0xFF004D40)),
-                        title: Text(loc?.translate('settings_calendar_sync') ?? 'Calendar Sync'),
+                        title: Text(loc?.translate('settings_calendar_sync') ?? 'Calendar Sync', maxLines: 1, overflow: TextOverflow.ellipsis),
                         subtitle: const Text('Add exam and fee due dates to device calendar'),
                         trailing: const Icon(Icons.chevron_right),
                         onTap: () => context.push('/admin/tools/calendar'),
@@ -148,7 +148,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           return ListTile(
                             leading: const Icon(Icons.dns_rounded, color: Color(0xFF004D40)),
                             title: const Text('FastAPI Server URL'),
-                            subtitle: Text(currentUrl),
+                            subtitle: Text(currentUrl, maxLines: 2, overflow: TextOverflow.ellipsis),
                             trailing: const Icon(Icons.edit_rounded),
                             onTap: () => _showServerConfigDialog(currentUrl),
                           );
@@ -169,7 +169,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           return ListTile(
                             leading: const Icon(Icons.language_rounded, color: Color(0xFF004D40)),
                             title: const Text('Preferred Language'),
-                            subtitle: Text(languages[currentCode] ?? 'English'),
+                            subtitle: Text(languages[currentCode] ?? 'English', maxLines: 2, overflow: TextOverflow.ellipsis),
                             trailing: SizedBox(
                               width: 140,
                               child: DropdownButton<String>(
@@ -193,7 +193,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     auth.setUser(updated);
                                     if (context.mounted) {
                                       ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(content: Text('Preferred language updated.')),
+                                        const SnackBar(content: Text('Preferred language updated.', maxLines: 2, overflow: TextOverflow.ellipsis)),
                                       );
                                     }
                                   }
@@ -220,7 +220,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           return ListTile(
                             leading: const Icon(Icons.language_rounded, color: Color(0xFF004D40)),
                             title: const Text('Language'),
-                            subtitle: Text(languages[currentCode] ?? 'English'),
+                            subtitle: Text(languages[currentCode] ?? 'English', maxLines: 2, overflow: TextOverflow.ellipsis),
                             trailing: SizedBox(
                               width: 140,
                               child: DropdownButton<String>(
@@ -308,8 +308,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 _buildSectionHeader('About App'),
                 const ListTile(
                   leading: Icon(Icons.info_outline_rounded, color: Color(0xFF004D40)),
-                  title: Text('Maktab Quran Management'),
-                  subtitle: Text('Version 2.4.0 (Build 2026) · Offline First'),
+                  title: Text('Maktab Quran Management', maxLines: 1, overflow: TextOverflow.ellipsis),
+                  subtitle: Text('Version 2.4.0 (Build 2026) · Offline First', maxLines: 2, overflow: TextOverflow.ellipsis),
                 ),
                 const SizedBox(height: 20),
 
@@ -373,7 +373,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   setState(() {});
                   nav.pop();
                   messenger.showSnackBar(
-                    SnackBar(content: Text('Server URL updated to $newUrl')),
+                    SnackBar(content: Text('Server URL updated to $newUrl', maxLines: 2, overflow: TextOverflow.ellipsis)),
                   );
                 }
               }
