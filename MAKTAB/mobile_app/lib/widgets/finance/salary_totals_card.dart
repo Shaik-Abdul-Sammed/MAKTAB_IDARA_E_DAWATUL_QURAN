@@ -60,25 +60,27 @@ class SalaryTotalsCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: (pendingCount > 0 ? Colors.orange.shade50 : Colors.green.shade50),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: (pendingCount > 0 ? Colors.orange.shade200 : Colors.green.shade200),
+                Flexible(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: (pendingCount > 0 ? Colors.orange.shade50 : Colors.green.shade50),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: (pendingCount > 0 ? Colors.orange.shade200 : Colors.green.shade200),
+                      ),
                     ),
-                  ),
-                  child: Text(
-                    pendingCount > 0
-                        ? '$pendingCount Pending'
-                        : 'All Paid',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                      color: pendingCount > 0 ? Colors.orange.shade800 : Colors.green.shade800,
+                    child: Text(
+                      pendingCount > 0
+                          ? '$pendingCount Pending'
+                          : 'All Paid',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: pendingCount > 0 ? Colors.orange.shade800 : Colors.green.shade800,
+                      ),
                     ),
                   ),
                 ),

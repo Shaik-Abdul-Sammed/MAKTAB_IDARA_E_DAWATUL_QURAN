@@ -837,8 +837,8 @@ class AuthProvider with ChangeNotifier {
       }
     }
 
-    // Firebase RTDB direct Teacher lookup fallback for fresh device installations
-    if (matchedUser == null && _db != null && input.isNotEmpty) {
+    // Firebase RTDB direct Teacher lookup fallback for fresh device installations (requires authenticated session)
+    if (matchedUser == null && _db != null && input.isNotEmpty && _fbAuth?.currentUser != null) {
       try {
         final activeMaktabId = await CloudSyncService.instance.getMaktabId();
         final teacherId = parsedId?.toString() ?? input;

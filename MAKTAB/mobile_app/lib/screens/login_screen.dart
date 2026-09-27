@@ -145,7 +145,14 @@ class _LoginScreenState extends State<LoginScreen> {
           children: [
             Icon(Icons.lock_reset, color: Color(0xFF004D40)),
             SizedBox(width: 8),
-            Text('Reset Password', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+            Expanded(
+              child: Text(
+                'Reset Password',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+              ),
+            ),
           ],
         ),
         content: Column(
@@ -395,20 +402,30 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         const SizedBox(height: 8),
                         SegmentedButton<String>(
+                          showSelectedIcon: false,
                           style: SegmentedButton.styleFrom(
                             selectedBackgroundColor: const Color(0xFF004D40),
                             selectedForegroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(horizontal: 6),
                           ),
                           segments: [
                             ButtonSegment<String>(
                               value: 'manager',
-                              label: Text(loc?.translate('login_as_manager') ?? 'Manager / Admin'),
-                              icon: const Icon(Icons.admin_panel_settings),
+                              label: Text(
+                                loc?.translate('login_as_manager') ?? 'Manager / Admin',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              icon: const Icon(Icons.admin_panel_settings, size: 18),
                             ),
                             ButtonSegment<String>(
                               value: 'teacher',
-                              label: Text(loc?.translate('login_as_teacher') ?? 'Teacher'),
-                              icon: const Icon(Icons.school),
+                              label: Text(
+                                loc?.translate('login_as_teacher') ?? 'Teacher',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              icon: const Icon(Icons.school, size: 18),
                             ),
                           ],
                           selected: {_selectedRole},
@@ -488,19 +505,19 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ),
                               ),
                               const SizedBox(width: 8),
-                              Flexible(
+                              Expanded(
                                 child: Text(
                                   loc?.translate('remember_me') ?? 'Remember me',
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style: const TextStyle(
-                                    fontSize: 14,
+                                    fontSize: 13,
                                     fontWeight: FontWeight.w500,
                                   ),
                                 ),
                               ),
                               const SizedBox(width: 8),
-                              Flexible(
+                              Expanded(
                                 child: Align(
                                   alignment: Alignment.centerRight,
                                   child: TextButton(
@@ -517,6 +534,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                       style: const TextStyle(
                                         color: Color(0xFF004D40),
                                         fontWeight: FontWeight.w600,
+                                        fontSize: 13,
                                       ),
                                     ),
                                   ),
@@ -528,22 +546,32 @@ class _LoginScreenState extends State<LoginScreen> {
                             const SizedBox(height: 8),
                             SizedBox(
                               width: double.infinity,
-                              child: OutlinedButton.icon(
-                                icon: const Icon(Icons.flash_on, size: 18, color: Color(0xFF004D40)),
-                                label: Text(
-                                  'Quick Login as $_rememberedManagerEmail',
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    color: Color(0xFF004D40),
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
+                              child: OutlinedButton(
                                 style: OutlinedButton.styleFrom(
                                   side: const BorderSide(color: Color(0xFF004D40)),
                                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                  padding: const EdgeInsets.symmetric(vertical: 12),
+                                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
                                 ),
                                 onPressed: auth.isLoading ? null : _handleLogin,
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    const Icon(Icons.flash_on, size: 18, color: Color(0xFF004D40)),
+                                    const SizedBox(width: 8),
+                                    Flexible(
+                                      child: Text(
+                                        'Quick Login as $_rememberedManagerEmail',
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(
+                                          color: Color(0xFF004D40),
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
                           ],
@@ -616,7 +644,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ),
                               ),
                               const SizedBox(width: 8),
-                              Flexible(
+                              Expanded(
                                 child: Text(
                                   loc?.translate('remember_me') ?? 'Remember Teacher ID',
                                   style: const TextStyle(
@@ -633,22 +661,32 @@ class _LoginScreenState extends State<LoginScreen> {
                             const SizedBox(height: 8),
                             SizedBox(
                               width: double.infinity,
-                              child: OutlinedButton.icon(
-                                icon: const Icon(Icons.flash_on, size: 18, color: Color(0xFF004D40)),
-                                label: Text(
-                                  'Quick Login as $_rememberedTeacherId',
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    color: Color(0xFF004D40),
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
+                              child: OutlinedButton(
                                 style: OutlinedButton.styleFrom(
                                   side: const BorderSide(color: Color(0xFF004D40)),
                                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                  padding: const EdgeInsets.symmetric(vertical: 12),
+                                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
                                 ),
                                 onPressed: auth.isLoading ? null : _handleLogin,
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    const Icon(Icons.flash_on, size: 18, color: Color(0xFF004D40)),
+                                    const SizedBox(width: 8),
+                                    Flexible(
+                                      child: Text(
+                                        'Quick Login as $_rememberedTeacherId',
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(
+                                          color: Color(0xFF004D40),
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
                           ],

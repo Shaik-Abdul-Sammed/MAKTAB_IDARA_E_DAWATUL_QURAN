@@ -321,8 +321,8 @@ class _FeeManagementScreenState extends State<FeeManagementScreen> {
                                   value: hasMatch ? _selectedBatchId : null,
                                   hint: const Text('Filter Batch'),
                                   items: [
-                                    const DropdownMenuItem(value: null, child: Text('All Batches')),
-                                    ...uniqueBatches.map((b) => DropdownMenuItem(value: b.id, child: Text(b.name))),
+                                    const DropdownMenuItem(value: null, child: Text('All Batches', maxLines: 1, overflow: TextOverflow.ellipsis)),
+                                    ...uniqueBatches.map((b) => DropdownMenuItem(value: b.id, child: Text(b.name, maxLines: 1, overflow: TextOverflow.ellipsis))),
                                   ],
                                   onChanged: (val) {
                                     setState(() {
@@ -689,21 +689,29 @@ class _FeeManagementScreenState extends State<FeeManagementScreen> {
           ),
           const SizedBox(width: 8),
           Flexible(
-            child: ElevatedButton.icon(
+            child: ElevatedButton(
               onPressed: _openBulkMessagingDialog,
-              icon: const Icon(Icons.send_rounded, size: 16),
-              label: Text(
-                loc?.translate('fee_mgmt_bulk_reminders') ?? 'Bulk Batch Reminders',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
-              ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppIcons.gold,
                 foregroundColor: const Color(0xFF004D40),
                 elevation: 2,
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.send_rounded, size: 16),
+                  const SizedBox(width: 6),
+                  Flexible(
+                    child: Text(
+                      loc?.translate('fee_mgmt_bulk_reminders') ?? 'Bulk Batch Reminders',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),

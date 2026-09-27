@@ -540,6 +540,7 @@ class _FeePaymentsListWidgetState extends State<FeePaymentsListWidget> {
                   '$count payment${count == 1 ? '' : 's'} · $_dateFilter',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.end,
                   style: const TextStyle(color: Colors.white54, fontSize: 11),
                 ),
               ),
@@ -693,11 +694,12 @@ class _PaymentCardItem extends StatelessWidget {
                   const SizedBox(height: 6),
                   Row(
                     children: [
-                      FittedBox(
-                        fit: BoxFit.scaleDown,
-                        alignment: Alignment.centerLeft,
+                      SizedBox(
+                        width: 90,
                         child: Text(
                           '₹$amount',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,

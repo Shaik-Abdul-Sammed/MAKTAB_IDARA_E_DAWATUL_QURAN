@@ -644,6 +644,10 @@ class CloudSyncService {
         return;
       }
 
+      if (kDebugMode) {
+        debugPrint('[CloudSyncService.pushUser] UID: ${currentUser.uid}, role: $userRole, maktabId: $userMaktabId, active: $isActive, targetMaktabId: $maktabId');
+      }
+
       final id = user.id ?? user.teacherId ?? DateTime.now().millisecondsSinceEpoch;
       final map = user.toMap();
       map['maktabId'] = maktabId;
