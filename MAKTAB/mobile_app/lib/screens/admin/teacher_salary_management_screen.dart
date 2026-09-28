@@ -1072,6 +1072,35 @@ class _TeacherSalaryManagementScreenState extends State<TeacherSalaryManagementS
                                           Expanded(child: _buildDetailColumn('Pending Due', '₹$remaining', color: Colors.red)),
                                         ],
                                       ),
+                                      if (teacher.upiId != null && teacher.upiId!.trim().isNotEmpty) ...[
+                                        const SizedBox(height: 8),
+                                        Container(
+                                          width: double.infinity,
+                                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                          decoration: BoxDecoration(
+                                            color: Colors.grey.shade100,
+                                            borderRadius: BorderRadius.circular(8),
+                                          ),
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                'UPI: ${teacher.upiId}',
+                                                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF004D40)),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                              if (teacher.upiRegisteredPhone != null && teacher.upiRegisteredPhone!.trim().isNotEmpty)
+                                                Text(
+                                                  'Phone: ${teacher.upiRegisteredPhone}',
+                                                  style: TextStyle(fontSize: 11, color: Colors.grey.shade700),
+                                                  maxLines: 1,
+                                                  overflow: TextOverflow.ellipsis,
+                                                ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
                                       const SizedBox(height: 12),
 
                                       // Action Buttons Row

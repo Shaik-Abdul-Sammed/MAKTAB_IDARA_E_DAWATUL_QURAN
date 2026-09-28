@@ -29,6 +29,7 @@ import '../../l10n/app_localizations.dart';
 import '../../widgets/shimmer_loader.dart';
 import '../../widgets/finance/fee_card.dart';
 import '../../widgets/bulk_fee_messaging_dialog.dart';
+import '../../widgets/upi_app_picker_dialog.dart';
 
 class TeacherFeesScreen extends StatefulWidget {
   const TeacherFeesScreen({super.key});
@@ -270,6 +271,7 @@ class _TeacherFeesScreenState extends State<TeacherFeesScreen> {
   }
 
   void _showRecordDialog(FeeStudentItem item, {String defaultMode = 'Cash', double? defaultAmount}) {
+    debugPrint('[RECORD-DIALOG] opened for ${item.student.name} defaultMode=$defaultMode');
     String selectedMode = defaultMode;
     final modes = ['Cash', 'UPI', 'Bank Transfer', 'Cheque', 'Online'];
     final audioRecorder = AudioRecorder();
@@ -664,14 +666,39 @@ class _TeacherFeesScreenState extends State<TeacherFeesScreen> {
       return;
     }
 
-    // Resolve manager's UPI ID
-    final managerUpi = manager.upiId?.trim();
+    String? managerUpi = manager.upiId?.trim();
+    String source = 'explicit';
+
     if (managerUpi == null || managerUpi.isEmpty) {
-      // Manager has no UPI ID configured — go straight to the record dialog (Cash mode)
+      final phone = (manager.upiRegisteredPhone ?? manager.mobile)?.trim().replaceAll(RegExp(r'\D'), '');
+      if (phone != null && phone.length >= 10) {
+        if (!mounted) return;
+        final pickedUpi = await UpiAppPickerDialog.show(
+          context,
+          rawPhone: phone,
+          title: "Which UPI app is the manager registered with?",
+        );
+        if (pickedUpi != null && pickedUpi.isNotEmpty) {
+          managerUpi = pickedUpi;
+          source = 'picker';
+          final updated = manager.copyWith(upiId: pickedUpi, upiRegisteredPhone: phone);
+          await _userRepo.updateUser(updated);
+          debugPrint('[UPI-SAVE] user=${manager.id} upi=$pickedUpi phone=$phone');
+          manager = updated;
+          _manager = updated;
+        }
+      }
+    }
+
+    if (managerUpi == null || managerUpi.isEmpty) {
+      source = 'cash-fallback';
+      debugPrint('[Handover UPI] payee=none source=$source');
       if (!mounted) return;
       _showHandoverDialog(manager, defaultAmount: amount.toInt(), defaultMode: 'Cash');
       return;
     }
+
+    debugPrint('[Handover UPI] payee=$managerUpi source=$source');
 
     final upiUri = Uri.parse(
       'upi://pay'
@@ -696,6 +723,7 @@ class _TeacherFeesScreenState extends State<TeacherFeesScreen> {
   }
 
   void _showHandoverDialog(User manager, {int defaultAmount = 0, String defaultMode = 'Cash'}) {
+    debugPrint('[HANDOVER-DIALOG] opened for manager=${manager.name} defaultAmount=$defaultAmount');
     final amountCtrl = TextEditingController(text: defaultAmount > 0 ? defaultAmount.toString() : '');
     final refCtrl = TextEditingController();
     final notesCtrl = TextEditingController();
@@ -797,6 +825,54 @@ class _TeacherFeesScreenState extends State<TeacherFeesScreen> {
                         ],
                       ),
                     ),
+                    const SizedBox(height: 12),
+                    if (manager.upiId == null || manager.upiId!.trim().isEmpty)
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.amber.shade50,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.amber.shade300),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(Icons.info_outline, size: 16, color: Colors.amber.shade900),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                "Manager hasn't set a UPI ID. Recording as cash settlement.",
+                                style: TextStyle(fontSize: 12, color: Colors.amber.shade900),
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    else ...[
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade100,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.account_balance_wallet_outlined, size: 16, color: Color(0xFF004D40)),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text('UPI: ${manager.upiId}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF004D40))),
+                                  if (manager.upiRegisteredPhone != null && manager.upiRegisteredPhone!.trim().isNotEmpty)
+                                    Text('Phone: ${manager.upiRegisteredPhone}', style: TextStyle(fontSize: 11, color: Colors.grey.shade700)),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: 14),
                     TextFormField(
                       controller: amountCtrl,
