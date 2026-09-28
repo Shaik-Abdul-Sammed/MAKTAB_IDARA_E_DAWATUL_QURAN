@@ -172,61 +172,64 @@ class FeeCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 4),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    _IconAction(
-                      icon: AppIcons.whatsapp,
-                      tooltip: 'WhatsApp Reminder',
-                      color: AppIcons.whatsappGreen,
-                      onTap: onWhatsApp,
-                    ),
-                    _IconAction(
-                      icon: Icons.mic,
-                      tooltip: 'Log/Voice Payment',
-                      color: AppIcons.primaryTeal,
-                      onTap: onLog,
-                    ),
-                    SizedBox(
-                      width: 32,
-                      height: 32,
-                      child: PopupMenuButton<String>(
-                        icon: const Icon(Icons.more_vert, size: 20, color: Colors.blueGrey),
-                        padding: EdgeInsets.zero,
-                        tooltip: 'More options',
-                        onSelected: (val) {
-                          if (val == 'edit') {
-                            onEdit();
-                          } else if (val == 'notify') {
-                            onNotify();
-                          }
-                        },
-                        itemBuilder: (context) => [
-                          const PopupMenuItem(
-                            value: 'edit',
-                            child: Row(
-                              children: [
-                                Icon(Icons.edit_note, size: 20, color: Colors.blueGrey),
-                                SizedBox(width: 8),
-                                Text('Edit Fee Amount', style: TextStyle(fontSize: 13)),
-                              ],
-                            ),
-                          ),
-                          const PopupMenuItem(
-                            value: 'notify',
-                            child: Row(
-                              children: [
-                                Icon(AppIcons.notification, size: 20, color: AppIcons.primaryTeal),
-                                SizedBox(width: 8),
-                                Text('Send Notification', style: TextStyle(fontSize: 13)),
-                              ],
-                            ),
-                          ),
-                        ],
+                Flexible(
+                  fit: FlexFit.loose,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      _IconAction(
+                        icon: AppIcons.whatsapp,
+                        tooltip: 'WhatsApp Reminder',
+                        color: AppIcons.whatsappGreen,
+                        onTap: onWhatsApp,
                       ),
-                    ),
-                  ],
+                      _IconAction(
+                        icon: Icons.mic,
+                        tooltip: 'Log/Voice Payment',
+                        color: AppIcons.primaryTeal,
+                        onTap: onLog,
+                      ),
+                      SizedBox(
+                        width: 32,
+                        height: 32,
+                        child: PopupMenuButton<String>(
+                          icon: const Icon(Icons.more_vert, size: 20, color: Colors.blueGrey),
+                          padding: EdgeInsets.zero,
+                          tooltip: 'More options',
+                          onSelected: (val) {
+                            if (val == 'edit') {
+                              onEdit();
+                            } else if (val == 'notify') {
+                              onNotify();
+                            }
+                          },
+                          itemBuilder: (context) => [
+                            const PopupMenuItem(
+                              value: 'edit',
+                              child: Row(
+                                children: [
+                                  Icon(Icons.edit_note, size: 20, color: Colors.blueGrey),
+                                  SizedBox(width: 8),
+                                  Text('Edit Fee Amount', style: TextStyle(fontSize: 13)),
+                                ],
+                              ),
+                            ),
+                            const PopupMenuItem(
+                              value: 'notify',
+                              child: Row(
+                                children: [
+                                  Icon(AppIcons.notification, size: 20, color: AppIcons.primaryTeal),
+                                  SizedBox(width: 8),
+                                  Text('Send Notification', style: TextStyle(fontSize: 13)),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),

@@ -9,6 +9,9 @@ class FeePayment {
   final String? voiceNotePath;
   final int receiptSent;
   final String? receiptSentAt;
+  /// The user.id of the teacher who recorded/collected this payment.
+  /// NULL for rows inserted before schema v28 (unattributed).
+  final int? collectedBy;
   /// 0 = pending cloud sync, 1 = synced. Defaults to 0 on insert so the
   /// retry queue can pick it up if the initial push fails.
   final int isSynced;
@@ -24,6 +27,7 @@ class FeePayment {
     this.voiceNotePath,
     this.receiptSent = 0,
     this.receiptSentAt,
+    this.collectedBy,
     this.isSynced = 0,
   });
 
@@ -39,6 +43,7 @@ class FeePayment {
       if (voiceNotePath != null) 'voice_note_path': voiceNotePath,
       'receipt_sent': receiptSent,
       if (receiptSentAt != null) 'receipt_sent_at': receiptSentAt,
+      'collected_by': collectedBy,
       'is_synced': isSynced,
     };
   }
@@ -55,6 +60,7 @@ class FeePayment {
       voiceNotePath: map['voice_note_path'] as String?,
       receiptSent: (map['receipt_sent'] as int?) ?? 0,
       receiptSentAt: map['receipt_sent_at'] as String?,
+      collectedBy: map['collected_by'] as int?,
       isSynced: (map['is_synced'] as int?) ?? 0,
     );
   }
@@ -70,6 +76,7 @@ class FeePayment {
     String? voiceNotePath,
     int? receiptSent,
     String? receiptSentAt,
+    int? collectedBy,
     int? isSynced,
   }) {
     return FeePayment(
@@ -83,6 +90,7 @@ class FeePayment {
       voiceNotePath: voiceNotePath ?? this.voiceNotePath,
       receiptSent: receiptSent ?? this.receiptSent,
       receiptSentAt: receiptSentAt ?? this.receiptSentAt,
+      collectedBy: collectedBy ?? this.collectedBy,
       isSynced: isSynced ?? this.isSynced,
     );
   }

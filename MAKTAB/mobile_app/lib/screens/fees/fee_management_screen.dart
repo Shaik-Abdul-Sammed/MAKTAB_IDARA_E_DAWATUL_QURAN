@@ -184,20 +184,16 @@ class _FeeManagementScreenState extends State<FeeManagementScreen> {
     }
 
     final amount = item.amountDue;
-    final uri = Uri(
-      scheme: 'upi',
-      host: 'pay',
-      queryParameters: {
-        'pa': 'maktab@upi',
-        'pn': 'MaktabQuran',
-        'am': amount.toStringAsFixed(2),
-        'cu': 'INR',
-        'tn': 'Fee_${item.student.admissionNumber}',
-      },
+    final upiUri = Uri.parse(
+      'upi://pay?pa=maktab@upi'
+      '&pn=MaktabQuran'
+      '&am=${amount.toStringAsFixed(2)}'
+      '&cu=INR'
+      '&tn=Fee_${item.student.admissionNumber}',
     );
 
     try {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
+      await launchUrl(upiUri, mode: LaunchMode.externalApplication);
     } catch (e) {
       debugPrint('[Fee UPI] launch failed: $e');
     }
@@ -227,9 +223,6 @@ class _FeeManagementScreenState extends State<FeeManagementScreen> {
       return statusMatch && searchMatch;
     }).toList();
 
-    final totalPending = _feeItems
-        .where((i) => i.status != 'Paid')
-        .fold(0.0, (sum, item) => sum + item.amountDue);
 
     final loc = AppLocalizations.of(context);
     return DefaultTabController(
@@ -272,8 +265,6 @@ class _FeeManagementScreenState extends State<FeeManagementScreen> {
                           periodTotals: _feeTotals,
                           modeBreakdown: _modeBreakdown,
                         ),
-                      _buildSummaryBanner(totalPending),
-                      const SizedBox(height: 16),
 
                       // ── Search bar ──────────────────────────────────────────────
                       TextField(
@@ -814,89 +805,6 @@ class _FeeManagementScreenState extends State<FeeManagementScreen> {
     );
   }
 
-
-
-  Widget _buildSummaryBanner(double totalPending) {
-    final loc = AppLocalizations.of(context);
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [AppIcons.primaryTeal, Color(0xFF00695C)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          BoxShadow(
-            color: AppIcons.primaryTeal.withValues(alpha: 0.25),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Expanded(
-            child: Row(
-              children: [
-                const Icon(AppIcons.fees, color: AppIcons.gold, size: 40),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Total Pending Monthly Fees',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(color: Colors.white70, fontSize: 12),
-                      ),
-                      const SizedBox(height: 4),
-                      FittedBox(
-                        fit: BoxFit.scaleDown,
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          '₹${totalPending.toInt()}',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 22),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 4),
-          Flexible(
-            child: ElevatedButton.icon(
-              onPressed: _openBulkMessagingDialog,
-              icon: const Icon(Icons.send_rounded, size: 16),
-              label: FittedBox(
-                fit: BoxFit.scaleDown,
-                child: Text(
-                  loc?.translate('fee_mgmt_bulk_reminders') ?? 'Bulk Batch Reminders',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
-                ),
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppIcons.gold,
-                foregroundColor: const Color(0xFF004D40),
-                elevation: 2,
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }
 
 /// Tab-body alias used by PaymentsHubScreen.

@@ -42,7 +42,7 @@ class DatabaseHelper {
       return await ffi.databaseFactoryFfi.openDatabase(
         path,
         options: ffi.OpenDatabaseOptions(
-          version: 27,
+          version: 28,
           onConfigure: (db) async {
             await db.execute('PRAGMA foreign_keys = ON');
           },
@@ -59,7 +59,7 @@ class DatabaseHelper {
     return await openDatabase(
       path,
       password: key,
-      version: 27,
+      version: 28,
       onConfigure: (db) async {
         await db.execute('PRAGMA foreign_keys = ON');
       },
@@ -180,10 +180,28 @@ class DatabaseHelper {
         voice_note_path TEXT,
         receipt_sent INTEGER DEFAULT 0,
         receipt_sent_at TEXT,
+        collected_by INTEGER,
         is_synced INTEGER DEFAULT 1
       )
     ''');
 
+
+    // Fee Handovers Table — teacher → manager settlement records
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS fee_handovers (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        teacher_id INTEGER NOT NULL,
+        manager_id INTEGER,
+        amount INTEGER NOT NULL,
+        mode TEXT NOT NULL,
+        timestamp TEXT NOT NULL,
+        reference TEXT,
+        notes TEXT,
+        receipt_sent INTEGER DEFAULT 0,
+        receipt_sent_at TEXT,
+        is_synced INTEGER DEFAULT 0
+      )
+    ''');
 
     // Attendance Table
     await db.execute('''
@@ -1105,6 +1123,36 @@ class DatabaseHelper {
         debugPrint('[MIGRATION v27] Added reference to fee_payments');
       } catch (e) {
         debugPrint('[MIGRATION v27] fee_payments.reference: $e');
+      }
+    }
+
+    if (oldVersion < 28) {
+      try {
+        await db.execute('ALTER TABLE fee_payments ADD COLUMN collected_by INTEGER');
+        debugPrint('[MIGRATION v28] Added collected_by to fee_payments');
+      } catch (e) {
+        debugPrint('[MIGRATION v28] fee_payments.collected_by: $e');
+      }
+
+      try {
+        await db.execute('''
+          CREATE TABLE IF NOT EXISTS fee_handovers (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            teacher_id INTEGER NOT NULL,
+            manager_id INTEGER,
+            amount INTEGER NOT NULL,
+            mode TEXT NOT NULL,
+            timestamp TEXT NOT NULL,
+            reference TEXT,
+            notes TEXT,
+            receipt_sent INTEGER DEFAULT 0,
+            receipt_sent_at TEXT,
+            is_synced INTEGER DEFAULT 0
+          )
+        ''');
+        debugPrint('[MIGRATION v28] Created fee_handovers table');
+      } catch (e) {
+        debugPrint('[MIGRATION v28] fee_handovers table: $e');
       }
     }
   }

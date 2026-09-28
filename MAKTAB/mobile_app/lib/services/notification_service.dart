@@ -67,7 +67,7 @@ class NotificationService {
       iOS: DarwinNotificationDetails(),
     );
     await _flutterLocalNotificationsPlugin.show(
-      id: DateTime.now().millisecondsSinceEpoch ~/ 1000,
+      id: DateTime.now().millisecondsSinceEpoch % 100000,
       title: title,
       body: body,
       notificationDetails: details,
