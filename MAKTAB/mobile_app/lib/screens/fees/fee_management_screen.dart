@@ -303,19 +303,23 @@ class _FeeManagementScreenState extends State<FeeManagementScreen> {
                                 }.values.toList();
                                 final hasMatch = _selectedBatchId == null ||
                                     uniqueBatches.any((b) => b.id == _selectedBatchId);
-                                return DropdownButton<int?>(
-                                  value: hasMatch ? _selectedBatchId : null,
-                                  hint: const Text('Filter Batch'),
-                                  items: [
-                                    const DropdownMenuItem(value: null, child: Text('All Batches', maxLines: 1, overflow: TextOverflow.ellipsis)),
-                                    ...uniqueBatches.map((b) => DropdownMenuItem(value: b.id, child: Text(b.name, maxLines: 1, overflow: TextOverflow.ellipsis))),
-                                  ],
-                                  onChanged: (val) {
-                                    setState(() {
-                                      _selectedBatchId = val;
-                                    });
-                                    _loadFeeRecords();
-                                  },
+                                return ConstrainedBox(
+                                  constraints: const BoxConstraints(maxWidth: 130),
+                                  child: DropdownButton<int?>(
+                                    isExpanded: true,
+                                    value: hasMatch ? _selectedBatchId : null,
+                                    hint: const Text('Filter Batch', maxLines: 1, overflow: TextOverflow.ellipsis),
+                                    items: [
+                                      const DropdownMenuItem(value: null, child: Text('All Batches', maxLines: 1, overflow: TextOverflow.ellipsis)),
+                                      ...uniqueBatches.map((b) => DropdownMenuItem(value: b.id, child: Text(b.name, maxLines: 1, overflow: TextOverflow.ellipsis))),
+                                    ],
+                                    onChanged: (val) {
+                                      setState(() {
+                                        _selectedBatchId = val;
+                                      });
+                                      _loadFeeRecords();
+                                    },
+                                  ),
                                 );
                               },
                             ),

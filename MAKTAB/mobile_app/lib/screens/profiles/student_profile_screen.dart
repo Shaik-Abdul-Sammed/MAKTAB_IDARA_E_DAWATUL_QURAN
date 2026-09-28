@@ -229,11 +229,6 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
                     widget.student.name,
                     textAlign: TextAlign.center,
                     style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold), maxLines: 2, overflow: TextOverflow.ellipsis),
-                  if (widget.student.arabicName != null)
-                    Text(
-                      widget.student.arabicName!,
-                      style: const TextStyle(color: Color(0xFFFFD700), fontSize: 18),
-                    ),
                   const SizedBox(height: 5),
                   Text(
                     'Admission: ${widget.student.admissionNumber}',

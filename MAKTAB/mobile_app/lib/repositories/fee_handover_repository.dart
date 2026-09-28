@@ -79,6 +79,30 @@ class FeeHandoverRepository {
     return 0;
   }
 
+  /// Total student fees collected by this teacher for specific assigned students
+  Future<int> getTotalCollectedForStudents(int teacherId, List<int> studentIds, [int? alternateTeacherId]) async {
+    if (studentIds.isEmpty) return 0;
+    final db = await _dbHelper.database;
+    final placeholders = List.filled(studentIds.length, '?').join(',');
+    final List<Map<String, dynamic>> result;
+    if (alternateTeacherId != null && alternateTeacherId != teacherId) {
+      result = await db.rawQuery(
+        'SELECT COALESCE(SUM(amount), 0) AS total FROM fee_payments WHERE (collected_by = ? OR collected_by = ?) AND student_id IN ($placeholders)',
+        [teacherId, alternateTeacherId, ...studentIds],
+      );
+    } else {
+      result = await db.rawQuery(
+        'SELECT COALESCE(SUM(amount), 0) AS total FROM fee_payments WHERE collected_by = ? AND student_id IN ($placeholders)',
+        [teacherId, ...studentIds],
+      );
+    }
+    if (result.isNotEmpty) {
+      final val = result.first['total'];
+      if (val is num) return val.toInt();
+    }
+    return 0;
+  }
+
   /// Get payments collected by this teacher with student details
   Future<List<Map<String, dynamic>>> getPaymentsCollectedByTeacher(int teacherId, [int? alternateTeacherId]) async {
     final db = await _dbHelper.database;

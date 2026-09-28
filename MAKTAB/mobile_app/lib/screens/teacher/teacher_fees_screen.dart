@@ -11,10 +11,10 @@ import '../../config/app_icons.dart';
 import '../../models/batch.dart';
 import '../../models/fee_payment.dart';
 import '../../models/fee_handover.dart';
+import '../../models/student.dart';
 import '../../models/user.dart';
 import '../../providers/auth_provider.dart';
 import '../../repositories/fee_payment_repository.dart';
-import '../../repositories/student_repository.dart';
 import '../../repositories/batch_repository.dart';
 import '../../repositories/fee_handover_repository.dart';
 import '../../repositories/user_repository.dart';
@@ -39,7 +39,6 @@ class TeacherFeesScreen extends StatefulWidget {
 
 class _TeacherFeesScreenState extends State<TeacherFeesScreen> {
   final FeePaymentRepository _feeRepo = FeePaymentRepository();
-  final StudentRepository _studentRepo = StudentRepository();
   final BatchRepository _batchRepo = BatchRepository();
   final FeeHandoverRepository _handoverRepo = FeeHandoverRepository();
   final UserRepository _userRepo = UserRepository();
@@ -90,8 +89,25 @@ class _TeacherFeesScreenState extends State<TeacherFeesScreen> {
     if (!mounted) return;
     setState(() => _isLoading = true);
     try {
-      final students = await _studentRepo.getStudentsByTeacher(_teacherId);
-      final batches = await _batchRepo.getBatchesByTeacher(_teacherId);
+      final batches = await _batchRepo.fetchTeacherBatches(_teacherId, _alternateTeacherId);
+      final batchIds = batches.map((b) => b.id).whereType<int>().toSet();
+
+      List<Student> students = [];
+      if (batchIds.isNotEmpty) {
+        final placeholders = List.filled(batchIds.length, '?').join(',');
+        final db = await DatabaseHelper.instance.database;
+        final maps = await db.rawQuery('''
+          SELECT s.* FROM students s
+          WHERE (s.is_deleted IS NULL OR s.is_deleted = 0)
+            AND s.batch_id IN ($placeholders)
+          ORDER BY s.name ASC
+        ''', batchIds.toList());
+        students = maps.map((m) => Student.fromMap(m)).toList();
+      }
+
+      final studentIds = students.map((s) => s.id).whereType<int>().toSet();
+      debugPrint('[TeacherFeeScope] teacherId=$_teacherId batches=${batchIds.length} students=${students.length}');
+
       final currentMonthStr = DateFormat('yyyy-MM').format(DateTime.now());
 
       final List<FeeStudentItem> items = [];
@@ -131,10 +147,16 @@ class _TeacherFeesScreenState extends State<TeacherFeesScreen> {
         ));
       }
 
-      final totalCollected = await _handoverRepo.getTotalCollected(_teacherId, _alternateTeacherId);
+      final totalCollected = await _handoverRepo.getTotalCollectedForStudents(
+        _teacherId,
+        studentIds.toList(),
+        _alternateTeacherId,
+      );
       final totalHandedOver = await _handoverRepo.getTotalHandedOver(_teacherId, _alternateTeacherId);
-      final myCollections = await _handoverRepo.getPaymentsCollectedByTeacher(_teacherId, _alternateTeacherId);
-      final unattributed = await _handoverRepo.getUnattributedPayments();
+      var myCollections = await _handoverRepo.getPaymentsCollectedByTeacher(_teacherId, _alternateTeacherId);
+      myCollections = myCollections.where((c) => studentIds.contains(c['student_id'])).toList();
+      var unattributed = await _handoverRepo.getUnattributedPayments();
+      unattributed = unattributed.where((c) => studentIds.contains(c['student_id'])).toList();
       final myHandovers = await _handoverRepo.getHandoversForTeacher(_teacherId, _alternateTeacherId);
       final manager = await _userRepo.getManager();
 
@@ -170,6 +192,7 @@ class _TeacherFeesScreenState extends State<TeacherFeesScreen> {
   }
 
   void _openBulkMessagingDialog() {
+    debugPrint('[showDialog] opening BulkFeeMessagingDialog');
     showDialog(
       context: context,
       builder: (ctx) => BulkFeeMessagingDialog(
@@ -263,6 +286,7 @@ class _TeacherFeesScreenState extends State<TeacherFeesScreen> {
 
     final formKey = GlobalKey<FormState>();
 
+    debugPrint('[showDialog] opening RecordFeePaymentDialog for ${item.student.name}');
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -553,6 +577,7 @@ class _TeacherFeesScreenState extends State<TeacherFeesScreen> {
   void _editFeeStructure(FeeStudentItem item) {
     final amountCtrl = TextEditingController(text: (item.student.feesAmount ?? 500).toString());
 
+    debugPrint('[showDialog] opening EditFeeDialog for ${item.student.name}');
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -675,6 +700,7 @@ class _TeacherFeesScreenState extends State<TeacherFeesScreen> {
 
     final formKey = GlobalKey<FormState>();
 
+    debugPrint('[showDialog] opening HandoverDialog (Pay to Manager)');
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -993,10 +1019,9 @@ class _TeacherFeesScreenState extends State<TeacherFeesScreen> {
         ),
         child: Row(
           children: [
-            const Icon(Icons.account_balance_wallet_rounded, color: AppIcons.gold, size: 32),
+            const Icon(Icons.account_balance_wallet_rounded, color: AppIcons.gold, size: 28),
             const SizedBox(width: 10),
             Expanded(
-              flex: 3,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
@@ -1024,33 +1049,30 @@ class _TeacherFeesScreenState extends State<TeacherFeesScreen> {
               ),
             ),
             const SizedBox(width: 8),
-            Expanded(
-              flex: 2,
-              child: ElevatedButton(
-                onPressed: () {
-                  final mgr = _manager ?? User(
-                    id: 0,
-                    name: 'Manager',
-                    pinHash: '',
-                    role: 'admin',
-                    createdAt: DateTime.now().toIso8601String(),
-                  );
-                  _payToManagerThenRecord(mgr, owed.toDouble());
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppIcons.gold,
-                  foregroundColor: const Color(0xFF004D40),
-                  elevation: 2,
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                ),
-                child: const FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Text(
-                    'PAY TO MANAGER',
-                    maxLines: 1,
-                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
-                  ),
+            ElevatedButton(
+              onPressed: () {
+                final mgr = _manager ?? User(
+                  id: 0,
+                  name: 'Manager',
+                  pinHash: '',
+                  role: 'admin',
+                  createdAt: DateTime.now().toIso8601String(),
+                );
+                _payToManagerThenRecord(mgr, owed.toDouble());
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppIcons.gold,
+                foregroundColor: const Color(0xFF004D40),
+                elevation: 2,
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+              child: const FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  'PAY TO MANAGER',
+                  maxLines: 1,
+                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
                 ),
               ),
             ),
@@ -1121,46 +1143,78 @@ class _TeacherFeesScreenState extends State<TeacherFeesScreen> {
             const SizedBox(height: 14),
 
             // Segmented toggle: Collections History vs Student Dues
-            Row(
-              children: [
-                Expanded(
-                  child: ChoiceChip(
-                    label: Center(
-                      child: Text(
-                        'Collections Log (${_myCollections.length})',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          color: _sectionASubTab == 0 ? Colors.white : AppIcons.primaryTeal,
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.grey.shade100,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: Colors.grey.shade300),
+              ),
+              padding: const EdgeInsets.all(3),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(8),
+                      onTap: () => setState(() => _sectionASubTab = 0),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        decoration: BoxDecoration(
+                          color: _sectionASubTab == 0 ? AppIcons.primaryTeal : Colors.transparent,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Center(
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 6),
+                              child: Text(
+                                'Collections Log (${_myCollections.length})',
+                                maxLines: 1,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: _sectionASubTab == 0 ? Colors.white : AppIcons.primaryTeal,
+                                ),
+                              ),
+                            ),
+                          ),
                         ),
                       ),
                     ),
-                    selected: _sectionASubTab == 0,
-                    selectedColor: AppIcons.primaryTeal,
-                    backgroundColor: Colors.white,
-                    onSelected: (_) => setState(() => _sectionASubTab = 0),
                   ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: ChoiceChip(
-                    label: Center(
-                      child: Text(
-                        'Student Dues (${_feeItems.length})',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          color: _sectionASubTab == 1 ? Colors.white : AppIcons.primaryTeal,
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(8),
+                      onTap: () => setState(() => _sectionASubTab = 1),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        decoration: BoxDecoration(
+                          color: _sectionASubTab == 1 ? AppIcons.primaryTeal : Colors.transparent,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Center(
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 6),
+                              child: Text(
+                                'Student Dues (${_feeItems.length})',
+                                maxLines: 1,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: _sectionASubTab == 1 ? Colors.white : AppIcons.primaryTeal,
+                                ),
+                              ),
+                            ),
+                          ),
                         ),
                       ),
                     ),
-                    selected: _sectionASubTab == 1,
-                    selectedColor: AppIcons.primaryTeal,
-                    backgroundColor: Colors.white,
-                    onSelected: (_) => setState(() => _sectionASubTab = 1),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
             const SizedBox(height: 14),
 
@@ -1374,19 +1428,23 @@ class _TeacherFeesScreenState extends State<TeacherFeesScreen> {
                         }.values.toList();
                         final hasMatch = _selectedBatchId == null ||
                             uniqueBatches.any((b) => b.id == _selectedBatchId);
-                        return DropdownButton<int?>(
-                          value: hasMatch ? _selectedBatchId : null,
-                          hint: const Text('Filter Batch'),
-                          items: [
-                            const DropdownMenuItem(value: null, child: Text('All Batches', maxLines: 1, overflow: TextOverflow.ellipsis)),
-                            ...uniqueBatches.map((b) => DropdownMenuItem(value: b.id, child: Text(b.name, maxLines: 1, overflow: TextOverflow.ellipsis))),
-                          ],
-                          onChanged: (val) {
-                            setState(() {
-                              _selectedBatchId = val;
-                            });
-                            _loadFeeRecords();
-                          },
+                        return ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 130),
+                          child: DropdownButton<int?>(
+                            isExpanded: true,
+                            value: hasMatch ? _selectedBatchId : null,
+                            hint: const Text('Filter Batch', maxLines: 1, overflow: TextOverflow.ellipsis),
+                            items: [
+                              const DropdownMenuItem(value: null, child: Text('All Batches', maxLines: 1, overflow: TextOverflow.ellipsis)),
+                              ...uniqueBatches.map((b) => DropdownMenuItem(value: b.id, child: Text(b.name, maxLines: 1, overflow: TextOverflow.ellipsis))),
+                            ],
+                            onChanged: (val) {
+                              setState(() {
+                                _selectedBatchId = val;
+                              });
+                              _loadFeeRecords();
+                            },
+                          ),
                         );
                       },
                     ),
@@ -1676,6 +1734,7 @@ class _TeacherFeesScreenState extends State<TeacherFeesScreen> {
   void _showRecordPaymentDialog() {
     if (_feeItems.isEmpty) return;
     final loc = AppLocalizations.of(context);
+    debugPrint('[showDialog] opening RecordPaymentDialog (FAB/helper)');
     showDialog(
       context: context,
       builder: (ctx) => SimpleDialog(
