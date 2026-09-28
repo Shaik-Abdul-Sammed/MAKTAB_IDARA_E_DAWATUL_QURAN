@@ -510,144 +510,306 @@ class _FeeManagementScreenState extends State<FeeManagementScreen> {
     );
   }
 
-  void _showRecordDialog(FeeStudentItem item) {
+  void _showRecordDialog(FeeStudentItem item, {String defaultMode = 'Cash', double? defaultAmount}) {
     bool isRecording = false;
     final AudioRecorder audioRecorder = AudioRecorder();
     String? recordFilePath;
-    String selectedMode = 'Cash';
-    final modes = ['Cash', 'Online', 'UPI', 'Cheque', 'Bank Transfer'];
+    String selectedMode = defaultMode;
+    final modes = ['Cash', 'UPI', 'Bank Transfer', 'Cheque', 'Online'];
+
+    final monthlyFee = (item.student.feesAmount ?? 500).toDouble();
+    final remainingDue = item.amountDue;
+    final alreadyPaid = (monthlyFee - remainingDue).clamp(0.0, monthlyFee);
+
+    final defaultAmtVal = defaultAmount ?? (remainingDue > 0 ? remainingDue : monthlyFee);
+    final amountCtrl = TextEditingController(text: defaultAmtVal.toInt().toString());
+    final refCtrl = TextEditingController();
+    final notesCtrl = TextEditingController();
+    DateTime paymentDate = DateTime.now();
+    bool sendReceiptWhatsApp = true;
+
+    final formKey = GlobalKey<FormState>();
 
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setStateBuilder) => AlertDialog(
-          title: Text('Log Payment: ${item.student.name}', maxLines: 2, overflow: TextOverflow.ellipsis),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Monthly Fee: ₹${item.student.feesAmount ?? 500}', style: const TextStyle(fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
-              const SizedBox(height: 12),
-              DropdownButtonFormField<String>(
-                initialValue: modes.contains(selectedMode) ? selectedMode : modes.first,
-                decoration: const InputDecoration(
-                  labelText: 'Payment Mode',
-                  border: OutlineInputBorder(),
-                  contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                ),
-                items: modes.toSet().map((m) => DropdownMenuItem(value: m, child: Text(m))).toList(),
-                onChanged: (val) {
-                  if (val != null) setStateBuilder(() => selectedMode = val);
-                },
-              ),
-              const SizedBox(height: 16),
-              const Text('Voice Note (Optional):', style: TextStyle(fontSize: 12, color: Colors.grey)),
-              const SizedBox(height: 8),
-              Center(
-                child: GestureDetector(
-                  onTap: () async {
-                    if (isRecording) {
-                      final path = await audioRecorder.stop();
-                      setStateBuilder(() {
-                        isRecording = false;
-                        recordFilePath = path;
-                      });
-                    } else {
-                      if (await audioRecorder.hasPermission()) {
-                        final directory = await getApplicationDocumentsDirectory();
-                        final p = '${directory.path}/voice_note_${DateTime.now().millisecondsSinceEpoch}.m4a';
-                        await audioRecorder.start(const RecordConfig(), path: p);
-                        setStateBuilder(() {
-                          isRecording = true;
-                          recordFilePath = null;
-                        });
-                      }
-                    }
-                  },
-                  child: CircleAvatar(
-                    radius: 32,
-                    backgroundColor: isRecording ? Colors.red : AppIcons.primaryTeal,
-                    child: Icon(isRecording ? Icons.stop : Icons.mic, color: Colors.white, size: 32),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 6),
-              if (isRecording) const Center(child: Text('Recording...', style: TextStyle(color: Colors.red, fontSize: 12))),
-              if (recordFilePath != null)
-                Center(
-                  child: TextButton.icon(
-                    onPressed: () async {
-                      await _audioPlayer.play(DeviceFileSource(recordFilePath!));
-                    },
-                    icon: const Icon(Icons.play_arrow, size: 18),
-                    label: const Text('Play Voice Note', style: TextStyle(fontSize: 12)),
-                  ),
-                ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                if (isRecording) audioRecorder.stop();
-                Navigator.pop(context);
-              },
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                if (isRecording) await audioRecorder.stop();
-                final amt = item.student.feesAmount ?? 500;
-                final now = DateTime.now();
-                final timestamp = now.toIso8601String();
+      builder: (dialogCtx) => StatefulBuilder(
+        builder: (dialogCtx, setStateBuilder) {
+          final payingNow = double.tryParse(amountCtrl.text.trim()) ?? 0.0;
+          final totalAfter = alreadyPaid + payingNow;
+          final remainingAfter = (monthlyFee - totalAfter).clamp(0.0, monthlyFee);
 
-                final newPayment = FeePayment(
-                  studentId: item.student.id!,
-                  amount: amt,
-                  mode: selectedMode,
-                  timestamp: timestamp,
-                  voiceNotePath: recordFilePath,
-                );
-                await FeePaymentRepository().insertFeePayment(newPayment);
-                if (context.mounted) {
-                  Navigator.pop(context);
-                  _loadFeeRecords();
-
-                  final currentUser = Provider.of<AuthProvider>(context, listen: false).currentUser;
-                  final collectorName = currentUser?.name ?? 'Management';
-                  final formattedTime = DateFormat('dd MMM yyyy, hh:mm a').format(now);
-                  final month = DateFormat('MMMM yyyy').format(now);
-
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: const Text('Payment Logged Successfully!'),
-                      action: SnackBarAction(
-                        label: 'Send Receipt',
-                        textColor: Colors.amber,
-                        onPressed: () {
-                          WhatsAppUtility.sendFeeReceipt(
-                            context,
-                            item.student.phone ?? '',
-                            item.student.name,
-                            amt.toDouble(),
-                            month,
-                            paymentMode: selectedMode,
-                            dateTime: formattedTime,
-                            collectorName: collectorName,
-                            languageCode: LanguageResolver.forStudent(item.student),
-                            senderName: collectorName,
-                          );
-                        },
+          return AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            title: Text('Log Payment: ${item.student.name}', maxLines: 2, overflow: TextOverflow.ellipsis),
+            content: SingleChildScrollView(
+              child: Form(
+                key: formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(color: const Color(0xFFE9F1E9), borderRadius: BorderRadius.circular(10)),
+                      child: Column(
+                        children: [
+                          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                            const Expanded(child: Text('Monthly Fee:', maxLines: 1, overflow: TextOverflow.ellipsis)),
+                            const SizedBox(width: 8),
+                            SizedBox(width: 90, child: Text('₹${monthlyFee.toInt()}', textAlign: TextAlign.end, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.bold))),
+                          ]),
+                          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                            const Expanded(child: Text('Already Paid:', maxLines: 1, overflow: TextOverflow.ellipsis)),
+                            const SizedBox(width: 8),
+                            SizedBox(width: 90, child: Text('₹${alreadyPaid.toInt()}', textAlign: TextAlign.end, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green))),
+                          ]),
+                          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                            const Expanded(child: Text('Remaining Due:', maxLines: 1, overflow: TextOverflow.ellipsis)),
+                            const SizedBox(width: 8),
+                            SizedBox(width: 90, child: Text('₹${remainingDue.toInt()}', textAlign: TextAlign.end, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.red))),
+                          ]),
+                        ],
                       ),
                     ),
-                  );
-                }
-              },
-              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF004D40), foregroundColor: Colors.white),
-              child: const Text('Log Payment & Save'),
+                    const SizedBox(height: 14),
+                    TextFormField(
+                      controller: amountCtrl,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        labelText: 'Amount Paying Now (₹)',
+                        prefixIcon: Icon(Icons.currency_rupee, color: Color(0xFF004D40)),
+                        border: OutlineInputBorder(),
+                      ),
+                      onChanged: (val) => setStateBuilder(() {}),
+                      validator: (val) {
+                        if (val == null || val.trim().isEmpty) return 'Enter payment amount';
+                        final amt = int.tryParse(val.trim());
+                        if (amt == null || amt <= 0) return 'Enter a valid amount > 0';
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    DropdownButtonFormField<String>(
+                      initialValue: modes.contains(selectedMode) ? selectedMode : modes.first,
+                      decoration: const InputDecoration(
+                        labelText: 'Payment Mode',
+                        border: OutlineInputBorder(),
+                        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      ),
+                      items: modes.toSet().map((m) => DropdownMenuItem(value: m, child: Text(m))).toList(),
+                      onChanged: (val) {
+                        if (val != null) setStateBuilder(() => selectedMode = val);
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    InkWell(
+                      onTap: () async {
+                        final picked = await showDatePicker(
+                          context: dialogCtx,
+                          initialDate: paymentDate,
+                          firstDate: DateTime(2020),
+                          lastDate: DateTime.now().add(const Duration(days: 365)),
+                        );
+                        if (picked != null) {
+                          setStateBuilder(() => paymentDate = picked);
+                        }
+                      },
+                      child: InputDecorator(
+                        decoration: const InputDecoration(
+                          labelText: 'Payment Date',
+                          prefixIcon: Icon(Icons.calendar_today, color: Color(0xFF004D40)),
+                          border: OutlineInputBorder(),
+                          contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        ),
+                        child: Text(DateFormat('dd MMM yyyy').format(paymentDate)),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: refCtrl,
+                      decoration: const InputDecoration(
+                        labelText: 'Reference / UTR / Cheque (Optional)',
+                        prefixIcon: Icon(Icons.numbers, color: Color(0xFF004D40)),
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: notesCtrl,
+                      decoration: const InputDecoration(
+                        labelText: 'Notes (Optional)',
+                        prefixIcon: Icon(Icons.note_alt_outlined, color: Color(0xFF004D40)),
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(8)),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              'After Payment Due: ₹${remainingAfter.toInt()}',
+                              style: const TextStyle(fontWeight: FontWeight.bold),
+                              maxLines: 1,
+                              softWrap: false,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            totalAfter >= monthlyFee ? 'PAID ✓' : 'PARTIAL ⚠',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: totalAfter >= monthlyFee ? Colors.green : Colors.orange,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    CheckboxListTile(
+                      value: sendReceiptWhatsApp,
+                      onChanged: (val) => setStateBuilder(() => sendReceiptWhatsApp = val ?? true),
+                      title: const Text('Send receipt to parent via WhatsApp', style: TextStyle(fontSize: 13)),
+                      contentPadding: EdgeInsets.zero,
+                      controlAffinity: ListTileControlAffinity.leading,
+                      dense: true,
+                    ),
+                    const Divider(height: 20),
+                    const Text('Voice Note (Optional):', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                    const SizedBox(height: 8),
+                    Center(
+                      child: GestureDetector(
+                        onTap: () async {
+                          if (isRecording) {
+                            final path = await audioRecorder.stop();
+                            setStateBuilder(() {
+                              isRecording = false;
+                              recordFilePath = path;
+                            });
+                          } else {
+                            if (await audioRecorder.hasPermission()) {
+                              final directory = await getApplicationDocumentsDirectory();
+                              final p = '${directory.path}/voice_note_${DateTime.now().millisecondsSinceEpoch}.m4a';
+                              await audioRecorder.start(const RecordConfig(), path: p);
+                              setStateBuilder(() {
+                                isRecording = true;
+                                recordFilePath = null;
+                              });
+                            }
+                          }
+                        },
+                        child: CircleAvatar(
+                          radius: 28,
+                          backgroundColor: isRecording ? Colors.red : AppIcons.primaryTeal,
+                          child: Icon(isRecording ? Icons.stop : Icons.mic, color: Colors.white, size: 28),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    if (isRecording) const Center(child: Text('Recording...', style: TextStyle(color: Colors.red, fontSize: 12))),
+                    if (recordFilePath != null)
+                      Center(
+                        child: TextButton.icon(
+                          onPressed: () async {
+                            await _audioPlayer.play(DeviceFileSource(recordFilePath!));
+                          },
+                          icon: const Icon(Icons.play_arrow, size: 18),
+                          label: const Text('Play Voice Note', style: TextStyle(fontSize: 12)),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
             ),
-          ],
-        ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  if (isRecording) audioRecorder.stop();
+                  Navigator.pop(dialogCtx);
+                },
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: () async {
+                  if (!formKey.currentState!.validate()) return;
+                  if (isRecording) await audioRecorder.stop();
+
+                  final amt = int.parse(amountCtrl.text.trim());
+                  final formattedTime = DateFormat('dd MMM yyyy, hh:mm a').format(paymentDate);
+                  final month = DateFormat('MMMM yyyy').format(paymentDate);
+
+                  final newPayment = FeePayment(
+                    studentId: item.student.id!,
+                    amount: amt,
+                    mode: selectedMode,
+                    timestamp: paymentDate.toIso8601String(),
+                    reference: refCtrl.text.trim().isNotEmpty ? refCtrl.text.trim() : null,
+                    notes: notesCtrl.text.trim().isNotEmpty ? notesCtrl.text.trim() : null,
+                    voiceNotePath: recordFilePath,
+                    receiptSent: sendReceiptWhatsApp ? 1 : 0,
+                    receiptSentAt: sendReceiptWhatsApp ? DateTime.now().toIso8601String() : null,
+                  );
+
+                  await FeePaymentRepository().insertFeePayment(newPayment);
+
+                  if (context.mounted) {
+                    Navigator.pop(dialogCtx);
+                    _loadFeeRecords();
+
+                    final currentUser = Provider.of<AuthProvider>(context, listen: false).currentUser;
+                    final collectorName = currentUser?.name ?? 'Management';
+
+                    if (sendReceiptWhatsApp) {
+                      await WhatsAppUtility.sendFeeReceipt(
+                        context,
+                        item.student.phone ?? '',
+                        item.student.name,
+                        amt.toDouble(),
+                        month,
+                        paymentMode: selectedMode,
+                        dateTime: formattedTime,
+                        collectorName: collectorName,
+                        languageCode: LanguageResolver.forStudent(item.student),
+                        senderName: collectorName,
+                      );
+                    }
+
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: const Text('Payment Logged Successfully!'),
+                        action: SnackBarAction(
+                          label: 'Receipt',
+                          textColor: Colors.amber,
+                          onPressed: () {
+                            WhatsAppUtility.sendFeeReceipt(
+                              context,
+                              item.student.phone ?? '',
+                              item.student.name,
+                              amt.toDouble(),
+                              month,
+                              paymentMode: selectedMode,
+                              dateTime: formattedTime,
+                              collectorName: collectorName,
+                              languageCode: LanguageResolver.forStudent(item.student),
+                              senderName: collectorName,
+                            );
+                          },
+                        ),
+                      ),
+                    );
+                  }
+                },
+                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF004D40), foregroundColor: Colors.white),
+                child: const Text('Log Payment & Save'),
+              ),
+            ],
+          );
+        },
       ),
     );
   }

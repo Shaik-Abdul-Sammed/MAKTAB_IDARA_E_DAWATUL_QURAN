@@ -87,24 +87,22 @@ class FeeCard extends StatelessWidget {
                   ],
                 ),
               ),
-              Flexible(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: statusColor.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: statusColor.withValues(alpha: 0.4)),
-                  ),
-                  child: Text(
-                    item.status,
-                    maxLines: 1,
-                    softWrap: false,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                      color: statusColor,
-                    ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: statusColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: statusColor.withValues(alpha: 0.4)),
+                ),
+                child: Text(
+                  item.status,
+                  maxLines: 1,
+                  softWrap: false,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: statusColor,
                   ),
                 ),
               ),
@@ -159,7 +157,8 @@ class FeeCard extends StatelessWidget {
                       children: [
                         Icon(Icons.payment_rounded, size: 14),
                         SizedBox(width: 4),
-                        Flexible(
+                        FittedBox(
+                          fit: BoxFit.scaleDown,
                           child: Text(
                             'Pay UPI',
                             maxLines: 1,
@@ -189,17 +188,43 @@ class FeeCard extends StatelessWidget {
                       color: AppIcons.primaryTeal,
                       onTap: onLog,
                     ),
-                    _IconAction(
-                      icon: Icons.edit_note,
-                      tooltip: 'Edit Fee Amount',
-                      color: Colors.blueGrey,
-                      onTap: onEdit,
-                    ),
-                    _IconAction(
-                      icon: AppIcons.notification,
-                      tooltip: 'Send Local App Notification',
-                      color: AppIcons.primaryTeal,
-                      onTap: onNotify,
+                    SizedBox(
+                      width: 32,
+                      height: 32,
+                      child: PopupMenuButton<String>(
+                        icon: const Icon(Icons.more_vert, size: 20, color: Colors.blueGrey),
+                        padding: EdgeInsets.zero,
+                        tooltip: 'More options',
+                        onSelected: (val) {
+                          if (val == 'edit') {
+                            onEdit();
+                          } else if (val == 'notify') {
+                            onNotify();
+                          }
+                        },
+                        itemBuilder: (context) => [
+                          const PopupMenuItem(
+                            value: 'edit',
+                            child: Row(
+                              children: [
+                                Icon(Icons.edit_note, size: 20, color: Colors.blueGrey),
+                                SizedBox(width: 8),
+                                Text('Edit Fee Amount', style: TextStyle(fontSize: 13)),
+                              ],
+                            ),
+                          ),
+                          const PopupMenuItem(
+                            value: 'notify',
+                            child: Row(
+                              children: [
+                                Icon(AppIcons.notification, size: 20, color: AppIcons.primaryTeal),
+                                SizedBox(width: 8),
+                                Text('Send Notification', style: TextStyle(fontSize: 13)),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
@@ -223,7 +248,8 @@ class FeeCard extends StatelessWidget {
                       children: [
                         Icon(AppIcons.whatsapp, size: 14),
                         SizedBox(width: 4),
-                        Flexible(
+                        FittedBox(
+                          fit: BoxFit.scaleDown,
                           child: Text(
                             'Send Receipt',
                             maxLines: 1,
@@ -260,19 +286,19 @@ class _IconAction extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: 36,
-      height: 36,
+      width: 32,
+      height: 32,
       child: IconButton(
-        icon: Icon(icon, size: 20, color: color),
+        icon: Icon(icon, size: 19, color: color),
         tooltip: tooltip,
         onPressed: onTap,
         visualDensity: VisualDensity.compact,
         padding: EdgeInsets.zero,
         constraints: const BoxConstraints(
-          minWidth: 36,
-          maxWidth: 36,
-          minHeight: 36,
-          maxHeight: 36,
+          minWidth: 32,
+          maxWidth: 32,
+          minHeight: 32,
+          maxHeight: 32,
         ),
       ),
     );

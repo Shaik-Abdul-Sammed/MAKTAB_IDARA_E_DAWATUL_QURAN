@@ -181,6 +181,9 @@ class _FeePaymentsListWidgetState extends State<FeePaymentsListWidget> {
     final amountCtrl = TextEditingController(
       text: existing != null ? '${existing['amount']}' : '',
     );
+    final refCtrl = TextEditingController(
+      text: existing?['reference'] as String? ?? '',
+    );
     final notesCtrl = TextEditingController(
       text: existing?['notes'] as String? ?? '',
     );
@@ -259,6 +262,14 @@ class _FeePaymentsListWidgetState extends State<FeePaymentsListWidget> {
                 ),
                 const SizedBox(height: 12),
                 TextField(
+                  controller: refCtrl,
+                  decoration: const InputDecoration(
+                    labelText: 'Reference / UTR / Cheque (optional)',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
                   controller: notesCtrl,
                   maxLines: 3,
                   decoration: const InputDecoration(
@@ -305,6 +316,7 @@ class _FeePaymentsListWidgetState extends State<FeePaymentsListWidget> {
                     timestamp: existing['timestamp'] as String,
                     receiptSent: (existing['receipt_sent'] as int?) ?? 0,
                     receiptSentAt: existing['receipt_sent_at'] as String?,
+                    reference: refCtrl.text.trim().isEmpty ? null : refCtrl.text.trim(),
                     notes: notesCtrl.text.trim().isEmpty ? null : notesCtrl.text.trim(),
                   );
                   await _repo.updateFeePayment(updated);
@@ -314,6 +326,7 @@ class _FeePaymentsListWidgetState extends State<FeePaymentsListWidget> {
                     amount: amt,
                     mode: selectedMode,
                     timestamp: DateTime.now().toIso8601String(),
+                    reference: refCtrl.text.trim().isEmpty ? null : refCtrl.text.trim(),
                     notes: notesCtrl.text.trim().isEmpty ? null : notesCtrl.text.trim(),
                   );
                   await _repo.insertFeePayment(payment);
