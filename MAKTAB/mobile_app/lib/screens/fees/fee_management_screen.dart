@@ -174,33 +174,6 @@ class _FeeManagementScreenState extends State<FeeManagementScreen> {
     }
   }
 
-  Future<void> _payViaUpiThenRecord(FeeStudentItem item) async {
-    if (item.amountDue <= 0) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No pending fee to pay.')),
-      );
-      return;
-    }
-
-    final amount = item.amountDue;
-    final upiUri = Uri.parse(
-      'upi://pay?pa=maktab@upi'
-      '&pn=MaktabQuran'
-      '&am=${amount.toStringAsFixed(2)}'
-      '&cu=INR'
-      '&tn=Fee_${item.student.admissionNumber}',
-    );
-
-    try {
-      await launchUrl(upiUri, mode: LaunchMode.externalApplication);
-    } catch (e) {
-      debugPrint('[Fee UPI] launch failed: $e');
-    }
-
-    if (!mounted) return;
-    _showRecordDialog(item, defaultMode: 'UPI', defaultAmount: amount);
-  }
 
   void _openBulkMessagingDialog() {
     showDialog(
@@ -370,10 +343,9 @@ class _FeeManagementScreenState extends State<FeeManagementScreen> {
                             final item = filtered[index];
                             return FeeCard(
                               item: item,
-                              onPayUpi: () => _payViaUpiThenRecord(item),
                               onWhatsApp: () => _sendWhatsAppReminder(item),
                               onNotify: () => _triggerNotification(item),
-                              onLog: () => _showRecordDialog(item),
+                              onLog: () => _showRecordDialog(item, defaultAmount: item.amountDue > 0 ? item.amountDue : null),
                               onEdit: () => _editFeeStructure(item),
                               onReceipt: () => _sendReceipt(item),
                             );
@@ -414,7 +386,7 @@ class _FeeManagementScreenState extends State<FeeManagementScreen> {
         children: _feeItems.map((item) => SimpleDialogOption(
           onPressed: () {
             Navigator.pop(ctx);
-            _showRecordDialog(item);
+            _showRecordDialog(item, defaultAmount: item.amountDue > 0 ? item.amountDue : null);
           },
           child: Text('${item.student.name} (ADM: ${item.student.admissionNumber})', maxLines: 2, overflow: TextOverflow.ellipsis),
         )).toList(),
@@ -512,8 +484,8 @@ class _FeeManagementScreenState extends State<FeeManagementScreen> {
     final remainingDue = item.amountDue;
     final alreadyPaid = (monthlyFee - remainingDue).clamp(0.0, monthlyFee);
 
-    final defaultAmtVal = defaultAmount ?? (remainingDue > 0 ? remainingDue : monthlyFee);
-    final amountCtrl = TextEditingController(text: defaultAmtVal.toInt().toString());
+    final defaultAmtVal = defaultAmount ?? (remainingDue > 0 ? remainingDue : 0.0);
+    final amountCtrl = TextEditingController(text: defaultAmtVal > 0 ? defaultAmtVal.toInt().toString() : '');
     final refCtrl = TextEditingController();
     final notesCtrl = TextEditingController();
     DateTime paymentDate = DateTime.now();
@@ -532,7 +504,7 @@ class _FeeManagementScreenState extends State<FeeManagementScreen> {
 
           return AlertDialog(
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-            title: Text('Log Payment: ${item.student.name}', maxLines: 2, overflow: TextOverflow.ellipsis),
+            title: Text('Record Collection: ${item.student.name}', maxLines: 2, overflow: TextOverflow.ellipsis),
             content: SingleChildScrollView(
               child: Form(
                 key: formKey,
@@ -566,20 +538,47 @@ class _FeeManagementScreenState extends State<FeeManagementScreen> {
                     const SizedBox(height: 14),
                     TextFormField(
                       controller: amountCtrl,
-                      keyboardType: TextInputType.number,
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
                       decoration: const InputDecoration(
-                        labelText: 'Amount Paying Now (₹)',
+                        labelText: 'Amount Paying Now',
+                        prefixText: '₹ ',
                         prefixIcon: Icon(Icons.currency_rupee, color: Color(0xFF004D40)),
                         border: OutlineInputBorder(),
                       ),
                       onChanged: (val) => setStateBuilder(() {}),
                       validator: (val) {
                         if (val == null || val.trim().isEmpty) return 'Enter payment amount';
-                        final amt = int.tryParse(val.trim());
+                        final amt = double.tryParse(val.trim());
                         if (amt == null || amt <= 0) return 'Enter a valid amount > 0';
                         return null;
                       },
                     ),
+                    if (payingNow > remainingDue)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: Colors.amber.shade50,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.amber.shade400),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(Icons.info_outline, size: 16, color: Colors.amber.shade900),
+                              const SizedBox(width: 6),
+                              Expanded(
+                                child: Text(
+                                  remainingDue > 0
+                                      ? 'Note: ₹${(payingNow - remainingDue).toInt()} will be recorded as advance payment.'
+                                      : 'Note: Full amount of ₹${payingNow.toInt()} is an advance payment.',
+                                  style: TextStyle(fontSize: 12, color: Colors.amber.shade900),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
                     const SizedBox(height: 12),
                     DropdownButtonFormField<String>(
                       initialValue: modes.contains(selectedMode) ? selectedMode : modes.first,
@@ -729,8 +728,9 @@ class _FeeManagementScreenState extends State<FeeManagementScreen> {
                 onPressed: () async {
                   if (!formKey.currentState!.validate()) return;
                   if (isRecording) await audioRecorder.stop();
+                  if (!context.mounted) return;
 
-                  final amt = int.parse(amountCtrl.text.trim());
+                  final amt = int.tryParse(amountCtrl.text.trim()) ?? (double.tryParse(amountCtrl.text.trim())?.round() ?? 0);
                   final formattedTime = DateFormat('dd MMM yyyy, hh:mm a').format(paymentDate);
                   final month = DateFormat('MMMM yyyy').format(paymentDate);
 
@@ -750,28 +750,28 @@ class _FeeManagementScreenState extends State<FeeManagementScreen> {
 
                   await FeePaymentRepository().insertFeePayment(newPayment);
 
+                  if (!context.mounted) return;
+                  Navigator.pop(dialogCtx);
+                  _loadFeeRecords();
+
+                  final collectorName = currentUser?.name ?? 'Management';
+
+                  if (sendReceiptWhatsApp) {
+                    await WhatsAppUtility.sendFeeReceipt(
+                      context,
+                      item.student.phone ?? '',
+                      item.student.name,
+                      amt.toDouble(),
+                      month,
+                      paymentMode: selectedMode,
+                      dateTime: formattedTime,
+                      collectorName: collectorName,
+                      languageCode: LanguageResolver.forStudent(item.student),
+                      senderName: collectorName,
+                    );
+                  }
+
                   if (context.mounted) {
-                    Navigator.pop(dialogCtx);
-                    _loadFeeRecords();
-
-                    final currentUser = Provider.of<AuthProvider>(context, listen: false).currentUser;
-                    final collectorName = currentUser?.name ?? 'Management';
-
-                    if (sendReceiptWhatsApp) {
-                      await WhatsAppUtility.sendFeeReceipt(
-                        context,
-                        item.student.phone ?? '',
-                        item.student.name,
-                        amt.toDouble(),
-                        month,
-                        paymentMode: selectedMode,
-                        dateTime: formattedTime,
-                        collectorName: collectorName,
-                        languageCode: LanguageResolver.forStudent(item.student),
-                        senderName: collectorName,
-                      );
-                    }
-
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: const Text('Payment Logged Successfully!'),

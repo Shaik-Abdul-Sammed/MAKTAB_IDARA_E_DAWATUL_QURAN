@@ -18,7 +18,7 @@ class FeeStudentItem {
 
 class FeeCard extends StatelessWidget {
   final FeeStudentItem item;
-  final VoidCallback onPayUpi;
+  final VoidCallback? onPayUpi;
   final VoidCallback onWhatsApp;
   final VoidCallback onNotify;
   final VoidCallback onLog;
@@ -28,7 +28,7 @@ class FeeCard extends StatelessWidget {
   const FeeCard({
     super.key,
     required this.item,
-    required this.onPayUpi,
+    this.onPayUpi,
     required this.onWhatsApp,
     required this.onNotify,
     required this.onLog,
@@ -144,27 +144,27 @@ class FeeCard extends StatelessWidget {
               children: [
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: onPayUpi,
+                    onPressed: onPayUpi ?? onLog,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppIcons.gold,
-                      foregroundColor: AppIcons.primaryTeal,
+                      backgroundColor: onPayUpi != null ? AppIcons.gold : const Color(0xFF004D40),
+                      foregroundColor: onPayUpi != null ? AppIcons.primaryTeal : Colors.white,
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     ),
-                    child: const Row(
+                    child: Row(
                       mainAxisSize: MainAxisSize.min,
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.payment_rounded, size: 14),
-                        SizedBox(width: 4),
+                        Icon(onPayUpi != null ? Icons.payment_rounded : Icons.add_card_rounded, size: 14),
+                        const SizedBox(width: 4),
                         FittedBox(
                           fit: BoxFit.scaleDown,
                           child: Text(
-                            'Pay UPI',
+                            onPayUpi != null ? 'Pay UPI' : 'RECORD COLLECTION',
                             maxLines: 1,
                             softWrap: false,
                             overflow: TextOverflow.ellipsis,
-                            style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
                           ),
                         ),
                       ],
@@ -184,12 +184,13 @@ class FeeCard extends StatelessWidget {
                         color: AppIcons.whatsappGreen,
                         onTap: onWhatsApp,
                       ),
-                      _IconAction(
-                        icon: Icons.mic,
-                        tooltip: 'Log/Voice Payment',
-                        color: AppIcons.primaryTeal,
-                        onTap: onLog,
-                      ),
+                      if (onPayUpi != null)
+                        _IconAction(
+                          icon: Icons.mic,
+                          tooltip: 'Log/Voice Payment',
+                          color: AppIcons.primaryTeal,
+                          onTap: onLog,
+                        ),
                       SizedBox(
                         width: 32,
                         height: 32,

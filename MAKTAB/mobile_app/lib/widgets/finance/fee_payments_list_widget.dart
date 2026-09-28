@@ -240,6 +240,7 @@ class _FeePaymentsListWidgetState extends State<FeePaymentsListWidget> {
                   keyboardType: TextInputType.number,
                   decoration: const InputDecoration(
                     labelText: 'Amount (₹)',
+                    prefixText: '₹ ',
                     border: OutlineInputBorder(),
                   ),
                 ),

@@ -1163,7 +1163,7 @@ class _TeacherFeesScreenState extends State<TeacherFeesScreen> {
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
                   itemCount: _myCollections.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 8),
+                  separatorBuilder: (_, index) => const SizedBox(height: 8),
                   itemBuilder: (context, index) {
                     final p = _myCollections[index];
                     final rawTime = (p['timestamp'] ?? '').toString();
@@ -1266,7 +1266,7 @@ class _TeacherFeesScreenState extends State<TeacherFeesScreen> {
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
                     itemCount: _unattributedCollections.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 8),
+                    separatorBuilder: (_, index) => const SizedBox(height: 8),
                     itemBuilder: (context, index) {
                       final p = _unattributedCollections[index];
                       final rawTime = (p['timestamp'] ?? '').toString();
@@ -1520,7 +1520,7 @@ class _TeacherFeesScreenState extends State<TeacherFeesScreen> {
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 itemCount: _myHandovers.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 8),
+                separatorBuilder: (_, index) => const SizedBox(height: 8),
                 itemBuilder: (context, index) {
                   final h = _myHandovers[index];
                   final parsed = DateTime.tryParse(h.timestamp);

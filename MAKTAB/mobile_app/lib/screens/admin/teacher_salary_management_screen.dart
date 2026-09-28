@@ -113,7 +113,7 @@ class _TeacherSalaryManagementScreenState extends State<TeacherSalaryManagementS
 
   // ── UPI Launch Handler ──────────────────────────────────────────────────
 
-  Future<void> _promptForUpiId(User teacher) async {
+  Future<void> _promptForUpiId(User teacher, {double? amount}) async {
     final upiCtrl = TextEditingController(text: teacher.upiId ?? '');
     final formKey = GlobalKey<FormState>();
     final saved = await showDialog<bool>(
@@ -169,8 +169,9 @@ class _TeacherSalaryManagementScreenState extends State<TeacherSalaryManagementS
       final paid = _getPaidAmountForTeacher(teacher.id!);
       final monthlySalary = teacher.monthlySalary ?? 0;
       final remaining = (monthlySalary - paid).clamp(0, monthlySalary);
+      final targetAmount = amount ?? remaining.toDouble();
       if (mounted) {
-        await _payViaUpiThenRecord(updated, remaining.toDouble());
+        await _payViaUpiThenRecord(updated, targetAmount);
       }
     }
   }
@@ -186,49 +187,36 @@ class _TeacherSalaryManagementScreenState extends State<TeacherSalaryManagementS
     }
     if (teacher.upiId == null || teacher.upiId!.trim().isEmpty) {
       // Prompt the manager to enter the UPI ID first
-      await _promptForUpiId(teacher);
+      await _promptForUpiId(teacher, amount: amount);
       return;
     }
-    final uri = Uri(
-      scheme: 'upi',
-      host: 'pay',
-      queryParameters: {
-        'pa': teacher.upiId!.trim(),
-        'pn': teacher.name,
-        'am': amount.toStringAsFixed(2),
-        'cu': 'INR',
-        'tn': 'Salary',
-      },
+    final upiUri = Uri.parse(
+      'upi://pay?pa=${teacher.upiId!.trim()}'
+      '&pn=${Uri.encodeComponent(teacher.name)}'
+      '&am=${amount.toStringAsFixed(2)}'
+      '&cu=INR'
+      '&tn=Salary_${teacher.teacherId ?? teacher.id}',
     );
     try {
-      final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
-      if (!launched && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No UPI app installed on this device.')),
-        );
-      }
+      await launchUrl(upiUri, mode: LaunchMode.externalApplication);
     } catch (e) {
-      debugPrint('[UPI] launch failed: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Could not open UPI app: $e')),
-        );
-      }
+      debugPrint('[Teacher Salary UPI] launch failed: $e');
     }
     // After UPI app returns (or error), open record payment dialog pre-filled with UPI
     if (mounted) {
-      _showRecordPaymentDialog(teacher, defaultMode: 'UPI');
+      _showRecordPaymentDialog(teacher, defaultMode: 'UPI', defaultAmount: amount);
     }
   }
 
   // ── Record Payment Dialog ────────────────────────────────────────────────
 
-  void _showRecordPaymentDialog(User teacher, {String defaultMode = 'Cash', String defaultRef = ''}) {
+  void _showRecordPaymentDialog(User teacher, {String defaultMode = 'Cash', String defaultRef = '', double? defaultAmount}) {
     final monthlySalary = teacher.monthlySalary ?? 0;
     final alreadyPaid = _getPaidAmountForTeacher(teacher.id!);
     final remaining = (monthlySalary - alreadyPaid).clamp(0, monthlySalary);
 
-    final amountController = TextEditingController(text: remaining > 0 ? remaining.toString() : '0');
+    final defaultAmtVal = defaultAmount != null ? defaultAmount.toInt() : (remaining > 0 ? remaining : 0);
+    final amountController = TextEditingController(text: defaultAmtVal > 0 ? defaultAmtVal.toString() : '');
     final refController = TextEditingController(text: defaultRef);
     final notesController = TextEditingController();
     String selectedMode = defaultMode;
@@ -241,7 +229,7 @@ class _TeacherSalaryManagementScreenState extends State<TeacherSalaryManagementS
       builder: (dialogCtx) {
         return StatefulBuilder(
           builder: (context, setDialogState) {
-            final payingNow = int.tryParse(amountController.text.trim()) ?? 0;
+            final payingNow = int.tryParse(amountController.text.trim()) ?? (double.tryParse(amountController.text.trim())?.round() ?? 0);
             final newTotal = alreadyPaid + payingNow;
             final newRemaining = (monthlySalary - newTotal).clamp(0, monthlySalary);
 
@@ -280,20 +268,47 @@ class _TeacherSalaryManagementScreenState extends State<TeacherSalaryManagementS
                       const SizedBox(height: 16),
                       TextFormField(
                         controller: amountController,
-                        keyboardType: TextInputType.number,
+                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
                         decoration: const InputDecoration(
-                          labelText: 'Amount Paying Now (₹)',
+                          labelText: 'Amount Paying Now',
+                          prefixText: '₹ ',
                           prefixIcon: Icon(Icons.currency_rupee, color: Color(0xFF004D40)),
                           border: OutlineInputBorder(),
                         ),
                         onChanged: (val) => setDialogState(() {}),
                         validator: (val) {
                           if (val == null || val.trim().isEmpty) return 'Enter payment amount';
-                          final amt = int.tryParse(val.trim());
+                          final amt = double.tryParse(val.trim());
                           if (amt == null || amt <= 0) return 'Enter a valid amount > 0';
                           return null;
                         },
                       ),
+                      if (payingNow > remaining)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 8),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: Colors.amber.shade50,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: Colors.amber.shade400),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(Icons.info_outline, size: 16, color: Colors.amber.shade900),
+                                const SizedBox(width: 6),
+                                Expanded(
+                                  child: Text(
+                                    remaining > 0
+                                        ? 'Note: ₹${payingNow - remaining} will be recorded as advance salary.'
+                                        : 'Note: Full amount of ₹$payingNow is an advance salary payment.',
+                                    style: TextStyle(fontSize: 12, color: Colors.amber.shade900),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
                       const SizedBox(height: 12),
                       DropdownButtonFormField<String>(
                         initialValue: ['UPI', 'Bank Transfer', 'Cash', 'Other'].contains(selectedMode) ? selectedMode : 'Cash',
@@ -352,7 +367,7 @@ class _TeacherSalaryManagementScreenState extends State<TeacherSalaryManagementS
                   style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF004D40), foregroundColor: Colors.white),
                   onPressed: () async {
                     if (formKey.currentState!.validate()) {
-                      final amount = int.parse(amountController.text.trim());
+                      final amount = int.tryParse(amountController.text.trim()) ?? (double.tryParse(amountController.text.trim())?.round() ?? 0);
                       final auth = Provider.of<AuthProvider>(context, listen: false);
                       final maktabId = auth.currentUser?.dob ?? 'MAKTAB-001';
 
@@ -1004,11 +1019,12 @@ class _TeacherSalaryManagementScreenState extends State<TeacherSalaryManagementS
                                           Expanded(
                                             child: ElevatedButton.icon(
                                               icon: const Icon(Icons.qr_code, size: 16),
-                                              label: Text(
-                                                loc?.translate('salary_mgmt_pay_upi') ?? 'PAY VIA UPI',
-                                                maxLines: 1,
-                                                softWrap: false,
-                                                overflow: TextOverflow.ellipsis,
+                                              label: FittedBox(
+                                                fit: BoxFit.scaleDown,
+                                                child: Text(
+                                                  loc?.translate('salary_mgmt_pay_upi') ?? 'PAY VIA UPI',
+                                                  maxLines: 1,
+                                                ),
                                               ),
                                               style: ElevatedButton.styleFrom(
                                                 backgroundColor: const Color(0xFF004D40),
