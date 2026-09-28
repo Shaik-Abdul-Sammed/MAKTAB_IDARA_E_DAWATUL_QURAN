@@ -262,13 +262,6 @@ class _StudentDetailContent extends StatelessWidget {
                   student.name,
                   textAlign: TextAlign.center,
                   style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 22), maxLines: 2, overflow: TextOverflow.ellipsis),
-                if (student.arabicName != null && student.arabicName!.isNotEmpty) ...[
-                  const SizedBox(height: 4),
-                  Text(
-                    student.arabicName!,
-                    style: const TextStyle(color: Color(0xFFFFD700), fontSize: 18, fontFamily: 'Traditional Arabic'),
-                  ),
-                ],
                 const SizedBox(height: 8),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),

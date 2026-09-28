@@ -14,24 +14,42 @@ class FeeHandoverRepository {
   }
 
   /// Get all handovers made by a specific teacher, sorted newest first
-  Future<List<FeeHandover>> getHandoversForTeacher(int teacherId) async {
+  Future<List<FeeHandover>> getHandoversForTeacher(int teacherId, [int? alternateTeacherId]) async {
     final db = await _dbHelper.database;
-    final List<Map<String, dynamic>> maps = await db.query(
-      'fee_handovers',
-      where: 'teacher_id = ?',
-      whereArgs: [teacherId],
-      orderBy: 'timestamp DESC, id DESC',
-    );
+    final List<Map<String, dynamic>> maps;
+    if (alternateTeacherId != null && alternateTeacherId != teacherId) {
+      maps = await db.query(
+        'fee_handovers',
+        where: 'teacher_id = ? OR teacher_id = ?',
+        whereArgs: [teacherId, alternateTeacherId],
+        orderBy: 'timestamp DESC, id DESC',
+      );
+    } else {
+      maps = await db.query(
+        'fee_handovers',
+        where: 'teacher_id = ?',
+        whereArgs: [teacherId],
+        orderBy: 'timestamp DESC, id DESC',
+      );
+    }
     return maps.map((m) => FeeHandover.fromMap(m)).toList();
   }
 
   /// Total amount handed over (settled) to manager by teacher
-  Future<int> getTotalHandedOver(int teacherId) async {
+  Future<int> getTotalHandedOver(int teacherId, [int? alternateTeacherId]) async {
     final db = await _dbHelper.database;
-    final result = await db.rawQuery(
-      'SELECT COALESCE(SUM(amount), 0) AS total FROM fee_handovers WHERE teacher_id = ?',
-      [teacherId],
-    );
+    final List<Map<String, dynamic>> result;
+    if (alternateTeacherId != null && alternateTeacherId != teacherId) {
+      result = await db.rawQuery(
+        'SELECT COALESCE(SUM(amount), 0) AS total FROM fee_handovers WHERE teacher_id = ? OR teacher_id = ?',
+        [teacherId, alternateTeacherId],
+      );
+    } else {
+      result = await db.rawQuery(
+        'SELECT COALESCE(SUM(amount), 0) AS total FROM fee_handovers WHERE teacher_id = ?',
+        [teacherId],
+      );
+    }
     if (result.isNotEmpty) {
       final val = result.first['total'];
       if (val is num) return val.toInt();
@@ -40,12 +58,20 @@ class FeeHandoverRepository {
   }
 
   /// Total student fees collected by this teacher
-  Future<int> getTotalCollected(int teacherId) async {
+  Future<int> getTotalCollected(int teacherId, [int? alternateTeacherId]) async {
     final db = await _dbHelper.database;
-    final result = await db.rawQuery(
-      'SELECT COALESCE(SUM(amount), 0) AS total FROM fee_payments WHERE collected_by = ?',
-      [teacherId],
-    );
+    final List<Map<String, dynamic>> result;
+    if (alternateTeacherId != null && alternateTeacherId != teacherId) {
+      result = await db.rawQuery(
+        'SELECT COALESCE(SUM(amount), 0) AS total FROM fee_payments WHERE collected_by = ? OR collected_by = ?',
+        [teacherId, alternateTeacherId],
+      );
+    } else {
+      result = await db.rawQuery(
+        'SELECT COALESCE(SUM(amount), 0) AS total FROM fee_payments WHERE collected_by = ?',
+        [teacherId],
+      );
+    }
     if (result.isNotEmpty) {
       final val = result.first['total'];
       if (val is num) return val.toInt();
@@ -54,8 +80,30 @@ class FeeHandoverRepository {
   }
 
   /// Get payments collected by this teacher with student details
-  Future<List<Map<String, dynamic>>> getPaymentsCollectedByTeacher(int teacherId) async {
+  Future<List<Map<String, dynamic>>> getPaymentsCollectedByTeacher(int teacherId, [int? alternateTeacherId]) async {
     final db = await _dbHelper.database;
+    if (alternateTeacherId != null && alternateTeacherId != teacherId) {
+      return await db.rawQuery('''
+        SELECT 
+          fp.id,
+          fp.student_id,
+          fp.amount,
+          fp.mode,
+          fp.timestamp,
+          fp.reference,
+          fp.notes,
+          fp.receipt_sent,
+          fp.receipt_sent_at,
+          fp.collected_by,
+          s.name AS student_name,
+          s.admission_number,
+          s.phone AS student_phone
+        FROM fee_payments fp
+        LEFT JOIN students s ON fp.student_id = s.id
+        WHERE fp.collected_by = ? OR fp.collected_by = ?
+        ORDER BY fp.timestamp DESC, fp.id DESC
+      ''', [teacherId, alternateTeacherId]);
+    }
     return await db.rawQuery('''
       SELECT 
         fp.id,

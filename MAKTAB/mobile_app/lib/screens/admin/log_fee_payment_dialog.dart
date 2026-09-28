@@ -50,6 +50,7 @@ class _LogFeePaymentDialogState extends State<LogFeePaymentDialog> {
       // Capture precise current date and time
       final now = DateTime.now();
       final timestamp = now.toIso8601String();
+      final currentUser = Provider.of<AuthProvider>(context, listen: false).currentUser;
 
       final payment = FeePayment(
         studentId: widget.student.id!,
@@ -57,6 +58,7 @@ class _LogFeePaymentDialogState extends State<LogFeePaymentDialog> {
         mode: _selectedMode,
         timestamp: timestamp,
         notes: _notesCtrl.text.trim().isNotEmpty ? _notesCtrl.text.trim() : null,
+        collectedBy: currentUser?.id,
       );
 
       final provider = Provider.of<StudentDetailProvider>(context, listen: false);

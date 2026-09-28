@@ -63,8 +63,9 @@ class UserRepository {
     final db = await _dbHelper.database;
     final List<Map<String, dynamic>> maps = await db.query(
       'users',
-      where: 'role = ?',
-      whereArgs: ['admin'],
+      where: "role = ? OR role = ?",
+      whereArgs: ['admin', 'manager'],
+      limit: 1,
     );
     if (maps.isNotEmpty) {
       return User.fromMap(maps.first);

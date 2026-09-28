@@ -94,15 +94,18 @@ class FeeCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(color: statusColor.withValues(alpha: 0.4)),
                 ),
-                child: Text(
-                  item.status,
-                  maxLines: 1,
-                  softWrap: false,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold,
-                    color: statusColor,
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    item.status,
+                    maxLines: 1,
+                    softWrap: false,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      color: statusColor,
+                    ),
                   ),
                 ),
               ),
@@ -123,16 +126,20 @@ class FeeCard extends StatelessWidget {
               ),
               SizedBox(
                 width: 80,
-                child: Text(
-                  '₹${item.amountDue.toInt()}',
-                  textAlign: TextAlign.end,
-                  maxLines: 1,
-                  softWrap: false,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                    color: AppIcons.primaryTeal,
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerRight,
+                  child: Text(
+                    '₹${item.amountDue.toInt()}',
+                    textAlign: TextAlign.end,
+                    maxLines: 1,
+                    softWrap: false,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      color: AppIcons.primaryTeal,
+                    ),
                   ),
                 ),
               ),
@@ -148,23 +155,24 @@ class FeeCard extends StatelessWidget {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: onPayUpi != null ? AppIcons.gold : const Color(0xFF004D40),
                       foregroundColor: onPayUpi != null ? AppIcons.primaryTeal : Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     ),
                     child: Row(
-                      mainAxisSize: MainAxisSize.min,
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Icon(onPayUpi != null ? Icons.payment_rounded : Icons.add_card_rounded, size: 14),
-                        const SizedBox(width: 4),
-                        FittedBox(
-                          fit: BoxFit.scaleDown,
-                          child: Text(
-                            onPayUpi != null ? 'Pay UPI' : 'RECORD COLLECTION',
-                            maxLines: 1,
-                            softWrap: false,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                        const SizedBox(width: 2),
+                        Flexible(
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              onPayUpi != null ? 'Pay UPI' : 'RECORD COLLECTION',
+                              maxLines: 1,
+                              softWrap: false,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                            ),
                           ),
                         ),
                       ],
@@ -243,22 +251,23 @@ class FeeCard extends StatelessWidget {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppIcons.whatsappGreen,
                       foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     ),
                     child: const Row(
-                      mainAxisSize: MainAxisSize.min,
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Icon(AppIcons.whatsapp, size: 14),
-                        SizedBox(width: 4),
-                        FittedBox(
-                          fit: BoxFit.scaleDown,
-                          child: Text(
-                            'Send Receipt',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                        SizedBox(width: 2),
+                        Flexible(
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              'Send Receipt',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                            ),
                           ),
                         ),
                       ],

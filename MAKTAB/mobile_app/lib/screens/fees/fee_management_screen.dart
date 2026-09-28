@@ -362,34 +362,6 @@ class _FeeManagementScreenState extends State<FeeManagementScreen> {
             ],
           ),
         ),
-        floatingActionButton: FloatingActionButton.extended(
-          onPressed: _showRecordPaymentDialog,
-          backgroundColor: const Color(0xFF004D40),
-          foregroundColor: Colors.white,
-          elevation: 4,
-          icon: const Icon(Icons.add_card_rounded, size: 22),
-          label: Text(
-            loc?.translate('fee_record_payment') ?? 'Record Payment',
-            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14), maxLines: 1, overflow: TextOverflow.ellipsis),
-        ),
-      ),
-    );
-  }
-
-  void _showRecordPaymentDialog() {
-    if (_feeItems.isEmpty) return;
-    final loc = AppLocalizations.of(context);
-    showDialog(
-      context: context,
-      builder: (ctx) => SimpleDialog(
-        title: Text(loc?.translate('fee_record_payment') ?? 'Record Payment', maxLines: 1, overflow: TextOverflow.ellipsis),
-        children: _feeItems.map((item) => SimpleDialogOption(
-          onPressed: () {
-            Navigator.pop(ctx);
-            _showRecordDialog(item, defaultAmount: item.amountDue > 0 ? item.amountDue : null);
-          },
-          child: Text('${item.student.name} (ADM: ${item.student.admissionNumber})', maxLines: 2, overflow: TextOverflow.ellipsis),
-        )).toList(),
       ),
     );
   }

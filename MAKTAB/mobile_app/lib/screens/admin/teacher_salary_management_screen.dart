@@ -191,16 +191,17 @@ class _TeacherSalaryManagementScreenState extends State<TeacherSalaryManagementS
       return;
     }
     final upiUri = Uri.parse(
-      'upi://pay?pa=${teacher.upiId!.trim()}'
+      'upi://pay?pa=${Uri.encodeComponent(teacher.upiId!.trim())}'
       '&pn=${Uri.encodeComponent(teacher.name)}'
       '&am=${amount.toStringAsFixed(2)}'
       '&cu=INR'
       '&tn=Salary_${teacher.teacherId ?? teacher.id}',
     );
+    debugPrint('[Salary UPI] launching $upiUri');
     try {
       await launchUrl(upiUri, mode: LaunchMode.externalApplication);
     } catch (e) {
-      debugPrint('[Teacher Salary UPI] launch failed: $e');
+      debugPrint('[Salary UPI] launch failed: $e');
     }
     // After UPI app returns (or error), open record payment dialog pre-filled with UPI
     if (mounted) {

@@ -322,6 +322,7 @@ class _FeePaymentsListWidgetState extends State<FeePaymentsListWidget> {
                   );
                   await _repo.updateFeePayment(updated);
                 } else {
+                  final currentUser = Provider.of<AuthProvider>(context, listen: false).currentUser;
                   final payment = FeePayment(
                     studentId: selectedStudent!.id!,
                     amount: amt,
@@ -329,6 +330,7 @@ class _FeePaymentsListWidgetState extends State<FeePaymentsListWidget> {
                     timestamp: DateTime.now().toIso8601String(),
                     reference: refCtrl.text.trim().isEmpty ? null : refCtrl.text.trim(),
                     notes: notesCtrl.text.trim().isEmpty ? null : notesCtrl.text.trim(),
+                    collectedBy: currentUser?.id,
                   );
                   await _repo.insertFeePayment(payment);
                 }

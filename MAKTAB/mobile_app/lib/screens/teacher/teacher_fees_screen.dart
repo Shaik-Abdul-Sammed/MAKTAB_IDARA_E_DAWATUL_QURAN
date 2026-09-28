@@ -54,6 +54,7 @@ class _TeacherFeesScreenState extends State<TeacherFeesScreen> {
   final TextEditingController _searchController = TextEditingController();
 
   int _teacherId = 0;
+  int? _alternateTeacherId;
   String _teacherName = '';
   User? _manager;
 
@@ -80,6 +81,7 @@ class _TeacherFeesScreenState extends State<TeacherFeesScreen> {
   void _boot() {
     final auth = Provider.of<AuthProvider>(context, listen: false);
     _teacherId = auth.currentUser?.teacherId ?? auth.currentUser?.id ?? 0;
+    _alternateTeacherId = (auth.currentUser?.id != null && auth.currentUser?.id != _teacherId) ? auth.currentUser!.id : null;
     _teacherName = auth.currentUser?.name ?? 'Teacher';
     _loadFeeRecords();
   }
@@ -129,12 +131,15 @@ class _TeacherFeesScreenState extends State<TeacherFeesScreen> {
         ));
       }
 
-      final totalCollected = await _handoverRepo.getTotalCollected(_teacherId);
-      final totalHandedOver = await _handoverRepo.getTotalHandedOver(_teacherId);
-      final myCollections = await _handoverRepo.getPaymentsCollectedByTeacher(_teacherId);
+      final totalCollected = await _handoverRepo.getTotalCollected(_teacherId, _alternateTeacherId);
+      final totalHandedOver = await _handoverRepo.getTotalHandedOver(_teacherId, _alternateTeacherId);
+      final myCollections = await _handoverRepo.getPaymentsCollectedByTeacher(_teacherId, _alternateTeacherId);
       final unattributed = await _handoverRepo.getUnattributedPayments();
-      final myHandovers = await _handoverRepo.getHandoversForTeacher(_teacherId);
+      final myHandovers = await _handoverRepo.getHandoversForTeacher(_teacherId, _alternateTeacherId);
       final manager = await _userRepo.getManager();
+
+      final outstanding = (totalCollected - totalHandedOver).clamp(0, 999999999);
+      debugPrint('[FeeTotals] collected=$totalCollected handedOver=$totalHandedOver outstanding=$outstanding');
 
       if (mounted) {
         setState(() {
@@ -192,10 +197,12 @@ class _TeacherFeesScreenState extends State<TeacherFeesScreen> {
       '&tn=Fee_${item.student.admissionNumber}',
     );
 
+    debugPrint('[Teacher UPI] launching $upiUri');
+
     try {
       await launchUrl(upiUri, mode: LaunchMode.externalApplication);
     } catch (e) {
-      debugPrint('[Teacher Fee UPI] launch failed: $e');
+      debugPrint('[Teacher UPI] launch failed: $e');
     }
 
     if (!mounted) return;
@@ -627,26 +634,34 @@ class _TeacherFeesScreenState extends State<TeacherFeesScreen> {
       return;
     }
 
-    String defaultMode = 'Cash';
+    // Resolve manager's UPI ID
+    final managerUpi = manager.upiId?.trim();
+    if (managerUpi == null || managerUpi.isEmpty) {
+      // Manager has no UPI ID configured — go straight to the record dialog (Cash mode)
+      if (!mounted) return;
+      _showHandoverDialog(manager, defaultAmount: amount.toInt(), defaultMode: 'Cash');
+      return;
+    }
 
-    if (manager.upiId != null && manager.upiId!.trim().isNotEmpty) {
-      defaultMode = 'UPI';
-      final upiUri = Uri.parse(
-        'upi://pay?pa=${manager.upiId!.trim()}'
-        '&pn=${Uri.encodeComponent(manager.name)}'
-        '&am=${amount.toStringAsFixed(2)}'
-        '&cu=INR'
-        '&tn=FeeHandover_$_teacherId',
-      );
-      try {
-        await launchUrl(upiUri, mode: LaunchMode.externalApplication);
-      } catch (e) {
-        debugPrint('[Teacher Fee Handover UPI] launch failed: $e');
-      }
+    final upiUri = Uri.parse(
+      'upi://pay'
+      '?pa=${Uri.encodeComponent(managerUpi)}'
+      '&pn=${Uri.encodeComponent(manager.name)}'
+      '&am=${amount.toStringAsFixed(2)}'
+      '&cu=INR'
+      '&tn=FeeHandover_$_teacherId',
+    );
+
+    debugPrint('[Handover UPI] launching $upiUri');
+
+    try {
+      await launchUrl(upiUri, mode: LaunchMode.externalApplication);
+    } catch (e) {
+      debugPrint('[Handover UPI] launch failed: $e');
     }
 
     if (!mounted) return;
-    _showHandoverDialog(manager, defaultAmount: amount.toInt(), defaultMode: defaultMode);
+    _showHandoverDialog(manager, defaultAmount: amount.toInt(), defaultMode: 'UPI');
   }
 
   void _showHandoverDialog(User manager, {int defaultAmount = 0, String defaultMode = 'Cash'}) {
