@@ -11,6 +11,7 @@ class User {
   final String? dob; // Date of birth (YYYY-MM-DD)
   final int? monthlySalary;
   final String? upiId;
+  final String? upiRegisteredPhone;
   final String? preferredPaymentMode;
   final String preferredLanguage;
 
@@ -27,6 +28,7 @@ class User {
     this.dob,
     this.monthlySalary,
     this.upiId,
+    this.upiRegisteredPhone,
     this.preferredPaymentMode,
     this.preferredLanguage = 'en',
   });
@@ -45,6 +47,7 @@ class User {
       'dob': dob,
       'monthly_salary': monthlySalary ?? 0,
       'upi_id': upiId,
+      'upi_registered_phone': upiRegisteredPhone,
       'preferred_payment_mode': preferredPaymentMode,
       'preferred_language': preferredLanguage,
     };
@@ -85,6 +88,7 @@ class User {
       dob: map['dob']?.toString(),
       monthlySalary: map['monthly_salary'] != null ? int.tryParse(map['monthly_salary'].toString()) : (map['monthlySalary'] != null ? int.tryParse(map['monthlySalary'].toString()) : 0),
       upiId: (map['upi_id'] ?? map['upiId'])?.toString(),
+      upiRegisteredPhone: (map['upi_registered_phone'] ?? map['upiRegisteredPhone'])?.toString(),
       preferredPaymentMode: (map['preferred_payment_mode'] ?? map['preferredPaymentMode'])?.toString(),
       preferredLanguage: (map['preferred_language'] ?? map['preferredLanguage'] ?? 'en').toString(),
     );
@@ -103,6 +107,7 @@ class User {
     String? dob,
     int? monthlySalary,
     String? upiId,
+    String? upiRegisteredPhone,
     String? preferredPaymentMode,
     String? preferredLanguage,
   }) {
@@ -119,6 +124,7 @@ class User {
       dob: dob ?? this.dob,
       monthlySalary: monthlySalary ?? this.monthlySalary,
       upiId: upiId ?? this.upiId,
+      upiRegisteredPhone: upiRegisteredPhone ?? this.upiRegisteredPhone,
       preferredPaymentMode: preferredPaymentMode ?? this.preferredPaymentMode,
       preferredLanguage: preferredLanguage ?? this.preferredLanguage,
     );

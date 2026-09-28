@@ -20,6 +20,7 @@ import 'package:maktab_app/utils/receipt_pdf_generator.dart';
 import 'package:maktab_app/utils/language_resolver.dart';
 import 'package:maktab_app/widgets/receipt_preview_dialog.dart';
 import 'package:maktab_app/widgets/finance/salary_totals_card.dart';
+import 'package:maktab_app/widgets/upi_app_picker_dialog.dart';
 import 'package:maktab_app/l10n/app_localizations.dart';
 
 class TeacherSalaryManagementScreen extends StatefulWidget {
@@ -114,7 +115,9 @@ class _TeacherSalaryManagementScreenState extends State<TeacherSalaryManagementS
   // ── UPI Launch Handler ──────────────────────────────────────────────────
 
   Future<void> _promptForUpiId(User teacher, {double? amount}) async {
+    debugPrint('[SALARY-UPI-PROMPT] fired for teacher=${teacher.name} amount=$amount');
     final upiCtrl = TextEditingController(text: teacher.upiId ?? '');
+    final phoneCtrl = TextEditingController(text: teacher.upiRegisteredPhone ?? teacher.mobile ?? '');
     final formKey = GlobalKey<FormState>();
     final saved = await showDialog<bool>(
       context: context,
@@ -143,6 +146,24 @@ class _TeacherSalaryManagementScreenState extends State<TeacherSalaryManagementS
                   return null;
                 },
               ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: phoneCtrl,
+                keyboardType: TextInputType.phone,
+                decoration: const InputDecoration(
+                  labelText: 'Phone registered to this UPI ID',
+                  border: OutlineInputBorder(),
+                ),
+                validator: (v) {
+                  if (v == null || v.trim().isEmpty) {
+                    return 'Phone number is required';
+                  }
+                  if (v.trim().replaceAll(RegExp(r'\D'), '').length < 10) {
+                    return 'Phone must be at least 10 digits';
+                  }
+                  return null;
+                },
+              ),
             ],
           ),
         ),
@@ -162,9 +183,13 @@ class _TeacherSalaryManagementScreenState extends State<TeacherSalaryManagementS
     );
 
     if (saved == true && mounted) {
-      final updated = teacher.copyWith(upiId: upiCtrl.text.trim());
+      final updated = teacher.copyWith(
+        upiId: upiCtrl.text.trim(),
+        upiRegisteredPhone: phoneCtrl.text.trim(),
+      );
       await _userRepository.updateUser(updated);
       await _cloudSyncService.pushUser(updated);
+      debugPrint('[UPI-SAVE] user=${teacher.id} upi=${updated.upiId} phone=${updated.upiRegisteredPhone}');
       await _loadSalaryData();
       final paid = _getPaidAmountForTeacher(teacher.id!);
       final monthlySalary = teacher.monthlySalary ?? 0;
@@ -185,13 +210,39 @@ class _TeacherSalaryManagementScreenState extends State<TeacherSalaryManagementS
       }
       return;
     }
-    if (teacher.upiId == null || teacher.upiId!.trim().isEmpty) {
-      // Prompt the manager to enter the UPI ID first
+
+    String? resolvedUpi = teacher.upiId?.trim();
+    String source = 'explicit';
+
+    if (resolvedUpi == null || resolvedUpi.isEmpty) {
+      final phone = (teacher.upiRegisteredPhone ?? teacher.mobile)?.trim().replaceAll(RegExp(r'\D'), '');
+      if (phone != null && phone.length >= 10) {
+        if (!mounted) return;
+        final pickedUpi = await UpiAppPickerDialog.show(
+          context,
+          rawPhone: phone,
+          title: "Which UPI app is ${teacher.name} registered with?",
+        );
+        if (pickedUpi != null && pickedUpi.isNotEmpty) {
+          resolvedUpi = pickedUpi;
+          source = 'picker';
+          final updated = teacher.copyWith(upiId: pickedUpi, upiRegisteredPhone: phone);
+          await _userRepository.updateUser(updated);
+          await _cloudSyncService.pushUser(updated);
+          debugPrint('[UPI-SAVE] user=${teacher.id} upi=$pickedUpi phone=$phone');
+          teacher = updated;
+        }
+      }
+    }
+
+    if (resolvedUpi == null || resolvedUpi.isEmpty) {
       await _promptForUpiId(teacher, amount: amount);
       return;
     }
+
+    debugPrint('[Salary UPI] payee=$resolvedUpi source=$source');
     final upiUri = Uri.parse(
-      'upi://pay?pa=${Uri.encodeComponent(teacher.upiId!.trim())}'
+      'upi://pay?pa=${Uri.encodeComponent(resolvedUpi)}'
       '&pn=${Uri.encodeComponent(teacher.name)}'
       '&am=${amount.toStringAsFixed(2)}'
       '&cu=INR'
@@ -553,6 +604,7 @@ class _TeacherSalaryManagementScreenState extends State<TeacherSalaryManagementS
   void _showEditSalaryConfigDialog(User teacher) {
     final salaryController = TextEditingController(text: (teacher.monthlySalary ?? 0).toString());
     final upiController = TextEditingController(text: teacher.upiId ?? '');
+    final phoneController = TextEditingController(text: teacher.upiRegisteredPhone ?? teacher.mobile ?? '');
     String selectedMode = teacher.preferredPaymentMode ?? 'UPI';
 
     showDialog(
@@ -574,6 +626,12 @@ class _TeacherSalaryManagementScreenState extends State<TeacherSalaryManagementS
               decoration: const InputDecoration(labelText: 'UPI ID (e.g. teacher@upi)', border: OutlineInputBorder()),
             ),
             const SizedBox(height: 12),
+            TextFormField(
+              controller: phoneController,
+              keyboardType: TextInputType.phone,
+              decoration: const InputDecoration(labelText: 'Phone Registered to UPI ID', border: OutlineInputBorder()),
+            ),
+            const SizedBox(height: 12),
             DropdownButtonFormField<String>(
               initialValue: ['UPI', 'Bank Transfer', 'Cash', 'Other'].contains(selectedMode) ? selectedMode : 'Cash',
               decoration: const InputDecoration(labelText: 'Preferred Payment Mode', border: OutlineInputBorder()),
@@ -593,10 +651,12 @@ class _TeacherSalaryManagementScreenState extends State<TeacherSalaryManagementS
               final updated = teacher.copyWith(
                 monthlySalary: salary,
                 upiId: upiController.text.trim().isNotEmpty ? upiController.text.trim() : null,
+                upiRegisteredPhone: phoneController.text.trim().isNotEmpty ? phoneController.text.trim() : null,
                 preferredPaymentMode: selectedMode,
               );
               await _userRepository.updateUser(updated);
               await _cloudSyncService.pushUser(updated);
+              debugPrint('[UPI-SAVE] user=${teacher.id} upi=${updated.upiId} phone=${updated.upiRegisteredPhone}');
               if (context.mounted) {
                 Navigator.pop(ctx);
                 _loadSalaryData();

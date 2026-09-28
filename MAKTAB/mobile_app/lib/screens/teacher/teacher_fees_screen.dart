@@ -192,6 +192,7 @@ class _TeacherFeesScreenState extends State<TeacherFeesScreen> {
   }
 
   void _openBulkMessagingDialog() {
+    debugPrint('[UPI-TRACE] showDialog fired from _openBulkMessagingDialog line 197');
     debugPrint('[showDialog] opening BulkFeeMessagingDialog');
     showDialog(
       context: context,
@@ -203,6 +204,7 @@ class _TeacherFeesScreenState extends State<TeacherFeesScreen> {
   }
 
   Future<void> _payViaUpiThenRecord(FeeStudentItem item) async {
+    debugPrint('[UPI-TRACE] handler entry, student=${item.student.id} amount=${item.amountDue}');
     if (item.amountDue <= 0) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -220,6 +222,7 @@ class _TeacherFeesScreenState extends State<TeacherFeesScreen> {
       '&tn=Fee_${item.student.admissionNumber}',
     );
 
+    debugPrint('[UPI-TRACE] launching uri=$upiUri');
     debugPrint('[Teacher UPI] launching $upiUri');
 
     try {
@@ -286,6 +289,7 @@ class _TeacherFeesScreenState extends State<TeacherFeesScreen> {
 
     final formKey = GlobalKey<FormState>();
 
+    debugPrint('[UPI-TRACE] showDialog fired from _showRecordDialog line 295');
     debugPrint('[showDialog] opening RecordFeePaymentDialog for ${item.student.name}');
     showDialog(
       context: context,
@@ -577,6 +581,7 @@ class _TeacherFeesScreenState extends State<TeacherFeesScreen> {
   void _editFeeStructure(FeeStudentItem item) {
     final amountCtrl = TextEditingController(text: (item.student.feesAmount ?? 500).toString());
 
+    debugPrint('[UPI-TRACE] showDialog fired from _editFeeStructure line 586');
     debugPrint('[showDialog] opening EditFeeDialog for ${item.student.name}');
     showDialog(
       context: context,
@@ -677,6 +682,7 @@ class _TeacherFeesScreenState extends State<TeacherFeesScreen> {
       '&tn=FeeHandover_$_teacherId',
     );
 
+    debugPrint('[UPI-TRACE] launching uri=$upiUri');
     debugPrint('[Handover UPI] launching $upiUri');
 
     try {
@@ -700,6 +706,7 @@ class _TeacherFeesScreenState extends State<TeacherFeesScreen> {
 
     final formKey = GlobalKey<FormState>();
 
+    debugPrint('[UPI-TRACE] showDialog fired from _showHandoverDialog line 709');
     debugPrint('[showDialog] opening HandoverDialog (Pay to Manager)');
     showDialog(
       context: context,
@@ -1734,6 +1741,7 @@ class _TeacherFeesScreenState extends State<TeacherFeesScreen> {
   void _showRecordPaymentDialog() {
     if (_feeItems.isEmpty) return;
     final loc = AppLocalizations.of(context);
+    debugPrint('[UPI-TRACE] showDialog fired from _showRecordPaymentDialog line 1745');
     debugPrint('[showDialog] opening RecordPaymentDialog (FAB/helper)');
     showDialog(
       context: context,

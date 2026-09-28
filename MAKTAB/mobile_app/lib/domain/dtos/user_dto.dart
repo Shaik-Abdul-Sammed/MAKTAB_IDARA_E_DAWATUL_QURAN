@@ -10,6 +10,7 @@ class UserDTO {
   final String? dob;
   final int? monthlySalary;
   final String? upiId;
+  final String? upiRegisteredPhone;
   final String? preferredPaymentMode;
   final String preferredLanguage;
 
@@ -25,6 +26,7 @@ class UserDTO {
     this.dob,
     this.monthlySalary,
     this.upiId,
+    this.upiRegisteredPhone,
     this.preferredPaymentMode,
     this.preferredLanguage = 'en',
   });
@@ -41,6 +43,7 @@ class UserDTO {
     'dob': dob,
     'monthly_salary': monthlySalary ?? 0,
     'upi_id': upiId,
+    'upi_registered_phone': upiRegisteredPhone,
     'preferred_payment_mode': preferredPaymentMode,
     'preferred_language': preferredLanguage,
   };
@@ -57,6 +60,7 @@ class UserDTO {
     dob: map['dob'],
     monthlySalary: map['monthly_salary'] as int? ?? 0,
     upiId: map['upi_id'] as String?,
+    upiRegisteredPhone: map['upi_registered_phone'] as String?,
     preferredPaymentMode: map['preferred_payment_mode'] as String?,
     preferredLanguage: (map['preferred_language'] ?? map['preferredLanguage'] ?? 'en').toString(),
   );

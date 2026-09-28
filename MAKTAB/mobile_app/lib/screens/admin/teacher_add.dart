@@ -31,6 +31,7 @@ class _TeacherAddScreenState extends State<TeacherAddScreen> {
   late final TextEditingController _confirmPinCtrl;
   late final TextEditingController _salaryCtrl;
   late final TextEditingController _upiCtrl;
+  late final TextEditingController _upiPhoneCtrl;
   bool _pinObscured = true;
   bool _confirmPinObscured = true;
   String _selectedLanguage = 'en';
@@ -59,6 +60,7 @@ class _TeacherAddScreenState extends State<TeacherAddScreen> {
     _confirmPinCtrl = TextEditingController();
     _salaryCtrl = TextEditingController();
     _upiCtrl = TextEditingController();
+    _upiPhoneCtrl = TextEditingController();
   }
 
   @override
@@ -69,6 +71,7 @@ class _TeacherAddScreenState extends State<TeacherAddScreen> {
     _confirmPinCtrl.dispose();
     _salaryCtrl.dispose();
     _upiCtrl.dispose();
+    _upiPhoneCtrl.dispose();
     _provider.dispose();
     super.dispose();
   }
@@ -125,6 +128,7 @@ class _TeacherAddScreenState extends State<TeacherAddScreen> {
     final pinText = _pinCtrl.text.trim();
     final salaryVal = int.tryParse(_salaryCtrl.text.trim()) ?? 0;
     final upiVal = _upiCtrl.text.trim();
+    final upiPhoneVal = _upiPhoneCtrl.text.trim();
 
     final newTeacherId = await _provider.addTeacher(
       name: nameText,
@@ -133,8 +137,13 @@ class _TeacherAddScreenState extends State<TeacherAddScreen> {
       photoPath: _selectedPhotoPath,
       monthlySalary: salaryVal,
       upiId: upiVal.isNotEmpty ? upiVal : null,
+      upiRegisteredPhone: upiPhoneVal.isNotEmpty ? upiPhoneVal : null,
       preferredLanguage: _selectedLanguage,
     );
+
+    if (newTeacherId != null && (upiVal.isNotEmpty || upiPhoneVal.isNotEmpty)) {
+      debugPrint('[UPI-SAVE] user=$newTeacherId upi=$upiVal phone=$upiPhoneVal');
+    }
 
     if (!mounted) return;
     if (_provider.status == TeacherFormStatus.success && newTeacherId != null) {
@@ -323,6 +332,21 @@ class _TeacherAddScreenState extends State<TeacherAddScreen> {
                     label: 'UPI ID (Optional)',
                     hint: 'e.g. teacher@upi',
                     icon: Icons.account_balance_wallet_outlined,
+                  ),
+                  const SizedBox(height: 16),
+                  _buildField(
+                    controller: _upiPhoneCtrl,
+                    label: 'Phone Registered to UPI ID (Optional)',
+                    hint: 'e.g. 9876543210',
+                    icon: Icons.phone_android_outlined,
+                    keyboardType: TextInputType.phone,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    validator: (v) {
+                      if (v != null && v.trim().isNotEmpty && v.trim().length < 10) {
+                        return 'Phone number must be at least 10 digits';
+                      }
+                      return null;
+                    },
                   ),
                   const SizedBox(height: 36),
                   Consumer<TeacherFormProvider>(

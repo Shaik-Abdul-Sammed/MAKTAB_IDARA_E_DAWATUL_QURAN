@@ -42,7 +42,7 @@ class DatabaseHelper {
       return await ffi.databaseFactoryFfi.openDatabase(
         path,
         options: ffi.OpenDatabaseOptions(
-          version: 28,
+          version: 29,
           onConfigure: (db) async {
             await db.execute('PRAGMA foreign_keys = ON');
           },
@@ -59,7 +59,7 @@ class DatabaseHelper {
     return await openDatabase(
       path,
       password: key,
-      version: 28,
+      version: 29,
       onConfigure: (db) async {
         await db.execute('PRAGMA foreign_keys = ON');
       },
@@ -121,6 +121,7 @@ class DatabaseHelper {
         dob $textNullable,
         monthly_salary INTEGER DEFAULT 0,
         upi_id TEXT,
+        upi_registered_phone TEXT,
         preferred_payment_mode TEXT,
         preferred_language TEXT DEFAULT 'en',
         is_active $boolType DEFAULT 1,
@@ -1153,6 +1154,15 @@ class DatabaseHelper {
         debugPrint('[MIGRATION v28] Created fee_handovers table');
       } catch (e) {
         debugPrint('[MIGRATION v28] fee_handovers table: $e');
+      }
+    }
+
+    if (oldVersion < 29) {
+      try {
+        await db.execute('ALTER TABLE users ADD COLUMN upi_registered_phone TEXT');
+        debugPrint('[MIGRATION v29] Added upi_registered_phone column');
+      } catch (e) {
+        debugPrint('[MIGRATION v29] $e');
       }
     }
   }

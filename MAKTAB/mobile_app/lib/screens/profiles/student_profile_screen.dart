@@ -114,8 +114,9 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
   }
 
   Future<void> _showEditStudentDialog() async {
+    const showArabic = false;
+    debugPrint('[StudentEdit] arabicName field removed=${!showArabic}');
     final nameCtrl = TextEditingController(text: widget.student.name);
-    final arabicCtrl = TextEditingController(text: widget.student.arabicName ?? '');
     final phoneCtrl = TextEditingController(text: widget.student.phone ?? '');
     final fatherCtrl = TextEditingController(text: widget.student.fatherName ?? '');
     final feesCtrl = TextEditingController(text: widget.student.feesAmount?.toString() ?? '0');
@@ -138,8 +139,6 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
             children: [
               TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'Student Name', icon: Icon(Icons.person))),
               const SizedBox(height: 8),
-              TextField(controller: arabicCtrl, decoration: const InputDecoration(labelText: 'Arabic Name', icon: Icon(Icons.translate))),
-              const SizedBox(height: 8),
               TextField(controller: phoneCtrl, keyboardType: TextInputType.phone, decoration: const InputDecoration(labelText: 'Phone Number', icon: Icon(Icons.phone))),
               const SizedBox(height: 8),
               TextField(controller: fatherCtrl, decoration: const InputDecoration(labelText: 'Father Name', icon: Icon(Icons.person_outline))),
@@ -157,7 +156,6 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
             onPressed: () async {
               final newStudent = widget.student.copyWith(
                 name: nameCtrl.text.trim(),
-                arabicName: arabicCtrl.text.trim(),
                 phone: phoneCtrl.text.trim(),
                 fatherName: fatherCtrl.text.trim(),
                 feesAmount: int.tryParse(feesCtrl.text.trim()) ?? widget.student.feesAmount,
