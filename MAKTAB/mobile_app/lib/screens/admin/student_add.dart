@@ -178,7 +178,7 @@ class _StudentAddScreenState extends State<StudentAddScreen> {
           builder: (ctx) => AlertDialog(
             title: const Text('Duplicate Mobile Number'),
             content: Text(
-              'A student with this mobile number already exists:\n${existing.name} (ID: ${existing.id ?? existing.admissionNumber})\n\nDo you want to continue anyway?', maxLines: 1, overflow: TextOverflow.ellipsis),
+              'A student with this mobile number already exists:\n${existing.name} (ID: ${existing.id ?? existing.admissionNumber})\n\nDo you want to continue anyway?', maxLines: 4, overflow: TextOverflow.ellipsis),
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(ctx).pop(false),

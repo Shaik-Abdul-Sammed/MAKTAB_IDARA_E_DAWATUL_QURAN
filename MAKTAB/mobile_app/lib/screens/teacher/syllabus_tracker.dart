@@ -210,7 +210,7 @@ class _SyllabusTrackerScreenState extends State<SyllabusTrackerScreen> {
                                 elevation: 1,
                                 child: ListTile(
                                   leading: const CircleAvatar(backgroundColor: Color(0xFF004D40), foregroundColor: Colors.white, child: Icon(Icons.menu_book, size: 18)),
-                                  title: Text(item.topic, style: const TextStyle(fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                  title: Text(item.topic, style: const TextStyle(fontWeight: FontWeight.bold), maxLines: 2, overflow: TextOverflow.ellipsis),
                                   subtitle: Text('Status: ${item.status} | ${item.description}', maxLines: 2, overflow: TextOverflow.ellipsis),
                                   trailing: const Icon(Icons.chevron_right),
                                   onTap: () => _showDetailSheet(item),

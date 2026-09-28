@@ -57,7 +57,6 @@ class AppRoutes {
   static const String teacherReports = '/teacher/reports';
   static const String teacherChecklist = '/teacher/checklist';
   static const String teacherSyllabusTracker = '/teacher/syllabus-tracker';
-  static const String teacherHealth = '/teacher/health';
   static const String teacherBehavior = '/teacher/behavior';
   static const String teacherChecklistEntry = '/teacher/checklist-entry';
   static const String teacherChecklistHistory = '/teacher/checklist-history';

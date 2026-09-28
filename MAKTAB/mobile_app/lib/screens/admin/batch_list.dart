@@ -423,7 +423,8 @@ class _BatchTile extends StatelessWidget {
         ),
         title: Text(
           batch.name,
-          maxLines: 1,
+          maxLines: 2,
+          softWrap: true,
           overflow: TextOverflow.ellipsis,
           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF1A1A1A)),
         ),
@@ -453,7 +454,8 @@ class _BatchTile extends StatelessWidget {
                 Expanded(
                   child: Text(
                     'Teacher: $teacherName',
-                    maxLines: 1,
+                    maxLines: 2,
+                    softWrap: true,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       fontSize: 12,

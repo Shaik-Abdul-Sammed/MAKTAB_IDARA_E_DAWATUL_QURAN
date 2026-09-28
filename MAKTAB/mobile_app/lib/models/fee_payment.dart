@@ -5,6 +5,7 @@ class FeePayment {
   final String mode;
   final String timestamp;
   final String? notes;
+  final String? reference;
   final String? voiceNotePath;
   final int receiptSent;
   final String? receiptSentAt;
@@ -19,6 +20,7 @@ class FeePayment {
     required this.mode,
     required this.timestamp,
     this.notes,
+    this.reference,
     this.voiceNotePath,
     this.receiptSent = 0,
     this.receiptSentAt,
@@ -33,6 +35,7 @@ class FeePayment {
       'mode': mode,
       'timestamp': timestamp,
       if (notes != null) 'notes': notes,
+      if (reference != null) 'reference': reference,
       if (voiceNotePath != null) 'voice_note_path': voiceNotePath,
       'receipt_sent': receiptSent,
       if (receiptSentAt != null) 'receipt_sent_at': receiptSentAt,
@@ -48,6 +51,7 @@ class FeePayment {
       mode: map['mode'] as String,
       timestamp: map['timestamp'] as String,
       notes: map['notes'] as String?,
+      reference: map['reference'] as String?,
       voiceNotePath: map['voice_note_path'] as String?,
       receiptSent: (map['receipt_sent'] as int?) ?? 0,
       receiptSentAt: map['receipt_sent_at'] as String?,
@@ -62,6 +66,7 @@ class FeePayment {
     String? mode,
     String? timestamp,
     String? notes,
+    String? reference,
     String? voiceNotePath,
     int? receiptSent,
     String? receiptSentAt,
@@ -74,6 +79,7 @@ class FeePayment {
       mode: mode ?? this.mode,
       timestamp: timestamp ?? this.timestamp,
       notes: notes ?? this.notes,
+      reference: reference ?? this.reference,
       voiceNotePath: voiceNotePath ?? this.voiceNotePath,
       receiptSent: receiptSent ?? this.receiptSent,
       receiptSentAt: receiptSentAt ?? this.receiptSentAt,

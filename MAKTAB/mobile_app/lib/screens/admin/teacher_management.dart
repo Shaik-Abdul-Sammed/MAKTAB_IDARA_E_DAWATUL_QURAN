@@ -440,7 +440,7 @@ class _TeacherManagementScreenState extends State<TeacherManagementScreen> {
       builder: (context) {
         return AlertDialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: Text('Reset PIN for ${teacher.name}', style: const TextStyle(color: Color(0xFF004D40), fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
+          title: Text('Reset PIN for ${teacher.name}', style: const TextStyle(color: Color(0xFF004D40), fontWeight: FontWeight.bold), maxLines: 2, overflow: TextOverflow.ellipsis),
           content: Form(
             key: formKey,
             child: TextFormField(
@@ -524,7 +524,7 @@ class _TeacherManagementScreenState extends State<TeacherManagementScreen> {
       builder: (context) {
         return AlertDialog(
           title: const Text('Confirm Delete'),
-          content: Text('Are you sure you want to delete ${teacher.name}? This will remove their profile from the local SQLite database.', maxLines: 1, overflow: TextOverflow.ellipsis),
+          content: Text('Are you sure you want to delete ${teacher.name}? This will remove their profile from the local SQLite database.', maxLines: 3, overflow: TextOverflow.ellipsis),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context, false),
@@ -624,7 +624,7 @@ class _TeacherManagementScreenState extends State<TeacherManagementScreen> {
                           title: Text(
                             teacher.name,
                             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Color(0xFF004D40)),
-                            maxLines: 1,
+                            maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                           ),
                           subtitle: Column(
@@ -639,7 +639,7 @@ class _TeacherManagementScreenState extends State<TeacherManagementScreen> {
                               const SizedBox(height: 2),
                               Text(
                                 'Role: ${teacher.role}',
-                                maxLines: 1,
+                                maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
                               ),
                               const SizedBox(height: 2),

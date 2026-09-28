@@ -108,7 +108,7 @@ class _TeacherDetailsScreenState extends State<TeacherDetailsScreen> {
       builder: (context) {
         return AlertDialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: Text('Reset PIN for ${teacher.name}', style: const TextStyle(color: Color(0xFF004D40), fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
+          title: Text('Reset PIN for ${teacher.name}', style: const TextStyle(color: Color(0xFF004D40), fontWeight: FontWeight.bold), maxLines: 2, overflow: TextOverflow.ellipsis),
           content: Form(
             key: formKey,
             child: TextFormField(
@@ -301,8 +301,9 @@ class _TeacherDetailContent extends StatelessWidget {
                 ),
                 const SizedBox(height: 14),
                 Text(teacher.name,
+                    textAlign: TextAlign.center,
                     style: const TextStyle(
-                        color: Colors.white, fontWeight: FontWeight.bold, fontSize: 22), maxLines: 1, overflow: TextOverflow.ellipsis),
+                        color: Colors.white, fontWeight: FontWeight.bold, fontSize: 22), maxLines: 2, overflow: TextOverflow.ellipsis),
                 const SizedBox(height: 6),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),

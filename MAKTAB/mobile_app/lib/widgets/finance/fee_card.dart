@@ -74,7 +74,7 @@ class FeeCard extends StatelessWidget {
                   children: [
                     Text(
                       s.name,
-                      maxLines: 1,
+                      maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
                     ),
@@ -89,7 +89,7 @@ class FeeCard extends StatelessWidget {
               ),
               Flexible(
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                   decoration: BoxDecoration(
                     color: statusColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(20),
@@ -98,6 +98,7 @@ class FeeCard extends StatelessWidget {
                   child: Text(
                     item.status,
                     maxLines: 1,
+                    softWrap: false,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       fontSize: 11,
@@ -117,16 +118,18 @@ class FeeCard extends StatelessWidget {
                 child: Text(
                   'Due: ${item.dueDate}',
                   maxLines: 1,
+                  softWrap: false,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(fontSize: 12, color: Colors.black54),
                 ),
               ),
               SizedBox(
-                width: 90,
+                width: 80,
                 child: Text(
                   '₹${item.amountDue.toInt()}',
                   textAlign: TextAlign.end,
                   maxLines: 1,
+                  softWrap: false,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
@@ -160,6 +163,7 @@ class FeeCard extends StatelessWidget {
                           child: Text(
                             'Pay UPI',
                             maxLines: 1,
+                            softWrap: false,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
                           ),
@@ -168,7 +172,7 @@ class FeeCard extends StatelessWidget {
                     ),
                   ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 4),
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   mainAxisAlignment: MainAxisAlignment.end,

@@ -281,7 +281,6 @@ class ReceiptPdfGenerator {
               pw.SizedBox(height: 12),
               pw.Text('${effectiveLabels['sabaqSurahLabel'] ?? 'Surah'}: $surah'),
               pw.Text('${effectiveLabels['sabaqAyahLabel'] ?? 'Ayah'}: $ayahFrom–$ayahTo'),
-              pw.Text('${effectiveLabels['sabaqTypeLabel'] ?? 'Type'}: $recitationType'),
               pw.Text('${effectiveLabels['sabaqGradeLabel'] ?? 'Grade'}: $grade'),
               pw.SizedBox(height: 12),
               pw.Text('${effectiveLabels['sabaqNoteHeader'] ?? "Teacher's Note"}:'),

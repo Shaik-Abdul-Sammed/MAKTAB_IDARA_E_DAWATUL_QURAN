@@ -218,7 +218,7 @@ class _FeePaymentsListWidgetState extends State<FeePaymentsListWidget> {
                                   value: s,
                                   child: Text(
                                     '${s.name} (${s.admissionNumber})',
-                                    maxLines: 1,
+                                    maxLines: 2,
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                 ))
@@ -230,7 +230,7 @@ class _FeePaymentsListWidgetState extends State<FeePaymentsListWidget> {
                 else
                   Text(
                     'Student: ${existing['student_name']}',
-                    style: const TextStyle(fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
+                    style: const TextStyle(fontWeight: FontWeight.bold), maxLines: 2, overflow: TextOverflow.ellipsis),
                 const SizedBox(height: 12),
                 TextField(
                   controller: amountCtrl,
@@ -260,6 +260,7 @@ class _FeePaymentsListWidgetState extends State<FeePaymentsListWidget> {
                 const SizedBox(height: 12),
                 TextField(
                   controller: notesCtrl,
+                  maxLines: 3,
                   decoration: const InputDecoration(
                     labelText: 'Notes (optional)',
                     border: OutlineInputBorder(),
@@ -335,7 +336,7 @@ class _FeePaymentsListWidgetState extends State<FeePaymentsListWidget> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Delete Payment'),
-        content: Text('Delete payment of ₹${row['amount']} for ${row['student_name']}?', maxLines: 1, overflow: TextOverflow.ellipsis),
+        content: Text('Delete payment of ₹${row['amount']} for ${row['student_name']}?', maxLines: 3, overflow: TextOverflow.ellipsis),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
           ElevatedButton(
@@ -662,6 +663,7 @@ class _PaymentCardItem extends StatelessWidget {
         ? DateFormat('dd MMM yyyy, hh:mm a').format(parsed)
         : ts;
     final receiptSent = (row['receipt_sent'] as int?) == 1;
+    final notes = row['notes'] as String?;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 10),
@@ -683,7 +685,7 @@ class _PaymentCardItem extends StatelessWidget {
                 children: [
                   Text(
                     studentName,
-                    maxLines: 1,
+                    maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                   ),
@@ -697,10 +699,11 @@ class _PaymentCardItem extends StatelessWidget {
                   Row(
                     children: [
                       SizedBox(
-                        width: 90,
+                        width: 80,
                         child: Text(
                           '₹$amount',
                           maxLines: 1,
+                          softWrap: false,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
                             fontSize: 16,
@@ -709,10 +712,10 @@ class _PaymentCardItem extends StatelessWidget {
                           ),
                         ),
                       ),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: 4),
                       Flexible(
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
                             color: AppColors.primaryTeal.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(10),
@@ -721,6 +724,7 @@ class _PaymentCardItem extends StatelessWidget {
                           child: Text(
                             mode,
                             maxLines: 1,
+                            softWrap: false,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
                               fontSize: 11,
@@ -744,6 +748,24 @@ class _PaymentCardItem extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(fontSize: 11, color: Colors.black45),
                   ),
+                  if (notes != null && notes.trim().isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Icon(Icons.note_alt_outlined, size: 12, color: Colors.black45),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            notes.trim(),
+                            maxLines: 3,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontSize: 11, fontStyle: FontStyle.italic, color: Colors.black54),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ],
               ),
             ),

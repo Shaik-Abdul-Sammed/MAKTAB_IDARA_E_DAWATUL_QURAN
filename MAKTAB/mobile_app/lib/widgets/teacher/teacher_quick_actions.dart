@@ -273,7 +273,7 @@ class _ParentContactSheet extends StatelessWidget {
                             ),
                             title: Text(s.name,
                                 style: const TextStyle(
-                                    fontWeight: FontWeight.w600), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                    fontWeight: FontWeight.w600), maxLines: 2, overflow: TextOverflow.ellipsis),
                             subtitle: Text('$contactName • $phone', maxLines: 2, overflow: TextOverflow.ellipsis),
                             trailing: IconButton(
                               icon: const Icon(Icons.call_rounded,

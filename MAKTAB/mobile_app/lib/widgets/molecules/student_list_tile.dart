@@ -26,7 +26,7 @@ class StudentListTile extends StatelessWidget {
           backgroundColor: const Color(0xFF004D40),
           child: Text(name.substring(0, 1).toUpperCase(), style: const TextStyle(color: Color(0xFFFFD700)), maxLines: 1, overflow: TextOverflow.ellipsis),
         ),
-        title: Text(name, style: const TextStyle(fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
+        title: Text(name, style: const TextStyle(fontWeight: FontWeight.bold), maxLines: 2, overflow: TextOverflow.ellipsis),
         subtitle: Text('Adm: $admissionNumber', maxLines: 2, overflow: TextOverflow.ellipsis),
         trailing: status != null ? StatusBadge(status: status!) : const Icon(Icons.chevron_right),
       ),

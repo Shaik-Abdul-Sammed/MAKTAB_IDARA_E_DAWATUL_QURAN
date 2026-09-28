@@ -409,19 +409,25 @@ class _LoginScreenState extends State<LoginScreen> {
                           segments: [
                             ButtonSegment<String>(
                               value: 'manager',
-                              label: Text(
-                                loc?.translate('login_as_manager') ?? 'Manager / Admin',
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
+                              label: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Text(
+                                  loc?.translate('login_as_manager') ?? 'Manager / Admin',
+                                  maxLines: 1,
+                                  softWrap: false,
+                                ),
                               ),
                               icon: const Icon(Icons.admin_panel_settings, size: 18),
                             ),
                             ButtonSegment<String>(
                               value: 'teacher',
-                              label: Text(
-                                loc?.translate('login_as_teacher') ?? 'Teacher',
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
+                              label: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Text(
+                                  loc?.translate('login_as_teacher') ?? 'Teacher',
+                                  maxLines: 1,
+                                  softWrap: false,
+                                ),
                               ),
                               icon: const Icon(Icons.school, size: 18),
                             ),
@@ -502,19 +508,23 @@ class _LoginScreenState extends State<LoginScreen> {
                                   },
                                 ),
                               ),
-                              const SizedBox(width: 8),
+                              const SizedBox(width: 4),
                               Expanded(
-                                child: Text(
-                                  loc?.translate('remember_me') ?? 'Remember me',
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w500,
+                                child: FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  alignment: Alignment.centerLeft,
+                                  child: Text(
+                                    loc?.translate('remember_me') ?? 'Remember me',
+                                    maxLines: 1,
+                                    softWrap: false,
+                                    style: const TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w500,
+                                    ),
                                   ),
                                 ),
                               ),
-                              const SizedBox(width: 8),
+                              const SizedBox(width: 4),
                               Expanded(
                                 child: Align(
                                   alignment: Alignment.centerRight,
@@ -525,14 +535,18 @@ class _LoginScreenState extends State<LoginScreen> {
                                       minimumSize: Size.zero,
                                       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                                     ),
-                                    child: Text(
-                                      loc?.translate('forgot_password') ?? 'Forgot Password?',
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(
-                                        color: Color(0xFF004D40),
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 13,
+                                    child: FittedBox(
+                                      fit: BoxFit.scaleDown,
+                                      alignment: Alignment.centerRight,
+                                      child: Text(
+                                        loc?.translate('forgot_password') ?? 'Forgot Password?',
+                                        maxLines: 1,
+                                        softWrap: false,
+                                        style: const TextStyle(
+                                          color: Color(0xFF004D40),
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: 13,
+                                        ),
                                       ),
                                     ),
                                   ),
@@ -556,15 +570,19 @@ class _LoginScreenState extends State<LoginScreen> {
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
                                     const Icon(Icons.flash_on, size: 18, color: Color(0xFF004D40)),
-                                    const SizedBox(width: 8),
+                                    const SizedBox(width: 4),
                                     Flexible(
-                                      child: Text(
-                                        'Quick Login as $_rememberedManagerEmail',
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: const TextStyle(
-                                          color: Color(0xFF004D40),
-                                          fontWeight: FontWeight.w600,
+                                      child: FittedBox(
+                                        fit: BoxFit.scaleDown,
+                                        alignment: Alignment.centerLeft,
+                                        child: Text(
+                                          'Quick Login as $_rememberedManagerEmail',
+                                          maxLines: 1,
+                                          softWrap: false,
+                                          style: const TextStyle(
+                                            color: Color(0xFF004D40),
+                                            fontWeight: FontWeight.w600,
+                                          ),
                                         ),
                                       ),
                                     ),
@@ -643,14 +661,18 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                               const SizedBox(width: 8),
                               Expanded(
-                                child: Text(
-                                  loc?.translate('remember_me') ?? 'Remember Teacher ID',
-                                  style: const TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w500,
+                                child: FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  alignment: Alignment.centerLeft,
+                                  child: Text(
+                                    loc?.translate('remember_me') ?? 'Remember Teacher ID',
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                    maxLines: 1,
+                                    softWrap: false,
                                   ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
                                 ),
                               ),
                             ],
@@ -673,13 +695,17 @@ class _LoginScreenState extends State<LoginScreen> {
                                     const Icon(Icons.flash_on, size: 18, color: Color(0xFF004D40)),
                                     const SizedBox(width: 8),
                                     Flexible(
-                                      child: Text(
-                                        'Quick Login as $_rememberedTeacherId',
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: const TextStyle(
-                                          color: Color(0xFF004D40),
-                                          fontWeight: FontWeight.w600,
+                                      child: FittedBox(
+                                        fit: BoxFit.scaleDown,
+                                        alignment: Alignment.centerLeft,
+                                        child: Text(
+                                          'Quick Login as $_rememberedTeacherId',
+                                          maxLines: 1,
+                                          softWrap: false,
+                                          style: const TextStyle(
+                                            color: Color(0xFF004D40),
+                                            fontWeight: FontWeight.w600,
+                                          ),
                                         ),
                                       ),
                                     ),
@@ -712,15 +738,21 @@ class _LoginScreenState extends State<LoginScreen> {
                                     color: Colors.white,
                                   ),
                                 )
-                              : Text(
-                                  _selectedRole == 'manager'
-                                      ? (loc?.translate('login_as_manager') ?? 'LOGIN AS MANAGER').toUpperCase()
-                                      : (loc?.translate('login_as_teacher') ?? 'LOGIN AS TEACHER').toUpperCase(),
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                    letterSpacing: 1,
-                                  ), maxLines: 1, overflow: TextOverflow.ellipsis),
+                              : FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  child: Text(
+                                    _selectedRole == 'manager'
+                                        ? (loc?.translate('login_as_manager') ?? 'LOGIN AS MANAGER').toUpperCase()
+                                        : (loc?.translate('login_as_teacher') ?? 'LOGIN AS TEACHER').toUpperCase(),
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      letterSpacing: 1,
+                                    ),
+                                    maxLines: 1,
+                                    softWrap: false,
+                                  ),
+                                ),
                         ),
                       ],
                     ),

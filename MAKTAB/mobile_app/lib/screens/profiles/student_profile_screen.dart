@@ -227,7 +227,8 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
                   const SizedBox(height: 15),
                   Text(
                     widget.student.name,
-                    style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold), maxLines: 2, overflow: TextOverflow.ellipsis),
                   if (widget.student.arabicName != null)
                     Text(
                       widget.student.arabicName!,

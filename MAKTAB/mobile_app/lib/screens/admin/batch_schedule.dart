@@ -217,7 +217,7 @@ class _ScheduleCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(batch.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF004D40)), maxLines: 1, overflow: TextOverflow.ellipsis),
+                    Text(batch.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF004D40)), maxLines: 2, overflow: TextOverflow.ellipsis),
                     const SizedBox(height: 4),
                     Row(
                       children: [
@@ -247,7 +247,7 @@ class _ScheduleCard extends StatelessWidget {
                     Expanded(
                       child: Text(
                         teacher != null ? teacher!.name : 'Unassigned Teacher',
-                        maxLines: 1,
+                        maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           fontSize: 12,

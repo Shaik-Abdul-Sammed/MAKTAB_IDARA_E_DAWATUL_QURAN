@@ -302,8 +302,8 @@ class _ExcelImportScreenState extends State<ExcelImportScreen> with SingleTicker
                                   child: Text('${index + 1}',
                                       style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.primaryTeal), maxLines: 1, overflow: TextOverflow.ellipsis),
                                 ),
-                                title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14), maxLines: 1, overflow: TextOverflow.ellipsis),
-                                subtitle: Text(subtitle, style: const TextStyle(fontSize: 11, color: AppColors.textMuted), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14), maxLines: 2, overflow: TextOverflow.ellipsis),
+                                subtitle: Text(subtitle, style: const TextStyle(fontSize: 11, color: AppColors.textMuted), maxLines: 3, overflow: TextOverflow.ellipsis),
                               ),
                             );
                           },

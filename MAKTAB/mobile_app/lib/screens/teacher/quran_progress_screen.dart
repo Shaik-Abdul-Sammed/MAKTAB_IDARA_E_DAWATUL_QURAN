@@ -220,12 +220,18 @@ class _QuranProgressScreenState extends State<QuranProgressScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(loc?.translate('quran_progress') ?? 'Sabaq Tracker',
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    loc?.translate('quran_progress') ?? 'Sabaq Tracker',
                     maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
+                    softWrap: false,
+                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
+                  ),
+                ),
                 const SizedBox(height: 4),
-                Text(loc?.translate('recitation_type') ?? 'Record Sabaq, Sabaqi, and Manzil daily',
+                Text(loc?.translate('recitation_type') ?? 'Record Sabaq daily',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(color: Colors.white70, fontSize: 12)),
@@ -249,7 +255,7 @@ class _QuranProgressScreenState extends State<QuranProgressScreen> {
           return Padding(
             padding: const EdgeInsets.only(right: 8.0),
             child: ChoiceChip(
-              label: Text(b.name, maxLines: 1, overflow: TextOverflow.ellipsis),
+              label: Text(b.name, maxLines: 1, softWrap: false),
               selected: isSelected,
               selectedColor: const Color(0xFF004D40),
               labelStyle: TextStyle(
@@ -303,7 +309,7 @@ class _StudentRecitationTile extends StatelessWidget {
                 student.name.isNotEmpty ? student.name[0].toUpperCase() : 'S',
                 style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
             ),
-            title: Text(student.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15), maxLines: 1, overflow: TextOverflow.ellipsis),
+            title: Text(student.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15), maxLines: 2, overflow: TextOverflow.ellipsis),
             subtitle: Padding(
               padding: const EdgeInsets.only(top: 4.0),
               child: Column(
@@ -353,7 +359,7 @@ class _StudentRecitationTile extends StatelessWidget {
               label: Text(
                 '${loc?.translate('save') ?? 'Log'} ${loc?.translate('sabaq') ?? 'Sabaq'}',
                 maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+                softWrap: false,
                 style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11),
               ),
               style: ElevatedButton.styleFrom(

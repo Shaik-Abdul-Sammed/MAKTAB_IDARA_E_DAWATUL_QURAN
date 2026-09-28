@@ -213,7 +213,7 @@ class _BehaviorLogListScreenState extends State<BehaviorLogListScreen> {
                                 elevation: 1,
                                 child: ListTile(
                                   leading: const CircleAvatar(backgroundColor: Color(0xFF004D40), foregroundColor: Colors.white, child: Icon(Icons.report_problem, size: 18)),
-                                  title: Text('Incident: ${item.incident}', style: const TextStyle(fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                  title: Text('Incident: ${item.incident}', style: const TextStyle(fontWeight: FontWeight.bold), maxLines: 3, overflow: TextOverflow.ellipsis),
                                   subtitle: Text('Date: ${item.date} | Action: ${item.actionTaken ?? "None"}', maxLines: 2, overflow: TextOverflow.ellipsis),
                                   trailing: const Icon(Icons.chevron_right),
                                   onTap: () => _showDetailSheet(item),

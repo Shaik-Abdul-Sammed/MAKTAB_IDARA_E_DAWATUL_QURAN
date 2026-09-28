@@ -167,7 +167,7 @@ class _StudentAcademicHistoryScreenState extends State<StudentAcademicHistoryScr
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Academic History: ${_selectedStudent!.name}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF004D40)), maxLines: 1, overflow: TextOverflow.ellipsis),
+          Text('Academic History: ${_selectedStudent!.name}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF004D40)), maxLines: 2, overflow: TextOverflow.ellipsis),
           const Divider(height: 20),
           _buildRecordRow('15 Jul 2026', 'Surah Al-Baqarah (1-50)', 'Grade A+ (Mumtaz)'),
           const Divider(),

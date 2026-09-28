@@ -721,7 +721,7 @@ class _AdminDashboardState extends State<AdminDashboard>
                           Expanded(
                             child: Text(
                               '⚠️ ${auth.provisionFailures.length} teacher account(s) could not be provisioned. They may not be able to log in. Tap for details.',
-                              style: const TextStyle(color: Color(0xFF856404), fontSize: 12.5, fontWeight: FontWeight.w600), maxLines: 1, overflow: TextOverflow.ellipsis),
+                              style: const TextStyle(color: Color(0xFF856404), fontSize: 12.5, fontWeight: FontWeight.w600), maxLines: 3, overflow: TextOverflow.ellipsis),
                           ),
                         ],
                       ),
@@ -778,7 +778,7 @@ class _AdminDashboardState extends State<AdminDashboard>
                           Expanded(
                             child: Text(
                               '🔑 ${auth.provisionPwMismatches.length} teacher account(s) have a password mismatch. Manual reset required. Tap for details.',
-                              style: const TextStyle(color: Color(0xFF721C24), fontSize: 12.5, fontWeight: FontWeight.w600), maxLines: 1, overflow: TextOverflow.ellipsis),
+                              style: const TextStyle(color: Color(0xFF721C24), fontSize: 12.5, fontWeight: FontWeight.w600), maxLines: 3, overflow: TextOverflow.ellipsis),
                           ),
                         ],
                       ),
@@ -1196,13 +1196,13 @@ class _AdminDashboardState extends State<AdminDashboard>
                               title: Text(
                                 att['student_name'] ?? 'Unknown',
                                 style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                                maxLines: 1,
+                                maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
                               ),
                               subtitle: Text(
                                 '${att['batch_name']} • ${att['date']}',
                                 style: const TextStyle(fontSize: 12),
-                                maxLines: 1,
+                                maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
                               ),
                               trailing: SizedBox(
@@ -1356,9 +1356,16 @@ class _AdminDashboardState extends State<AdminDashboard>
                   overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 2),
-                Text(
-                  loc?.translate('admin_dashboard_manager_role') ?? 'Manager & Administrator',
-                  style: const TextStyle(color: Colors.white70, fontSize: 12), maxLines: 1, overflow: TextOverflow.ellipsis),
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    loc?.translate('admin_dashboard_manager_role') ?? 'Manager & Administrator',
+                    style: const TextStyle(color: Colors.white70, fontSize: 12),
+                    maxLines: 1,
+                    softWrap: false,
+                  ),
+                ),
               ],
             ),
           ),

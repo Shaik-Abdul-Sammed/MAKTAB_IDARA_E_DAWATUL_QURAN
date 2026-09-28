@@ -219,7 +219,8 @@ class _BatchDetailContent extends StatelessWidget {
                 ),
                 const SizedBox(height: 14),
                 Text(batch.name,
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 22), maxLines: 1, overflow: TextOverflow.ellipsis),
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 22), maxLines: 2, overflow: TextOverflow.ellipsis),
                 const SizedBox(height: 6),
                 Row(
                   mainAxisSize: MainAxisSize.min,
@@ -302,7 +303,7 @@ class _BatchDetailContent extends StatelessWidget {
                   teacher!.name.isNotEmpty ? teacher!.name[0].toUpperCase() : 'T',
                   style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
               ),
-              title: Text(teacher!.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15), maxLines: 1, overflow: TextOverflow.ellipsis),
+              title: Text(teacher!.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15), maxLines: 2, overflow: TextOverflow.ellipsis),
               subtitle: Text(teacher!.mobile ?? 'No phone number', style: const TextStyle(fontSize: 12, color: Colors.black54), maxLines: 2, overflow: TextOverflow.ellipsis),
               trailing: IconButton(
                 icon: const Icon(Icons.open_in_new, color: Color(0xFF004D40), size: 20),
@@ -384,7 +385,7 @@ class _BatchDetailContent extends StatelessWidget {
                       child: Text(s.name.isNotEmpty ? s.name[0].toUpperCase() : 'S',
                           style: const TextStyle(color: Color(0xFF004D40), fontWeight: FontWeight.bold, fontSize: 12), maxLines: 1, overflow: TextOverflow.ellipsis),
                     ),
-                    title: Text(s.name, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13), maxLines: 1, overflow: TextOverflow.ellipsis),
+                    title: Text(s.name, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13), maxLines: 2, overflow: TextOverflow.ellipsis),
                     subtitle: Text('ADM: ${s.admissionNumber}', style: const TextStyle(fontSize: 11, color: Colors.black45), maxLines: 2, overflow: TextOverflow.ellipsis),
                     trailing: const Icon(Icons.chevron_right, size: 18, color: Colors.black26),
                     onTap: () => context.push('/admin/students/${s.id}'),

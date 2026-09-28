@@ -88,7 +88,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF9FBE7),
       appBar: AppBar(
-        title: Text(loc?.translate('settings_screen_title') ?? 'Settings & Configuration', maxLines: 1, overflow: TextOverflow.ellipsis),
+        title: FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: Text(loc?.translate('settings_screen_title') ?? 'Settings & Configuration', maxLines: 1, softWrap: false),
+        ),
                 flexibleSpace: Container(
           decoration: const BoxDecoration(gradient: AppColors.primaryGradient),
         ),
@@ -107,7 +111,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       _buildSectionHeader(loc?.translate('settings_tools_integrations') ?? 'Tools & Integrations'),
                       ListTile(
                         leading: const Icon(Icons.account_balance_wallet_rounded, color: Color(0xFF004D40)),
-                        title: Text(loc?.translate('settings_fee_management_upi') ?? 'Fee Management & UPI', maxLines: 1, overflow: TextOverflow.ellipsis),
+                        title: Text(loc?.translate('settings_fee_management_upi') ?? 'Fee Management & UPI', maxLines: 2, overflow: TextOverflow.ellipsis),
                         subtitle: const Text('Track pending fees and collect via UPI'),
                         trailing: const Icon(Icons.chevron_right),
                         onTap: () => context.push('/admin/fees'),
@@ -115,7 +119,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       const Divider(height: 1),
                       ListTile(
                         leading: const Icon(Icons.chat_rounded, color: Colors.green),
-                        title: Text(loc?.translate('settings_whatsapp_broadcasts') ?? 'WhatsApp Broadcasts', maxLines: 1, overflow: TextOverflow.ellipsis),
+                        title: Text(loc?.translate('settings_whatsapp_broadcasts') ?? 'WhatsApp Broadcasts', maxLines: 2, overflow: TextOverflow.ellipsis),
                         subtitle: const Text('Send template messages to parents'),
                         trailing: const Icon(Icons.chevron_right),
                         onTap: () => context.push('/admin/tools/whatsapp'),
@@ -123,7 +127,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       const Divider(height: 1),
                       ListTile(
                         leading: const Icon(Icons.calendar_month_rounded, color: Color(0xFF004D40)),
-                        title: Text(loc?.translate('settings_calendar_sync') ?? 'Calendar Sync', maxLines: 1, overflow: TextOverflow.ellipsis),
+                        title: Text(loc?.translate('settings_calendar_sync') ?? 'Calendar Sync', maxLines: 2, overflow: TextOverflow.ellipsis),
                         subtitle: const Text('Add exam and fee due dates to device calendar'),
                         trailing: const Icon(Icons.chevron_right),
                         onTap: () => context.push('/admin/tools/calendar'),
@@ -308,7 +312,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 _buildSectionHeader('About App'),
                 const ListTile(
                   leading: Icon(Icons.info_outline_rounded, color: Color(0xFF004D40)),
-                  title: Text('Maktab Quran Management', maxLines: 1, overflow: TextOverflow.ellipsis),
+                  title: Text('Maktab Quran Management', maxLines: 2, overflow: TextOverflow.ellipsis),
                   subtitle: Text('Version 2.4.0 (Build 2026) · Offline First', maxLines: 2, overflow: TextOverflow.ellipsis),
                 ),
                 const SizedBox(height: 20),

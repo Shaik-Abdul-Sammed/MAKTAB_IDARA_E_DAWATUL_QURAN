@@ -374,7 +374,7 @@ class _MessageBoxScreenState extends State<MessageBoxScreen> {
               foregroundColor: Colors.white,
               child: Icon(Icons.announcement, size: 18),
             ),
-            title: Text(item.title, style: const TextStyle(fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
+            title: Text(item.title, style: const TextStyle(fontWeight: FontWeight.bold), maxLines: 2, overflow: TextOverflow.ellipsis),
             subtitle: Text('Date: ${item.date} | ${item.content}', maxLines: 2, overflow: TextOverflow.ellipsis),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => _showAnnouncementDetailSheet(item),

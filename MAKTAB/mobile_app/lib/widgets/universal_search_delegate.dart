@@ -65,7 +65,7 @@ class UniversalSearchDelegate extends SearchDelegate {
                 backgroundColor: Color(0xFF004D40),
                 child: Icon(Icons.person, color: Colors.white),
               ),
-              title: Text(student.name, maxLines: 1, overflow: TextOverflow.ellipsis),
+              title: Text(student.name, maxLines: 2, overflow: TextOverflow.ellipsis),
               subtitle: Text('ID: ${student.admissionNumber}', maxLines: 2, overflow: TextOverflow.ellipsis),
               onTap: () {
                 close(context, null);

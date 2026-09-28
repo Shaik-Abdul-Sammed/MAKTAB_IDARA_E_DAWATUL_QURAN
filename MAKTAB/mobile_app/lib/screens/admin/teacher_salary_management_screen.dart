@@ -113,74 +113,112 @@ class _TeacherSalaryManagementScreenState extends State<TeacherSalaryManagementS
 
   // ── UPI Launch Handler ──────────────────────────────────────────────────
 
-  Future<void> _launchUpiPayment(User teacher, int remainingAmount) async {
-    if (teacher.upiId == null || teacher.upiId!.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Teacher has no UPI ID configured. Edit salary profile first.', maxLines: 2, overflow: TextOverflow.ellipsis)),
-      );
-      return;
-    }
-
-    final upiId = teacher.upiId!.trim();
-    final name = Uri.encodeComponent(teacher.name);
-    final upiUrl = 'upi://pay?pa=$upiId&pn=$name&am=$remainingAmount&cu=INR';
-    final uri = Uri.parse(upiUrl);
-
-    bool launched = false;
-    try {
-      if (await canLaunchUrl(uri)) {
-        launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
-      }
-    } catch (e) {
-      debugPrint('[TeacherSalaryManagementScreen._launchUpiPayment] launch failed: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Could not open the app. Please try again.', maxLines: 2, overflow: TextOverflow.ellipsis),
-            backgroundColor: Colors.redAccent,
-          ),
-        );
-      }
-    }
-
-    if (!mounted) return;
-
-    showDialog(
+  Future<void> _promptForUpiId(User teacher) async {
+    final upiCtrl = TextEditingController(text: teacher.upiId ?? '');
+    final formKey = GlobalKey<FormState>();
+    final saved = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('UPI Payment Initiated', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF004D40))),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('UPI App launch status: ${launched ? "Success" : "Manual / App Open"}', maxLines: 1, overflow: TextOverflow.ellipsis),
-            const SizedBox(height: 8),
-            Text('Paying to: $upiId', maxLines: 1, overflow: TextOverflow.ellipsis),
-            Text('Target Amount: ₹$remainingAmount', maxLines: 1, overflow: TextOverflow.ellipsis),
-            const SizedBox(height: 12),
-            const Text(
-              'IMPORTANT:\nOpening the UPI application is NOT confirmation of payment. Complete the transaction in your UPI app, then tap "Record Payment" to update records.',
-              style: TextStyle(fontSize: 12, color: Colors.orange, fontWeight: FontWeight.bold),
-            ),
-          ],
+        title: Text('Enter UPI ID for ${teacher.name}', maxLines: 2, overflow: TextOverflow.ellipsis),
+        content: Form(
+          key: formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextFormField(
+                controller: upiCtrl,
+                autofocus: true,
+                decoration: const InputDecoration(
+                  labelText: 'Teacher UPI ID (e.g. name@upi)',
+                  border: OutlineInputBorder(),
+                ),
+                validator: (v) {
+                  if (v == null || v.trim().isEmpty) {
+                    return 'UPI ID is required';
+                  }
+                  if (!v.contains('@')) {
+                    return 'Invalid UPI ID format (must contain @)';
+                  }
+                  return null;
+                },
+              ),
+            ],
+          ),
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Close'),
-          ),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF004D40), foregroundColor: Colors.white),
             onPressed: () {
-              Navigator.pop(ctx);
-              _showRecordPaymentDialog(teacher, defaultMode: 'UPI', defaultRef: 'UPI-${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}');
+              if (formKey.currentState?.validate() ?? false) {
+                Navigator.pop(ctx, true);
+              }
             },
-            child: const Text('Record Payment'),
+            child: const Text('Save & Pay'),
           ),
         ],
       ),
     );
+
+    if (saved == true && mounted) {
+      final updated = teacher.copyWith(upiId: upiCtrl.text.trim());
+      await _userRepository.updateUser(updated);
+      await _cloudSyncService.pushUser(updated);
+      await _loadSalaryData();
+      final paid = _getPaidAmountForTeacher(teacher.id!);
+      final monthlySalary = teacher.monthlySalary ?? 0;
+      final remaining = (monthlySalary - paid).clamp(0, monthlySalary);
+      if (mounted) {
+        await _payViaUpiThenRecord(updated, remaining.toDouble());
+      }
+    }
+  }
+
+  Future<void> _payViaUpiThenRecord(User teacher, double amount) async {
+    if (amount <= 0) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No pending salary to pay.')),
+        );
+      }
+      return;
+    }
+    if (teacher.upiId == null || teacher.upiId!.trim().isEmpty) {
+      // Prompt the manager to enter the UPI ID first
+      await _promptForUpiId(teacher);
+      return;
+    }
+    final uri = Uri(
+      scheme: 'upi',
+      host: 'pay',
+      queryParameters: {
+        'pa': teacher.upiId!.trim(),
+        'pn': teacher.name,
+        'am': amount.toStringAsFixed(2),
+        'cu': 'INR',
+        'tn': 'Salary',
+      },
+    );
+    try {
+      final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+      if (!launched && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No UPI app installed on this device.')),
+        );
+      }
+    } catch (e) {
+      debugPrint('[UPI] launch failed: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not open UPI app: $e')),
+        );
+      }
+    }
+    // After UPI app returns (or error), open record payment dialog pre-filled with UPI
+    if (mounted) {
+      _showRecordPaymentDialog(teacher, defaultMode: 'UPI');
+    }
   }
 
   // ── Record Payment Dialog ────────────────────────────────────────────────
@@ -209,7 +247,7 @@ class _TeacherSalaryManagementScreenState extends State<TeacherSalaryManagementS
 
             return AlertDialog(
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-              title: Text('Record Salary Payment — ${teacher.name}', style: const TextStyle(fontSize: 18, color: Color(0xFF004D40), fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
+              title: Text('Record Salary Payment — ${teacher.name}', style: const TextStyle(fontSize: 18, color: Color(0xFF004D40), fontWeight: FontWeight.bold), maxLines: 2, overflow: TextOverflow.ellipsis),
               content: SingleChildScrollView(
                 child: Form(
                   key: formKey,
@@ -290,7 +328,16 @@ class _TeacherSalaryManagementScreenState extends State<TeacherSalaryManagementS
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text('After Payment Due: ₹$newRemaining', style: const TextStyle(fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
+                            Expanded(
+                              child: Text(
+                                'After Payment Due: ₹$newRemaining',
+                                style: const TextStyle(fontWeight: FontWeight.bold),
+                                maxLines: 1,
+                                softWrap: false,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
                             Text(newTotal >= monthlySalary ? 'PAID ✓' : 'PARTIAL ⚠', style: TextStyle(fontWeight: FontWeight.bold, color: newTotal >= monthlySalary ? Colors.green : Colors.orange)),
                           ],
                         ),
@@ -496,7 +543,7 @@ class _TeacherSalaryManagementScreenState extends State<TeacherSalaryManagementS
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text('Edit Salary Config — ${teacher.name}', style: const TextStyle(color: Color(0xFF004D40), fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
+        title: Text('Edit Salary Config — ${teacher.name}', style: const TextStyle(color: Color(0xFF004D40), fontWeight: FontWeight.bold), maxLines: 2, overflow: TextOverflow.ellipsis),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -565,7 +612,11 @@ class _TeacherSalaryManagementScreenState extends State<TeacherSalaryManagementS
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
               title: Text(
                 'Edit Salary Payment — ${teacher.name}',
-                style: const TextStyle(fontSize: 18, color: Color(0xFF004D40), fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
+                style: const TextStyle(fontSize: 18, color: Color(0xFF004D40), fontWeight: FontWeight.bold),
+                maxLines: 2,
+                softWrap: true,
+                overflow: TextOverflow.ellipsis,
+              ),
               content: SingleChildScrollView(
                 child: Form(
                   key: formKey,
@@ -662,7 +713,7 @@ class _TeacherSalaryManagementScreenState extends State<TeacherSalaryManagementS
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Delete Salary Payment'),
-        content: Text('Delete this salary payment of ₹${payment.amount} for ${payment.salaryMonth}? This cannot be undone.', maxLines: 1, overflow: TextOverflow.ellipsis),
+        content: Text('Delete this salary payment of ₹${payment.amount} for ${payment.salaryMonth}? This cannot be undone.', maxLines: 3, overflow: TextOverflow.ellipsis),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
           ElevatedButton(
@@ -823,9 +874,13 @@ class _TeacherSalaryManagementScreenState extends State<TeacherSalaryManagementS
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text(
-                          'TEACHER SALARY LIST',
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF004D40)),
+                        const Expanded(
+                          child: Text(
+                            'TEACHER SALARY LIST',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF004D40)),
+                          ),
                         ),
                         TextButton.icon(
                           icon: const Icon(Icons.share, size: 18),
@@ -897,7 +952,7 @@ class _TeacherSalaryManagementScreenState extends State<TeacherSalaryManagementS
                                             children: [
                                               Text(
                                                 teacher.name,
-                                                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF004D40)), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF004D40)), maxLines: 2, overflow: TextOverflow.ellipsis),
                                               const SizedBox(height: 2),
                                               Text(
                                                 'This Month: ₹$paid / ₹$salary',
@@ -906,7 +961,7 @@ class _TeacherSalaryManagementScreenState extends State<TeacherSalaryManagementS
                                           ),
                                         ),
                                         Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
                                           decoration: BoxDecoration(
                                             color: statusColor.withValues(alpha: 0.15),
                                             borderRadius: BorderRadius.circular(20),
@@ -917,13 +972,12 @@ class _TeacherSalaryManagementScreenState extends State<TeacherSalaryManagementS
                                             children: [
                                               Icon(statusIcon, size: 14, color: statusColor),
                                               const SizedBox(width: 4),
-                                              Flexible(
-                                                child: Text(
-                                                  status,
-                                                  maxLines: 1,
-                                                  overflow: TextOverflow.ellipsis,
-                                                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: statusColor),
-                                                ),
+                                              Text(
+                                                status,
+                                                maxLines: 1,
+                                                softWrap: false,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: statusColor),
                                               ),
                                             ],
                                           ),
@@ -949,40 +1003,22 @@ class _TeacherSalaryManagementScreenState extends State<TeacherSalaryManagementS
                                         children: [
                                           Expanded(
                                             child: ElevatedButton.icon(
-                                              icon: const Icon(Icons.payments, size: 16),
+                                              icon: const Icon(Icons.qr_code, size: 16),
                                               label: Text(
-                                                loc?.translate('salary_mgmt_pay_salary') ?? 'PAY SALARY',
+                                                loc?.translate('salary_mgmt_pay_upi') ?? 'PAY VIA UPI',
                                                 maxLines: 1,
+                                                softWrap: false,
                                                 overflow: TextOverflow.ellipsis,
                                               ),
                                               style: ElevatedButton.styleFrom(
+                                                backgroundColor: const Color(0xFF004D40),
                                                 foregroundColor: Colors.white,
                                                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                                                 textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
                                               ),
-                                              onPressed: () => _showRecordPaymentDialog(teacher),
+                                              onPressed: () => _payViaUpiThenRecord(teacher, remaining.toDouble()),
                                             ),
                                           ),
-                                          if (teacher.upiId != null && teacher.upiId!.isNotEmpty && remaining > 0) ...[
-                                            const SizedBox(width: 8),
-                                            Expanded(
-                                              child: OutlinedButton.icon(
-                                                icon: const Icon(Icons.qr_code, size: 16),
-                                                label: Text(
-                                                  loc?.translate('salary_mgmt_pay_upi') ?? 'PAY VIA UPI',
-                                                  maxLines: 1,
-                                                  overflow: TextOverflow.ellipsis,
-                                                ),
-                                                style: OutlinedButton.styleFrom(
-                                                  foregroundColor: const Color(0xFF004D40),
-                                                  side: const BorderSide(color: Color(0xFF004D40)),
-                                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                                  textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-                                                ),
-                                                onPressed: () => _launchUpiPayment(teacher, remaining),
-                                              ),
-                                            ),
-                                          ],
                                           const SizedBox(width: 4),
                                           _IconAction(
                                             icon: Icons.settings,
@@ -1081,13 +1117,25 @@ class _TeacherSalaryManagementScreenState extends State<TeacherSalaryManagementS
                                                 overflow: TextOverflow.ellipsis,
                                                 style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                                               ),
-                                              subtitle: Text(
-                                                '${p.paymentDate} • ${p.paymentMode}${p.transactionReference != null && p.transactionReference!.isNotEmpty ? " • Ref: ${p.transactionReference}" : ""}',
-                                                maxLines: 1,
-                                                overflow: TextOverflow.ellipsis,
+                                              subtitle: Column(
+                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(
+                                                    '${p.paymentDate} • ${p.paymentMode}${p.transactionReference != null && p.transactionReference!.isNotEmpty ? " • Ref: ${p.transactionReference}" : ""}',
+                                                    maxLines: 1,
+                                                    overflow: TextOverflow.ellipsis,
+                                                  ),
+                                                  if (p.notes != null && p.notes!.trim().isNotEmpty)
+                                                    Text(
+                                                      p.notes!.trim(),
+                                                      maxLines: 3,
+                                                      overflow: TextOverflow.ellipsis,
+                                                      style: const TextStyle(fontSize: 11, fontStyle: FontStyle.italic, color: Colors.black54),
+                                                    ),
+                                                ],
                                               ),
                                               trailing: SizedBox(
-                                                width: 116,
+                                                width: 108,
                                                 child: Row(
                                                   mainAxisSize: MainAxisSize.min,
                                                   mainAxisAlignment: MainAxisAlignment.end,

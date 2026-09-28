@@ -196,7 +196,7 @@ class _TeacherFeesScreenState extends State<TeacherFeesScreen> {
       barrierDismissible: false,
       builder: (context) => StatefulBuilder(
         builder: (context, setStateBuilder) => AlertDialog(
-          title: Text('Record Fee Payment: ${item.student.name}', maxLines: 1, overflow: TextOverflow.ellipsis),
+          title: Text('Record Fee Payment: ${item.student.name}', maxLines: 2, overflow: TextOverflow.ellipsis),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -336,7 +336,7 @@ class _TeacherFeesScreenState extends State<TeacherFeesScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Student: ${item.student.name}', style: const TextStyle(fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
+            Text('Student: ${item.student.name}', style: const TextStyle(fontWeight: FontWeight.bold), maxLines: 2, overflow: TextOverflow.ellipsis),
             const SizedBox(height: 12),
             TextField(
               controller: amountCtrl,
@@ -452,31 +452,26 @@ class _TeacherFeesScreenState extends State<TeacherFeesScreen> {
               ],
             ),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 4),
           Flexible(
-            child: ElevatedButton(
+            child: ElevatedButton.icon(
               onPressed: _openBulkMessagingDialog,
+              icon: const Icon(Icons.send_rounded, size: 16),
+              label: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  loc?.translate('teacher_fees_reminders') ?? 'Bulk Batch Reminders',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                ),
+              ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppIcons.gold,
                 foregroundColor: const Color(0xFF004D40),
                 elevation: 2,
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.send_rounded, size: 16),
-                  const SizedBox(width: 6),
-                  Flexible(
-                    child: Text(
-                      loc?.translate('teacher_fees_reminders') ?? 'Bulk Batch Reminders',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                ],
               ),
             ),
           ),
@@ -694,7 +689,7 @@ class _TeacherFeesScreenState extends State<TeacherFeesScreen> {
             Navigator.pop(ctx);
             _showRecordDialog(item);
           },
-          child: Text('${item.student.name} (ADM: ${item.student.admissionNumber})', maxLines: 1, overflow: TextOverflow.ellipsis),
+          child: Text('${item.student.name} (ADM: ${item.student.admissionNumber})', maxLines: 2, overflow: TextOverflow.ellipsis),
         )).toList(),
       ),
     );

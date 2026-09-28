@@ -311,7 +311,7 @@ class _BatchProgressCard extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(batchName,
-                    maxLines: 1,
+                    maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF004D40))),
               ),
@@ -360,7 +360,7 @@ class _RecentStudentTile extends StatelessWidget {
           const SizedBox(width: 12),
           Expanded(
             child: Text(student.name,
-                maxLines: 1,
+                maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
           ),

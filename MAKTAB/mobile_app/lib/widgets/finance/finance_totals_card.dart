@@ -68,11 +68,12 @@ class FinanceTotalsCard extends StatelessWidget {
                           size: 18,
                         ),
                       ),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: 4),
                       Expanded(
                         child: Text(
                           title,
                           maxLines: 1,
+                          softWrap: false,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
                             fontSize: 16,
@@ -84,11 +85,12 @@ class FinanceTotalsCard extends StatelessWidget {
                     ],
                   ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 4),
                 Flexible(
                   child: Text(
                     'Total: ${formatRupees(allTime)}',
                     maxLines: 1,
+                    softWrap: false,
                     overflow: TextOverflow.ellipsis,
                     textAlign: TextAlign.end,
                     style: TextStyle(
@@ -112,7 +114,7 @@ class FinanceTotalsCard extends StatelessWidget {
                     color: const Color(0xFF00796B),
                   ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 4),
                 Expanded(
                   child: _buildStatTile(
                     label: 'This Week',
@@ -120,7 +122,7 @@ class FinanceTotalsCard extends StatelessWidget {
                     color: const Color(0xFF1976D2),
                   ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 4),
                 Expanded(
                   child: _buildStatTile(
                     label: 'This Month',
@@ -192,7 +194,7 @@ class FinanceTotalsCard extends StatelessWidget {
     required Color color,
   }) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 6),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(12),
@@ -204,6 +206,7 @@ class FinanceTotalsCard extends StatelessWidget {
           Text(
             label,
             maxLines: 1,
+            softWrap: false,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
               fontSize: 11,

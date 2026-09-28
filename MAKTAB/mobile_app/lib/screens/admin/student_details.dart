@@ -260,7 +260,8 @@ class _StudentDetailContent extends StatelessWidget {
                 const SizedBox(height: 14),
                 Text(
                   student.name,
-                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 22), maxLines: 1, overflow: TextOverflow.ellipsis),
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 22), maxLines: 2, overflow: TextOverflow.ellipsis),
                 if (student.arabicName != null && student.arabicName!.isNotEmpty) ...[
                   const SizedBox(height: 4),
                   Text(
@@ -277,7 +278,7 @@ class _StudentDetailContent extends StatelessWidget {
                   ),
                   child: Text(
                     'ADM: ${student.admissionNumber} · $batchName',
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 12), maxLines: 1, overflow: TextOverflow.ellipsis),
+                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 12), maxLines: 2, overflow: TextOverflow.ellipsis),
                 ),
               ],
             ),
@@ -316,7 +317,12 @@ class _StudentDetailContent extends StatelessWidget {
                   child: Icon(Icons.currency_rupee, color: Color(0xFF004D40), size: 18),
                 ),
                 title: Text('₹${p.amount}', style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF004D40)), maxLines: 1, overflow: TextOverflow.ellipsis),
-                subtitle: Text('${p.mode}\\n${_formatDateTime(p.timestamp)}', style: const TextStyle(fontSize: 12), maxLines: 2, overflow: TextOverflow.ellipsis),
+                subtitle: Text(
+                  '${p.mode} · ${_formatDateTime(p.timestamp)}${p.notes != null && p.notes!.trim().isNotEmpty ? '\nNote: ${p.notes!.trim()}' : ''}',
+                  style: const TextStyle(fontSize: 12),
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                ),
                 isThreeLine: true,
                 trailing: IconButton(
                   icon: const Icon(Icons.delete_outline, color: Colors.red),

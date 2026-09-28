@@ -172,7 +172,7 @@ class _BatchManagementScreenState extends State<BatchManagementScreen> {
           builder: (context, setStateDialog) {
             return AlertDialog(
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-              title: Text('Edit Batch: ${batch.name}', style: const TextStyle(color: Color(0xFF004D40), fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
+              title: Text('Edit Batch: ${batch.name}', style: const TextStyle(color: Color(0xFF004D40), fontWeight: FontWeight.bold), maxLines: 2, overflow: TextOverflow.ellipsis),
               content: Form(
                 key: formKey,
                 child: SingleChildScrollView(
@@ -221,7 +221,7 @@ class _BatchManagementScreenState extends State<BatchManagementScreen> {
                               ),
                               ...uniqueTeachers.map((t) => DropdownMenuItem<int?>(
                                 value: t.id,
-                                child: Text(t.name, maxLines: 1, overflow: TextOverflow.ellipsis),
+                                child: Text(t.name, maxLines: 2, overflow: TextOverflow.ellipsis),
                               )),
                             ],
                             onChanged: (val) {
@@ -275,7 +275,7 @@ class _BatchManagementScreenState extends State<BatchManagementScreen> {
       builder: (context) {
         return AlertDialog(
           title: const Text('Confirm Delete'),
-          content: Text('Are you sure you want to delete ${batch.name}? Student references to this batch will remain, but the batch itself will be deleted.', maxLines: 1, overflow: TextOverflow.ellipsis),
+          content: Text('Are you sure you want to delete ${batch.name}? Student references to this batch will remain, but the batch itself will be deleted.', maxLines: 3, overflow: TextOverflow.ellipsis),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context, false),
@@ -318,7 +318,7 @@ class _BatchManagementScreenState extends State<BatchManagementScreen> {
             }
 
             return AlertDialog(
-              title: Text('Manage Students - ${batch.name}', style: const TextStyle(color: Color(0xFF004D40)), maxLines: 1, overflow: TextOverflow.ellipsis),
+              title: Text('Manage Students - ${batch.name}', style: const TextStyle(color: Color(0xFF004D40)), maxLines: 2, overflow: TextOverflow.ellipsis),
               content: SizedBox(
                 width: double.maxFinite,
                 height: 400,
@@ -335,7 +335,7 @@ class _BatchManagementScreenState extends State<BatchManagementScreen> {
                                 color: Colors.transparent,
                                 child: CheckboxListTile(
                                   activeColor: const Color(0xFF004D40),
-                                  title: Text(student.name, style: const TextStyle(fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                  title: Text(student.name, style: const TextStyle(fontWeight: FontWeight.bold), maxLines: 2, overflow: TextOverflow.ellipsis),
                                   subtitle: Text('ADM: ${student.admissionNumber}', maxLines: 2, overflow: TextOverflow.ellipsis),
                                   value: isSelected,
                                   onChanged: (bool? checked) {
@@ -482,7 +482,7 @@ class _BatchManagementScreenState extends State<BatchManagementScreen> {
                           ),
                           title: Text(
                             batch.name,
-                            maxLines: 1,
+                            maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Color(0xFF004D40)),
                           ),
@@ -497,7 +497,7 @@ class _BatchManagementScreenState extends State<BatchManagementScreen> {
                               ),
                               Text(
                                 'Teacher: ${_getTeacherName(batch.teacherId)}',
-                                maxLines: 1,
+                                maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ],

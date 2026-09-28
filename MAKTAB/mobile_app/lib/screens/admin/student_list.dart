@@ -136,11 +136,19 @@ class _StudentListScreenState extends State<StudentListScreen> {
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
                       color: Color(0xFF004D40),
-                    ), maxLines: 1, overflow: TextOverflow.ellipsis),
+                    ),
+                    maxLines: 2,
+                    softWrap: true,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                   const SizedBox(height: 4),
                   Text(
                     'ADM: ${student.admissionNumber}',
-                    style: const TextStyle(fontSize: 13, color: Colors.black54), maxLines: 1, overflow: TextOverflow.ellipsis),
+                    style: const TextStyle(fontSize: 13, color: Colors.black54),
+                    maxLines: 2,
+                    softWrap: true,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                   const SizedBox(height: 20),
                   Builder(
                     builder: (context) {
@@ -378,7 +386,7 @@ class _StudentListScreenState extends State<StudentListScreen> {
           child: Row(
             children: [
               ChoiceChip(
-                label: Text(loc?.translate('all_batches') ?? 'All Batches', maxLines: 1, overflow: TextOverflow.ellipsis),
+                label: Text(loc?.translate('all_batches') ?? 'All Batches', maxLines: 1, softWrap: false),
                 selected: !_showUnassigned && p.selectedBatchFilter == null,
                 selectedColor: const Color(0xFF004D40),
                 labelStyle: TextStyle(
@@ -394,7 +402,7 @@ class _StudentListScreenState extends State<StudentListScreen> {
               if (!_isTeacher) ...[
                 const SizedBox(width: 8),
                 ChoiceChip(
-                  label: Text(loc?.translate('unassigned') ?? 'Unassigned', maxLines: 1, overflow: TextOverflow.ellipsis),
+                  label: Text(loc?.translate('unassigned') ?? 'Unassigned', maxLines: 1, softWrap: false),
                   selected: _showUnassigned,
                   selectedColor: const Color(0xFF004D40),
                   labelStyle: TextStyle(
@@ -409,7 +417,7 @@ class _StudentListScreenState extends State<StudentListScreen> {
               ..._batches.map((b) => Padding(
                     padding: const EdgeInsets.only(right: 8.0),
                     child: ChoiceChip(
-                      label: Text(b.name, maxLines: 1, overflow: TextOverflow.ellipsis),
+                      label: Text(b.name, maxLines: 1, softWrap: false),
                       selected: !_showUnassigned && p.selectedBatchFilter == b.id,
                       selectedColor: const Color(0xFF004D40),
                       labelStyle: TextStyle(
@@ -846,7 +854,8 @@ class _StudentTile extends StatelessWidget {
                   child: Text(
                     student.name,
                     style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF1A1A1A)),
-                    maxLines: 1,
+                    maxLines: 2,
+                    softWrap: true,
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
@@ -861,7 +870,8 @@ class _StudentTile extends StatelessWidget {
                 Text(
                   'ADM: ${student.admissionNumber} ${student.fatherName != null ? '· S/O ${student.fatherName}' : ''}',
                   style: const TextStyle(fontSize: 12, color: Colors.black54),
-                  maxLines: 1,
+                  maxLines: 2,
+                  softWrap: true,
                   overflow: TextOverflow.ellipsis,
                 ),
                 if (batchName != null && batchName!.isNotEmpty) ...[

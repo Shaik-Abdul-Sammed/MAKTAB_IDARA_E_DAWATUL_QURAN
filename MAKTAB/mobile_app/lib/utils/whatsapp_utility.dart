@@ -389,7 +389,6 @@ ${t['commonRegards']}
     buf.writeln('━━━━━━━━━━━━━━━━━━━━');
     buf.writeln('• *${t['sabaqSurahLabel']}:* $surah');
     buf.writeln('• *${t['sabaqAyahLabel']}:* $ayahFrom–$ayahTo');
-    buf.writeln('• *${t['sabaqTypeLabel']}:* $recitationType');
     buf.writeln('• *${t['sabaqGradeLabel']}:* $grade');
     buf.writeln('• *${t['sabaqDateLabel']}:* $date');
     buf.writeln();

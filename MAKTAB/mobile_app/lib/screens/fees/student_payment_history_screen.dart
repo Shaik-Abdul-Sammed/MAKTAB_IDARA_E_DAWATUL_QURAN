@@ -366,7 +366,7 @@ class _StudentPaymentHistoryScreenState extends State<StudentPaymentHistoryScree
                                     children: [
                                       Text(
                                         tx.student.name,
-                                        maxLines: 1,
+                                        maxLines: 2,
                                         overflow: TextOverflow.ellipsis,
                                         style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                                       ),
@@ -376,12 +376,30 @@ class _StudentPaymentHistoryScreenState extends State<StudentPaymentHistoryScree
                                         overflow: TextOverflow.ellipsis,
                                         style: const TextStyle(fontSize: 12, color: Colors.black54),
                                       ),
+                                      if (tx.payment.notes != null && tx.payment.notes!.trim().isNotEmpty) ...[
+                                        const SizedBox(height: 2),
+                                        Row(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            const Icon(Icons.note_alt_outlined, size: 12, color: Colors.black45),
+                                            const SizedBox(width: 4),
+                                            Expanded(
+                                              child: Text(
+                                                tx.payment.notes!.trim(),
+                                                maxLines: 3,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: const TextStyle(fontSize: 11, fontStyle: FontStyle.italic, color: Colors.black54),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
                                     ],
                                   ),
                                 ),
-                                const SizedBox(width: 8),
+                                const SizedBox(width: 4),
                                 SizedBox(
-                                  width: 90,
+                                  width: 80,
                                   child: FittedBox(
                                     fit: BoxFit.scaleDown,
                                     alignment: Alignment.centerRight,

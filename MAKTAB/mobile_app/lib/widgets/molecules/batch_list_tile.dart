@@ -31,7 +31,7 @@ class BatchListTile extends StatelessWidget {
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
                         color: Color(0xFF004D40)),
-                    maxLines: 1,
+                    maxLines: 2,
                     overflow: TextOverflow.ellipsis),
                 const SizedBox(height: 4),
                 Text(timing,

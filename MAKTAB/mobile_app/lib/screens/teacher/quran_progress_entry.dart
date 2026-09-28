@@ -227,23 +227,6 @@ class _QuranProgressEntryScreenState extends State<QuranProgressEntryScreen> {
                 children: [
                   const _SectionTitle('Sabaq Details'),
                   const SizedBox(height: 10),
-                  SizedBox(
-                    width: double.infinity,
-                    child: SegmentedButton<String>(
-                      segments: const [
-                        ButtonSegment(value: 'Sabaq', label: Text('Sabaq')),
-                        ButtonSegment(value: 'Sabaqi', label: Text('Sabaqi')),
-                        ButtonSegment(value: 'Manzil', label: Text('Manzil')),
-                      ],
-                      selected: {_recitationType},
-                      onSelectionChanged: (newSelection) {
-                        setState(() {
-                          _recitationType = newSelection.first;
-                        });
-                      },
-                    ),
-                  ),
-                  const SizedBox(height: 16),
                   Row(
                     children: [
                       Expanded(

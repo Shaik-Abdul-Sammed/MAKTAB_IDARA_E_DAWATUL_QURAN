@@ -589,7 +589,7 @@ class _BatchAttendanceCard extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(batch.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF004D40)), maxLines: 1, overflow: TextOverflow.ellipsis),
+                          Text(batch.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF004D40)), maxLines: 2, overflow: TextOverflow.ellipsis),
                           Text('🕐 ${batch.timing}', style: const TextStyle(fontSize: 12, color: Colors.black54), maxLines: 1, overflow: TextOverflow.ellipsis),
                           Text('👤 ${teacherName ?? 'Unassigned'}', style: const TextStyle(fontSize: 12, color: Colors.black45), maxLines: 1, overflow: TextOverflow.ellipsis),
                         ],

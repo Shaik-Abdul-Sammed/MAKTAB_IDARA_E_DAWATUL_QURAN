@@ -147,7 +147,7 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
       builder: (_) => AlertDialog(
         title: const Text('Mark All Present'),
         content: Text(
-          'Mark all students in "${batch.name}" as Present for today?', maxLines: 1, overflow: TextOverflow.ellipsis),
+          'Mark all students in "${batch.name}" as Present for today?', maxLines: 3, overflow: TextOverflow.ellipsis),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -554,7 +554,7 @@ class _BatchTimelineCard extends StatelessWidget {
                               fontSize: 15,
                               color: AppColors.primaryTeal,
                             ),
-                            maxLines: 1,
+                            maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                           ),
                           Text(

@@ -74,7 +74,6 @@ import 'package:maktab_app/screens/admin/admin_audit_logs.dart';
 import 'package:maktab_app/screens/admin/teacher_activity_log.dart';
 import 'package:maktab_app/screens/admin/student_promotion.dart';
 import 'package:maktab_app/screens/teacher/syllabus_tracker.dart';
-import 'package:maktab_app/screens/teacher/student_health_info.dart';
 import 'package:maktab_app/screens/teacher/behavior_log_list.dart';
 import 'package:maktab_app/screens/teacher/checklist_entry.dart';
 import 'package:maktab_app/screens/teacher/checklist_history.dart';
@@ -601,10 +600,6 @@ class AppRouter {
           GoRoute(
             path: 'syllabus-tracker',
             builder: (context, state) => const SyllabusTrackerScreen(),
-          ),
-          GoRoute(
-            path: 'health',
-            builder: (context, state) => const StudentHealthInfoScreen(),
           ),
           GoRoute(
             path: 'behavior',

@@ -248,7 +248,7 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                                             style: const TextStyle(fontWeight: FontWeight.bold),
                                           ),
                                         ),
-                                        title: Text(studentName, style: const TextStyle(fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                        title: Text(studentName, style: const TextStyle(fontWeight: FontWeight.bold), maxLines: 2, overflow: TextOverflow.ellipsis),
                                         subtitle: Text('ID: ${item.studentId}${item.time != null && item.time!.isNotEmpty ? " • ${item.time}" : ""}', maxLines: 2, overflow: TextOverflow.ellipsis),
                                         trailing: ConstrainedBox(
                                           constraints: const BoxConstraints(maxWidth: 100),

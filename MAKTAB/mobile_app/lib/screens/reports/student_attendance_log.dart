@@ -107,7 +107,7 @@ class _StudentAttendanceLogScreenState extends State<StudentAttendanceLogScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Attendance Log: ${_selectedStudent!.name}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF004D40)), maxLines: 1, overflow: TextOverflow.ellipsis),
+          Text('Attendance Log: ${_selectedStudent!.name}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF004D40)), maxLines: 2, overflow: TextOverflow.ellipsis),
           const SizedBox(height: 12),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,

@@ -526,6 +526,8 @@ class _TeacherDashboardState extends State<TeacherDashboard>
                             fontSize: 14,
                             fontWeight: FontWeight.bold,
                           ),
+                          maxLines: 2,
+                          softWrap: true,
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),

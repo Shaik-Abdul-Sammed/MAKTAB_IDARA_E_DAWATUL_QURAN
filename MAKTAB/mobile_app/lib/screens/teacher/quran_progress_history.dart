@@ -157,7 +157,6 @@ class _QuranProgressHistoryScreenState extends State<QuranProgressHistoryScreen>
 ━━━━━━━━━━━━━━━━━━━━
 • *${t['sabaqSurahLabel'] ?? 'Surah'}:* ${p.surah}
 • *${t['sabaqAyahLabel'] ?? 'Ayah'}:* ${p.ayahFrom}–${p.ayahTo}
-• *${t['sabaqTypeLabel'] ?? 'Type'}:* ${p.recitationType}
 • *${t['sabaqGradeLabel'] ?? 'Grade'}:* ${p.grade}
 • *${t['sabaqDateLabel'] ?? 'Date'}:* ${p.date}
 
@@ -239,19 +238,6 @@ $maktabName
     );
   }
 
-  Color _getRecitationColor(String type) {
-    switch (type.toLowerCase()) {
-      case 'sabaq':
-        return const Color(0xFF004D40);
-      case 'sabaqi':
-        return Colors.amber.shade800;
-      case 'manzil':
-        return Colors.deepPurple;
-      default:
-        return const Color(0xFF004D40);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final filteredItems = _items.where((item) => item.surah.toLowerCase().contains(_searchQuery.toLowerCase()) || item.studentId.toString().contains(_searchQuery)).toList();
@@ -330,7 +316,6 @@ $maktabName
                                 itemCount: filteredItems.length,
                                 itemBuilder: (context, index) {
                                   final item = filteredItems[index];
-                                  final badgeColor = _getRecitationColor(item.recitationType);
                                   return Dismissible(
                                     key: ValueKey('qp_${item.id}'),
                                     direction: DismissDirection.endToStart,
@@ -372,37 +357,15 @@ $maktabName
                                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                                       elevation: 1,
                                       child: ListTile(
-                                        leading: CircleAvatar(
-                                          backgroundColor: badgeColor,
+                                        leading: const CircleAvatar(
+                                          backgroundColor: Color(0xFF004D40),
                                           foregroundColor: Colors.white,
-                                          child: const Icon(Icons.book, size: 18),
+                                          child: Icon(Icons.book, size: 18),
                                         ),
-                                        title: Row(
-                                          children: [
-                                            Expanded(
-                                              child: Text(
-                                                'Surah: ${item.surah}',
-                                                style: const TextStyle(fontWeight: FontWeight.bold),
-                                                overflow: TextOverflow.ellipsis,
-                                              ),
-                                            ),
-                                            Container(
-                                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                              decoration: BoxDecoration(
-                                                color: badgeColor.withValues(alpha: 0.12),
-                                                borderRadius: BorderRadius.circular(8),
-                                                border: Border.all(color: badgeColor, width: 1),
-                                              ),
-                                              child: Text(
-                                                item.recitationType,
-                                                style: TextStyle(
-                                                  fontSize: 11,
-                                                  fontWeight: FontWeight.bold,
-                                                  color: badgeColor,
-                                                ),
-                                              ),
-                                            ),
-                                          ],
+                                        title: Text(
+                                          'Surah: ${item.surah}',
+                                          style: const TextStyle(fontWeight: FontWeight.bold),
+                                          overflow: TextOverflow.ellipsis,
                                         ),
                                         subtitle: Text('Date: ${item.date} | Ayah: ${item.ayahFrom}–${item.ayahTo} | Grade: ${item.grade}', maxLines: 2, overflow: TextOverflow.ellipsis),
                                         trailing: ConstrainedBox(

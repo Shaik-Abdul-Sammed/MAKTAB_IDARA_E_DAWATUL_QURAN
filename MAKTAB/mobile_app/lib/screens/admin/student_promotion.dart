@@ -99,7 +99,7 @@ class _StudentPromotionScreenState extends State<StudentPromotionScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Confirm Promotion'),
-        content: Text('Promote ${_selectedStudentIds.length} students to ${_targetBatch!.name}?', maxLines: 1, overflow: TextOverflow.ellipsis),
+        content: Text('Promote ${_selectedStudentIds.length} students to ${_targetBatch!.name}?', maxLines: 2, overflow: TextOverflow.ellipsis),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
           ElevatedButton(
@@ -224,7 +224,7 @@ class _StudentPromotionScreenState extends State<StudentPromotionScreen> {
                                     return Material(
                                       color: Colors.transparent,
                                       child: CheckboxListTile(
-                                        title: Text(student.name, style: const TextStyle(fontWeight: FontWeight.w600), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                        title: Text(student.name, style: const TextStyle(fontWeight: FontWeight.w600), maxLines: 2, overflow: TextOverflow.ellipsis),
                                         subtitle: Text(student.fatherName ?? 'No Guardian Info', maxLines: 2, overflow: TextOverflow.ellipsis),
                                         value: isSelected,
                                         activeColor: const Color(0xFF004D40),
@@ -283,7 +283,14 @@ class _StudentPromotionScreenState extends State<StudentPromotionScreen> {
                       ElevatedButton.icon(
                         onPressed: _isPromoting ? null : _promoteSelectedStudents,
                         icon: _isPromoting ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.upgrade),
-                        label: Text(_isPromoting ? 'Promoting...' : 'Promote ${_selectedStudentIds.length} Students', maxLines: 1, overflow: TextOverflow.ellipsis),
+                        label: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            _isPromoting ? 'Promoting...' : 'Promote ${_selectedStudentIds.length} Students',
+                            maxLines: 1,
+                            softWrap: false,
+                          ),
+                        ),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFFFFD700), // Gold
                           foregroundColor: const Color(0xFF004D40),

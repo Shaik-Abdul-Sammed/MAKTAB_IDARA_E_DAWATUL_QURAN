@@ -94,7 +94,7 @@ class _PastStudentsScreenState extends State<PastStudentsScreen> {
       builder: (context) => AlertDialog(
         title: const Text('Restore Student'),
         content: Text(
-          'Are you sure you want to restore ${student.name} (ADM: ${student.admissionNumber}) back to active students list?', maxLines: 1, overflow: TextOverflow.ellipsis),
+          'Are you sure you want to restore ${student.name} (ADM: ${student.admissionNumber}) back to active students list?', maxLines: 3, overflow: TextOverflow.ellipsis),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -130,7 +130,7 @@ class _PastStudentsScreenState extends State<PastStudentsScreen> {
       builder: (context) => AlertDialog(
         title: const Text('Permanently Delete Student', style: TextStyle(color: Colors.red)),
         content: Text(
-          'WARNING: This will PERMANENTLY remove ${student.name} (ADM: ${student.admissionNumber}) and all associated records from the database. This action CANNOT be undone!', maxLines: 1, overflow: TextOverflow.ellipsis),
+          'WARNING: This will PERMANENTLY remove ${student.name} (ADM: ${student.admissionNumber}) and all associated records from the database. This action CANNOT be undone!', maxLines: 4, overflow: TextOverflow.ellipsis),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -262,7 +262,7 @@ class _PastStudentsScreenState extends State<PastStudentsScreen> {
                                     ),
                                     title: Text(
                                       student.name,
-                                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16), maxLines: 2, overflow: TextOverflow.ellipsis),
                                     subtitle: Text(
                                       'ADM: ${student.admissionNumber} | Father: ${student.fatherName ?? 'N/A'}\nBatch: ${_getBatchName(student.batchId)}',
                                       style: const TextStyle(fontSize: 13, height: 1.4), maxLines: 2, overflow: TextOverflow.ellipsis),

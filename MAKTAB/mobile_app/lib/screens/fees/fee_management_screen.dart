@@ -73,24 +73,34 @@ class _FeeManagementScreenState extends State<FeeManagementScreen> {
         
         final feeAmount = (s.feesAmount ?? 500).toDouble();
         final payments = await FeePaymentRepository().getPaymentsForStudent(s.id!);
-        
-        // Check if there is a payment in the current month
-        bool paidThisMonth = false;
-        for (var p in payments) {
-          if (p.timestamp.startsWith(currentMonthStr)) {
-            paidThisMonth = true;
-            break;
-          }
-        }
-        
+
+        // Sum all payments recorded in the current calendar month
+        final paymentsThisMonth = payments
+            .where((p) => p.timestamp.startsWith(currentMonthStr))
+            .toList();
+        final paidThisMonth = paymentsThisMonth.fold<double>(
+          0.0,
+          (sum, p) => sum + p.amount.toDouble(),
+        );
+
+        // True remaining balance for the month
+        final remaining = (feeAmount - paidThisMonth).clamp(0.0, feeAmount);
+        final isFullyPaid = remaining <= 0;
+
         final dueDate = DateFormat('yyyy-MM-10').format(DateTime.now());
-        final isOverdue = !paidThisMonth && DateTime.now().day > 10;
-        
+        final isOverdue = !isFullyPaid && DateTime.now().day > 10;
+
+        final status = isFullyPaid
+            ? 'Paid'
+            : (paidThisMonth > 0
+                ? 'Partial'
+                : (isOverdue ? 'Overdue' : 'Pending'));
+
         items.add(FeeStudentItem(
           student: s,
-          amountDue: paidThisMonth ? 0.0 : feeAmount,
+          amountDue: remaining,
           dueDate: dueDate,
-          status: paidThisMonth ? 'Paid' : (isOverdue ? 'Overdue' : 'Pending'),
+          status: status,
         ));
       }
       
@@ -164,25 +174,36 @@ class _FeeManagementScreenState extends State<FeeManagementScreen> {
     }
   }
 
-  Future<void> _payViaUpi(FeeStudentItem item) async {
-    final upiUrl = Uri.parse(
-      'upi://pay?pa=maktab@upi&pn=MaktabQuran&am=${item.amountDue}&cu=INR&tn=Fee_${item.student.admissionNumber}',
-    );
-    try {
-      if (await canLaunchUrl(upiUrl)) {
-        await launchUrl(upiUrl, mode: LaunchMode.externalApplication);
-      } else {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('UPI App launched for ₹${item.amountDue.toInt()}', maxLines: 2, overflow: TextOverflow.ellipsis)),
-        );
-      }
-    } catch (_) {
+  Future<void> _payViaUpiThenRecord(FeeStudentItem item) async {
+    if (item.amountDue <= 0) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Simulated UPI intent for ₹${item.amountDue.toInt()}', maxLines: 2, overflow: TextOverflow.ellipsis)),
+        const SnackBar(content: Text('No pending fee to pay.')),
       );
+      return;
     }
+
+    final amount = item.amountDue;
+    final uri = Uri(
+      scheme: 'upi',
+      host: 'pay',
+      queryParameters: {
+        'pa': 'maktab@upi',
+        'pn': 'MaktabQuran',
+        'am': amount.toStringAsFixed(2),
+        'cu': 'INR',
+        'tn': 'Fee_${item.student.admissionNumber}',
+      },
+    );
+
+    try {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } catch (e) {
+      debugPrint('[Fee UPI] launch failed: $e');
+    }
+
+    if (!mounted) return;
+    _showRecordDialog(item, defaultMode: 'UPI', defaultAmount: amount);
   }
 
   void _openBulkMessagingDialog() {
@@ -358,7 +379,7 @@ class _FeeManagementScreenState extends State<FeeManagementScreen> {
                             final item = filtered[index];
                             return FeeCard(
                               item: item,
-                              onPayUpi: () => _payViaUpi(item),
+                              onPayUpi: () => _payViaUpiThenRecord(item),
                               onWhatsApp: () => _sendWhatsAppReminder(item),
                               onNotify: () => _triggerNotification(item),
                               onLog: () => _showRecordDialog(item),
@@ -404,7 +425,7 @@ class _FeeManagementScreenState extends State<FeeManagementScreen> {
             Navigator.pop(ctx);
             _showRecordDialog(item);
           },
-          child: Text('${item.student.name} (ADM: ${item.student.admissionNumber})', maxLines: 1, overflow: TextOverflow.ellipsis),
+          child: Text('${item.student.name} (ADM: ${item.student.admissionNumber})', maxLines: 2, overflow: TextOverflow.ellipsis),
         )).toList(),
       ),
     );
@@ -423,7 +444,7 @@ class _FeeManagementScreenState extends State<FeeManagementScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Student: ${item.student.name}', style: const TextStyle(fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
+            Text('Student: ${item.student.name}', style: const TextStyle(fontWeight: FontWeight.bold), maxLines: 2, overflow: TextOverflow.ellipsis),
             const SizedBox(height: 12),
             TextField(
               controller: amountCtrl,
@@ -501,7 +522,7 @@ class _FeeManagementScreenState extends State<FeeManagementScreen> {
       barrierDismissible: false,
       builder: (context) => StatefulBuilder(
         builder: (context, setStateBuilder) => AlertDialog(
-          title: Text('Log Payment: ${item.student.name}', maxLines: 1, overflow: TextOverflow.ellipsis),
+          title: Text('Log Payment: ${item.student.name}', maxLines: 2, overflow: TextOverflow.ellipsis),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -687,31 +708,26 @@ class _FeeManagementScreenState extends State<FeeManagementScreen> {
               ],
             ),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 4),
           Flexible(
-            child: ElevatedButton(
+            child: ElevatedButton.icon(
               onPressed: _openBulkMessagingDialog,
+              icon: const Icon(Icons.send_rounded, size: 16),
+              label: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  loc?.translate('fee_mgmt_bulk_reminders') ?? 'Bulk Batch Reminders',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                ),
+              ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppIcons.gold,
                 foregroundColor: const Color(0xFF004D40),
                 elevation: 2,
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.send_rounded, size: 16),
-                  const SizedBox(width: 6),
-                  Flexible(
-                    child: Text(
-                      loc?.translate('fee_mgmt_bulk_reminders') ?? 'Bulk Batch Reminders',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                ],
               ),
             ),
           ),

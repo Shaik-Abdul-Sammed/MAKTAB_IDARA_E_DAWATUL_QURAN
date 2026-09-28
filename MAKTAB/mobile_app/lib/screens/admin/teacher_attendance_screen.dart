@@ -821,7 +821,7 @@ class _TeacherAttendanceScreenState extends State<TeacherAttendanceScreen> {
                                                         content: Row(children: [
                                                           const Icon(Icons.warning_amber, color: Colors.white, size: 18),
                                                           const SizedBox(width: 8),
-                                                          Expanded(child: Text('${teacher.name} has no profile photo. Please add one to enable Face Verification.', maxLines: 1, overflow: TextOverflow.ellipsis)),
+                                                          Expanded(child: Text('${teacher.name} has no profile photo. Please add one to enable Face Verification.', maxLines: 3, overflow: TextOverflow.ellipsis)),
                                                         ]),
                                                         backgroundColor: Colors.orange.shade700,
                                                         duration: const Duration(seconds: 4),
@@ -1070,7 +1070,7 @@ class _SummaryTeacherTile extends StatelessWidget {
         const SizedBox(width: 10),
         Expanded(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(teacher.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14), maxLines: 1, overflow: TextOverflow.ellipsis),
+            Text(teacher.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14), maxLines: 2, overflow: TextOverflow.ellipsis),
             Text(status, style: TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.w600)),
           ]),
         ),

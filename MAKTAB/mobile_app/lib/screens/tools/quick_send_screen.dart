@@ -268,7 +268,6 @@ class _QuickSendScreenState extends State<QuickSendScreen> {
         buf.writeln('━━━━━━━━━━━━━━━━━━━━');
         buf.writeln('• *${t['sabaqSurahLabel'] ?? 'Surah'}:* ${_surahCtrl.text.trim()}');
         buf.writeln('• *${t['sabaqAyahLabel'] ?? 'Ayah'}:* ${_ayahFromCtrl.text.trim()}–${_ayahToCtrl.text.trim()}');
-        buf.writeln('• *${t['sabaqTypeLabel'] ?? 'Type'}:* $_recitationType');
         buf.writeln('• *${t['sabaqGradeLabel'] ?? 'Grade'}:* $_sabaqGrade');
         buf.writeln('• *${t['sabaqDateLabel'] ?? 'Date'}:* $nowStr');
         buf.writeln();
@@ -625,7 +624,7 @@ class _QuickSendScreenState extends State<QuickSendScreen> {
         children: [
           Icon(icon, size: 16, color: isSelected ? Colors.white : const Color(0xFF004D40)),
           const SizedBox(width: 6),
-          Flexible(child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis)),
+          Text(label, maxLines: 1, softWrap: false),
         ],
       ),
       selectedColor: const Color(0xFF004D40),
@@ -686,7 +685,8 @@ class _QuickSendScreenState extends State<QuickSendScreen> {
                   value: s,
                   child: Text(
                     '${s.name} (${s.admissionNumber}) — ${s.guardianPhone ?? s.phone ?? 'No Phone'}',
-                    maxLines: 1,
+                    maxLines: 2,
+                    softWrap: true,
                     overflow: TextOverflow.ellipsis,
                   ),
                 )).toList(),
@@ -707,7 +707,8 @@ class _QuickSendScreenState extends State<QuickSendScreen> {
                   value: t,
                   child: Text(
                     '${t.name} (ID: ${t.teacherId ?? t.id}) — ${t.mobile ?? 'No Mobile'}',
-                    maxLines: 1,
+                    maxLines: 2,
+                    softWrap: true,
                     overflow: TextOverflow.ellipsis,
                   ),
                 )).toList(),
@@ -717,7 +718,7 @@ class _QuickSendScreenState extends State<QuickSendScreen> {
               ListTile(
                 contentPadding: EdgeInsets.zero,
                 leading: const CircleAvatar(backgroundColor: Color(0xFF004D40), child: Icon(Icons.admin_panel_settings, color: Colors.white)),
-                title: Text(_manager?.name ?? 'Maktab Manager', maxLines: 1, overflow: TextOverflow.ellipsis),
+                title: Text(_manager?.name ?? 'Maktab Manager', maxLines: 2, overflow: TextOverflow.ellipsis),
                 subtitle: Text(_manager?.mobile ?? 'No Mobile', maxLines: 2, overflow: TextOverflow.ellipsis),
               ),
             ],
@@ -731,7 +732,7 @@ class _QuickSendScreenState extends State<QuickSendScreen> {
     final isSelected = _recipientRole == role;
     return ChoiceChip(
       selected: isSelected,
-      label: Flexible(child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis)),
+      label: Text(label, maxLines: 1, softWrap: false),
       selectedColor: const Color(0xFF004D40),
       labelStyle: TextStyle(
         color: isSelected ? Colors.white : const Color(0xFF004D40),

@@ -483,7 +483,7 @@ class AuthProvider with ChangeNotifier {
             final uid = cred.user?.uid;
             if (uid != null) {
               final snap = await secondaryDb.ref('users/$uid').get()
-                  .timeout(const Duration(seconds: 5));
+                  .timeout(const Duration(seconds: 10));
               if (!snap.exists) {
                 missing.add('teacherId=${t.id} uid=$uid');
                 needsProvision = true;
@@ -970,7 +970,7 @@ class AuthProvider with ChangeNotifier {
             cred = await _fbAuth!.signInWithEmailAndPassword(
               email: derivedEmail,
               password: derivedPassword,
-            ).timeout(const Duration(seconds: 5));
+            ).timeout(const Duration(seconds: 10));
           } catch (e) {
             debugPrint('Teacher Firebase Auth sign-in failed, attempting provisioning: $e');
             if (teacher.id != null) {
@@ -984,13 +984,13 @@ class AuthProvider with ChangeNotifier {
                 cred = await _fbAuth!.signInWithEmailAndPassword(
                   email: derivedEmail,
                   password: derivedPassword,
-                ).timeout(const Duration(seconds: 5));
+                ).timeout(const Duration(seconds: 10));
               } catch (e2) {
                 try {
                   cred = await _fbAuth!.createUserWithEmailAndPassword(
                     email: derivedEmail,
                     password: derivedPassword,
-                  ).timeout(const Duration(seconds: 5));
+                  ).timeout(const Duration(seconds: 10));
                 } catch (e3) {
                   debugPrint('Teacher Firebase Auth login failed gracefully: $e3');
                 }

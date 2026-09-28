@@ -158,7 +158,7 @@ class _TeacherBatchesScreenState extends State<TeacherBatchesScreen> {
                                     foregroundColor: Colors.white,
                                     child: Icon(Icons.group, size: 18),
                                   ),
-                                  title: Text(item.name, style: const TextStyle(fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                  title: Text(item.name, style: const TextStyle(fontWeight: FontWeight.bold), maxLines: 2, overflow: TextOverflow.ellipsis),
                                   subtitle: Text('Course: ${item.timing} | Year: ${item.name}', maxLines: 2, overflow: TextOverflow.ellipsis),
                                   trailing: const Icon(Icons.chevron_right),
                                   onTap: () => _showDetailSheet(item),

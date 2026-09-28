@@ -42,7 +42,7 @@ class DatabaseHelper {
       return await ffi.databaseFactoryFfi.openDatabase(
         path,
         options: ffi.OpenDatabaseOptions(
-          version: 26,
+          version: 27,
           onConfigure: (db) async {
             await db.execute('PRAGMA foreign_keys = ON');
           },
@@ -59,7 +59,7 @@ class DatabaseHelper {
     return await openDatabase(
       path,
       password: key,
-      version: 26,
+      version: 27,
       onConfigure: (db) async {
         await db.execute('PRAGMA foreign_keys = ON');
       },
@@ -176,6 +176,7 @@ class DatabaseHelper {
         mode TEXT NOT NULL,
         timestamp TEXT NOT NULL,
         notes TEXT,
+        reference TEXT,
         voice_note_path TEXT,
         receipt_sent INTEGER DEFAULT 0,
         receipt_sent_at TEXT,
@@ -1095,6 +1096,15 @@ class DatabaseHelper {
         debugPrint('[MIGRATION v26] Cleared orphaned batch.teacher_id values');
       } catch (e) {
         debugPrint('[MIGRATION v26] Clear orphaned teacher_id: $e');
+      }
+    }
+
+    if (oldVersion < 27) {
+      try {
+        await db.execute('ALTER TABLE fee_payments ADD COLUMN reference TEXT');
+        debugPrint('[MIGRATION v27] Added reference to fee_payments');
+      } catch (e) {
+        debugPrint('[MIGRATION v27] fee_payments.reference: $e');
       }
     }
   }
