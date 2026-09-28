@@ -10,10 +10,14 @@ import 'package:permission_handler/permission_handler.dart';
 import '../../config/app_icons.dart';
 import '../../models/batch.dart';
 import '../../models/fee_payment.dart';
+import '../../models/fee_handover.dart';
+import '../../models/user.dart';
 import '../../providers/auth_provider.dart';
 import '../../repositories/fee_payment_repository.dart';
 import '../../repositories/student_repository.dart';
 import '../../repositories/batch_repository.dart';
+import '../../repositories/fee_handover_repository.dart';
+import '../../repositories/user_repository.dart';
 import '../../services/database_helper.dart';
 import '../../services/notification_service.dart';
 import '../../utils/reminder_formatter.dart';
@@ -23,9 +27,7 @@ import '../../utils/permission_helper.dart';
 import '../../widgets/molecules/custom_app_bar.dart';
 import '../../l10n/app_localizations.dart';
 import '../../widgets/shimmer_loader.dart';
-import '../../widgets/finance/finance_totals_card.dart';
 import '../../widgets/finance/fee_card.dart';
-import '../../widgets/finance/fee_payments_list_widget.dart';
 import '../../widgets/bulk_fee_messaging_dialog.dart';
 
 class TeacherFeesScreen extends StatefulWidget {
@@ -39,11 +41,11 @@ class _TeacherFeesScreenState extends State<TeacherFeesScreen> {
   final FeePaymentRepository _feeRepo = FeePaymentRepository();
   final StudentRepository _studentRepo = StudentRepository();
   final BatchRepository _batchRepo = BatchRepository();
+  final FeeHandoverRepository _handoverRepo = FeeHandoverRepository();
+  final UserRepository _userRepo = UserRepository();
 
   List<FeeStudentItem> _feeItems = [];
   List<Batch> _batches = [];
-  Map<String, int> _feeTotals = const {};
-  Map<String, int> _modeBreakdown = const {};
   bool _isLoading = true;
   String _filter = 'All';
   String _searchQuery = '';
@@ -53,6 +55,14 @@ class _TeacherFeesScreenState extends State<TeacherFeesScreen> {
 
   int _teacherId = 0;
   String _teacherName = '';
+  User? _manager;
+
+  int _totalCollected = 0;
+  int _totalHandedOver = 0;
+  List<Map<String, dynamic>> _myCollections = [];
+  List<Map<String, dynamic>> _unattributedCollections = [];
+  List<FeeHandover> _myHandovers = [];
+  int _sectionASubTab = 0; // 0 = Collections History, 1 = Student Fee Dues
 
   @override
   void initState() {
@@ -119,15 +129,23 @@ class _TeacherFeesScreenState extends State<TeacherFeesScreen> {
         ));
       }
 
-      final feeTotals = await _feeRepo.getFeeTotalsForTeacher(_teacherId);
-      final modeBreakdown = await _feeRepo.getFeeModeBreakdown(canonicalTeacherId: _teacherId);
+      final totalCollected = await _handoverRepo.getTotalCollected(_teacherId);
+      final totalHandedOver = await _handoverRepo.getTotalHandedOver(_teacherId);
+      final myCollections = await _handoverRepo.getPaymentsCollectedByTeacher(_teacherId);
+      final unattributed = await _handoverRepo.getUnattributedPayments();
+      final myHandovers = await _handoverRepo.getHandoversForTeacher(_teacherId);
+      final manager = await _userRepo.getManager();
 
       if (mounted) {
         setState(() {
           _batches = batches;
           _feeItems = items;
-          _feeTotals = feeTotals;
-          _modeBreakdown = modeBreakdown;
+          _totalCollected = totalCollected;
+          _totalHandedOver = totalHandedOver;
+          _myCollections = myCollections;
+          _unattributedCollections = unattributed;
+          _myHandovers = myHandovers;
+          _manager = manager;
           _isLoading = false;
         });
       }
@@ -135,6 +153,15 @@ class _TeacherFeesScreenState extends State<TeacherFeesScreen> {
       debugPrint('[TeacherFeesScreen] load error: $e');
       if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  int get _outstandingOwed {
+    final diff = _totalCollected - _totalHandedOver;
+    if (diff < 0) {
+      debugPrint('[TeacherFees] Warning: totalHandedOver ($_totalHandedOver) > totalCollected ($_totalCollected)');
+      return 0;
+    }
+    return diff;
   }
 
   void _openBulkMessagingDialog() {
@@ -457,6 +484,7 @@ class _TeacherFeesScreenState extends State<TeacherFeesScreen> {
                     voiceNotePath: recordFilePath,
                     receiptSent: sendReceiptWhatsApp ? 1 : 0,
                     receiptSentAt: sendReceiptWhatsApp ? DateTime.now().toIso8601String() : null,
+                    collectedBy: _teacherId,
                   );
 
                   await _feeRepo.insertFeePayment(newPayment);
@@ -589,6 +617,974 @@ class _TeacherFeesScreenState extends State<TeacherFeesScreen> {
   }
 
 
+  Future<void> _payToManagerThenRecord(User manager, double amount) async {
+    if (amount <= 0) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Nothing to settle with the manager.')),
+        );
+      }
+      return;
+    }
+
+    String defaultMode = 'Cash';
+
+    if (manager.upiId != null && manager.upiId!.trim().isNotEmpty) {
+      defaultMode = 'UPI';
+      final upiUri = Uri.parse(
+        'upi://pay?pa=${manager.upiId!.trim()}'
+        '&pn=${Uri.encodeComponent(manager.name)}'
+        '&am=${amount.toStringAsFixed(2)}'
+        '&cu=INR'
+        '&tn=FeeHandover_$_teacherId',
+      );
+      try {
+        await launchUrl(upiUri, mode: LaunchMode.externalApplication);
+      } catch (e) {
+        debugPrint('[Teacher Fee Handover UPI] launch failed: $e');
+      }
+    }
+
+    if (!mounted) return;
+    _showHandoverDialog(manager, defaultAmount: amount.toInt(), defaultMode: defaultMode);
+  }
+
+  void _showHandoverDialog(User manager, {int defaultAmount = 0, String defaultMode = 'Cash'}) {
+    final amountCtrl = TextEditingController(text: defaultAmount > 0 ? defaultAmount.toString() : '');
+    final refCtrl = TextEditingController();
+    final notesCtrl = TextEditingController();
+    String selectedMode = defaultMode;
+    DateTime paymentDate = DateTime.now();
+    bool sendReceiptToManager = true;
+    final modes = ['Cash', 'UPI', 'Bank Transfer', 'Cheque', 'Online'];
+
+    final formKey = GlobalKey<FormState>();
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogCtx) => StatefulBuilder(
+        builder: (ctx, setStateBuilder) {
+          final payingNow = int.tryParse(amountCtrl.text.trim()) ?? 0;
+          final remainingAfter = (_outstandingOwed - payingNow).clamp(0, 9999999);
+
+          return AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            title: Text(
+              'Hand Over Fees to ${manager.name.isNotEmpty ? manager.name : "Manager"}',
+              style: const TextStyle(
+                fontSize: 18,
+                color: Color(0xFF004D40),
+                fontWeight: FontWeight.bold,
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+            content: SingleChildScrollView(
+              child: Form(
+                key: formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE9F1E9),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Column(
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Expanded(
+                                child: Text('Total Collected:', maxLines: 1, overflow: TextOverflow.ellipsis),
+                              ),
+                              const SizedBox(width: 8),
+                              SizedBox(
+                                width: 90,
+                                child: Text(
+                                  '₹$_totalCollected',
+                                  textAlign: TextAlign.end,
+                                  style: const TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                            ],
+                          ),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Expanded(
+                                child: Text('Already Handed Over:', maxLines: 1, overflow: TextOverflow.ellipsis),
+                              ),
+                              const SizedBox(width: 8),
+                              SizedBox(
+                                width: 90,
+                                child: Text(
+                                  '₹$_totalHandedOver',
+                                  textAlign: TextAlign.end,
+                                  style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green),
+                                ),
+                              ),
+                            ],
+                          ),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Expanded(
+                                child: Text('Outstanding Due:', maxLines: 1, overflow: TextOverflow.ellipsis),
+                              ),
+                              const SizedBox(width: 8),
+                              SizedBox(
+                                width: 90,
+                                child: Text(
+                                  '₹$_outstandingOwed',
+                                  textAlign: TextAlign.end,
+                                  style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.red),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    TextFormField(
+                      controller: amountCtrl,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        labelText: 'Handover Amount (₹)',
+                        prefixIcon: Icon(Icons.currency_rupee, color: Color(0xFF004D40)),
+                        border: OutlineInputBorder(),
+                      ),
+                      onChanged: (val) => setStateBuilder(() {}),
+                      validator: (val) {
+                        if (val == null || val.trim().isEmpty) return 'Enter handover amount';
+                        final amt = int.tryParse(val.trim());
+                        if (amt == null || amt <= 0) return 'Enter a valid amount > 0';
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    DropdownButtonFormField<String>(
+                      initialValue: modes.contains(selectedMode) ? selectedMode : modes.first,
+                      decoration: const InputDecoration(
+                        labelText: 'Payment Mode',
+                        border: OutlineInputBorder(),
+                        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      ),
+                      items: modes.map((m) => DropdownMenuItem(value: m, child: Text(m))).toList(),
+                      onChanged: (v) {
+                        if (v != null) setStateBuilder(() => selectedMode = v);
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    InkWell(
+                      onTap: () async {
+                        final picked = await showDatePicker(
+                          context: dialogCtx,
+                          initialDate: paymentDate,
+                          firstDate: DateTime(2020),
+                          lastDate: DateTime.now().add(const Duration(days: 365)),
+                        );
+                        if (picked != null) {
+                          setStateBuilder(() => paymentDate = picked);
+                        }
+                      },
+                      child: InputDecorator(
+                        decoration: const InputDecoration(
+                          labelText: 'Payment Date',
+                          prefixIcon: Icon(Icons.calendar_today, color: Color(0xFF004D40)),
+                          border: OutlineInputBorder(),
+                          contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        ),
+                        child: Text(DateFormat('dd MMM yyyy').format(paymentDate)),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: refCtrl,
+                      decoration: const InputDecoration(
+                        labelText: 'Reference / UTR / Cheque (Optional)',
+                        prefixIcon: Icon(Icons.numbers, color: Color(0xFF004D40)),
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: notesCtrl,
+                      decoration: const InputDecoration(
+                        labelText: 'Notes (Optional)',
+                        prefixIcon: Icon(Icons.note_alt_outlined, color: Color(0xFF004D40)),
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade100,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              'Remaining Outstanding: ₹$remainingAfter',
+                              style: const TextStyle(fontWeight: FontWeight.bold),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            remainingAfter <= 0 ? 'SETTLED ✓' : 'PARTIAL ⚠',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: remainingAfter <= 0 ? Colors.green : Colors.orange,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    CheckboxListTile(
+                      value: sendReceiptToManager,
+                      onChanged: (val) => setStateBuilder(() => sendReceiptToManager = val ?? true),
+                      title: const Text('Send receipt to Manager via WhatsApp', style: TextStyle(fontSize: 13)),
+                      contentPadding: EdgeInsets.zero,
+                      controlAffinity: ListTileControlAffinity.leading,
+                      dense: true,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogCtx),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF004D40),
+                  foregroundColor: Colors.white,
+                ),
+                onPressed: () async {
+                  if (!formKey.currentState!.validate()) return;
+                  final amt = int.parse(amountCtrl.text.trim());
+                  final ref = refCtrl.text.trim().isNotEmpty ? refCtrl.text.trim() : null;
+                  final notes = notesCtrl.text.trim().isNotEmpty ? notesCtrl.text.trim() : null;
+
+                  final handover = FeeHandover(
+                    teacherId: _teacherId,
+                    managerId: manager.id,
+                    amount: amt,
+                    mode: selectedMode,
+                    timestamp: paymentDate.toIso8601String(),
+                    reference: ref,
+                    notes: notes,
+                    receiptSent: sendReceiptToManager ? 1 : 0,
+                    receiptSentAt: sendReceiptToManager ? DateTime.now().toIso8601String() : null,
+                  );
+
+                  await _handoverRepo.insertHandover(handover);
+
+                  if (context.mounted) {
+                    Navigator.pop(dialogCtx);
+                    _loadFeeRecords();
+
+                    if (sendReceiptToManager && manager.mobile != null && manager.mobile!.isNotEmpty) {
+                      final dateStr = DateFormat('dd MMM yyyy').format(paymentDate);
+                      final receiptMsg = 'Assalamu Alaikum,\n\n'
+                          'Fee Handover Recorded:\n'
+                          '• Amount: ₹$amt\n'
+                          '• Date: $dateStr\n'
+                          '• Mode: $selectedMode\n'
+                          '${ref != null ? '• Reference: $ref\n' : ''}'
+                          '• Teacher: $_teacherName\n\n'
+                          'Please verify in the Maktab app.';
+                      await WhatsAppUtility.launchWhatsApp(manager.mobile!, receiptMsg, context: context);
+                    }
+
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Handover of ₹$amt recorded successfully!')),
+                    );
+                  }
+                },
+                child: const Text('Save Handover'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildOutstandingBanner() {
+    final owed = _outstandingOwed;
+    if (owed <= 0) {
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 6),
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: double.infinity),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            color: const Color(0xFFE8F5E9),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: const Color(0xFFA5D6A7)),
+          ),
+          child: const Row(
+            children: [
+              Icon(Icons.check_circle_rounded, color: Color(0xFF2E7D32), size: 22),
+              SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'All settled with the manager.',
+                  style: TextStyle(
+                    color: Color(0xFF1B5E20),
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 6),
+      child: Container(
+        constraints: const BoxConstraints(maxWidth: double.infinity),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [AppIcons.primaryTeal, Color(0xFF00695C)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: AppIcons.primaryTeal.withValues(alpha: 0.25),
+              blurRadius: 8,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.account_balance_wallet_rounded, color: AppIcons.gold, size: 32),
+            const SizedBox(width: 10),
+            Expanded(
+              flex: 3,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    'Outstanding to Manager',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(color: Colors.white70, fontSize: 11),
+                  ),
+                  const SizedBox(height: 2),
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'You owe ₹$owed',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 17,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              flex: 2,
+              child: ElevatedButton(
+                onPressed: () {
+                  final mgr = _manager ?? User(
+                    id: 0,
+                    name: 'Manager',
+                    pinHash: '',
+                    role: 'admin',
+                    createdAt: DateTime.now().toIso8601String(),
+                  );
+                  _payToManagerThenRecord(mgr, owed.toDouble());
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppIcons.gold,
+                  foregroundColor: const Color(0xFF004D40),
+                  elevation: 2,
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+                child: const FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    'PAY TO MANAGER',
+                    maxLines: 1,
+                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSectionA(List<FeeStudentItem> filtered, AppLocalizations? loc) {
+    return RefreshIndicator(
+      onRefresh: _loadFeeRecords,
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Subtotal Card
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: Colors.grey.shade200),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.04),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE0F2F1),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.receipt_long_rounded, color: AppIcons.primaryTeal, size: 28),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Total Collected from Students',
+                          style: TextStyle(color: Colors.black54, fontSize: 13),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          '₹$_totalCollected',
+                          style: const TextStyle(
+                            color: Color(0xFF004D40),
+                            fontWeight: FontWeight.bold,
+                            fontSize: 22,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 14),
+
+            // Segmented toggle: Collections History vs Student Dues
+            Row(
+              children: [
+                Expanded(
+                  child: ChoiceChip(
+                    label: Center(
+                      child: Text(
+                        'Collections Log (${_myCollections.length})',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: _sectionASubTab == 0 ? Colors.white : AppIcons.primaryTeal,
+                        ),
+                      ),
+                    ),
+                    selected: _sectionASubTab == 0,
+                    selectedColor: AppIcons.primaryTeal,
+                    backgroundColor: Colors.white,
+                    onSelected: (_) => setState(() => _sectionASubTab = 0),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: ChoiceChip(
+                    label: Center(
+                      child: Text(
+                        'Student Dues (${_feeItems.length})',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: _sectionASubTab == 1 ? Colors.white : AppIcons.primaryTeal,
+                        ),
+                      ),
+                    ),
+                    selected: _sectionASubTab == 1,
+                    selectedColor: AppIcons.primaryTeal,
+                    backgroundColor: Colors.white,
+                    onSelected: (_) => setState(() => _sectionASubTab = 1),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+
+            if (_sectionASubTab == 0) ...[
+              // Collections Log
+              if (_myCollections.isEmpty && _unattributedCollections.isEmpty)
+                const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(32),
+                    child: Text('No collections recorded by you yet.', style: TextStyle(color: Colors.black45)),
+                  ),
+                )
+              else ...[
+                ListView.separated(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: _myCollections.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 8),
+                  itemBuilder: (context, index) {
+                    final p = _myCollections[index];
+                    final rawTime = (p['timestamp'] ?? '').toString();
+                    final parsed = DateTime.tryParse(rawTime);
+                    final formattedDate = parsed != null
+                        ? DateFormat('dd MMM yyyy, hh:mm a').format(parsed)
+                        : rawTime;
+                    final studentName = p['student_name'] ?? 'Student';
+                    final admNo = p['admission_number'] ?? '';
+                    final ref = p['reference']?.toString();
+                    final mode = p['mode']?.toString() ?? 'Cash';
+                    final receiptSent = p['receipt_sent'] == 1;
+
+                    return Card(
+                      elevation: 1,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      child: ListTile(
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                        leading: CircleAvatar(
+                          backgroundColor: const Color(0xFFE0F2F1),
+                          child: Icon(
+                            mode == 'UPI' ? Icons.qr_code_rounded : Icons.currency_rupee_rounded,
+                            color: AppIcons.primaryTeal,
+                            size: 20,
+                          ),
+                        ),
+                        title: Text(
+                          '$studentName ${admNo.isNotEmpty ? "($admNo)" : ""}',
+                          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        subtitle: Text(
+                          '$formattedDate\nMode: $mode${ref != null && ref.isNotEmpty ? " • Ref: $ref" : ""}',
+                          style: const TextStyle(fontSize: 11, color: Colors.black54),
+                        ),
+                        isThreeLine: true,
+                        trailing: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text(
+                              '₹${p['amount']}',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                                color: Color(0xFF004D40),
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  receiptSent ? Icons.check_circle_rounded : Icons.schedule_rounded,
+                                  size: 13,
+                                  color: receiptSent ? Colors.green : Colors.amber.shade800,
+                                ),
+                                const SizedBox(width: 3),
+                                Text(
+                                  receiptSent ? 'Receipt sent' : 'No receipt',
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    color: receiptSent ? Colors.green : Colors.amber.shade800,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+
+                if (_unattributedCollections.isNotEmpty) ...[
+                  const SizedBox(height: 20),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.amber.shade50,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.amber.shade200),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.info_outline, size: 18, color: Colors.amber.shade900),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Legacy / Unattributed Collections (${_unattributedCollections.length})\nRecorded before version 28 tracking.',
+                            style: TextStyle(fontSize: 11, color: Colors.amber.shade900),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  ListView.separated(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: _unattributedCollections.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 8),
+                    itemBuilder: (context, index) {
+                      final p = _unattributedCollections[index];
+                      final rawTime = (p['timestamp'] ?? '').toString();
+                      final parsed = DateTime.tryParse(rawTime);
+                      final formattedDate = parsed != null
+                          ? DateFormat('dd MMM yyyy, hh:mm a').format(parsed)
+                          : rawTime;
+                      final studentName = p['student_name'] ?? 'Student';
+                      final admNo = p['admission_number'] ?? '';
+                      final mode = p['mode']?.toString() ?? 'Cash';
+
+                      return Card(
+                        elevation: 0.5,
+                        color: Colors.grey.shade50,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        child: ListTile(
+                          dense: true,
+                          leading: const Icon(Icons.history, color: Colors.grey),
+                          title: Text('$studentName ${admNo.isNotEmpty ? "($admNo)" : ""}', style: const TextStyle(fontSize: 13)),
+                          subtitle: Text('$formattedDate • $mode', style: const TextStyle(fontSize: 11)),
+                          trailing: Text('₹${p['amount']}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              ],
+            ] else ...[
+              // Student Dues & Recording list
+              TextField(
+                controller: _searchController,
+                decoration: InputDecoration(
+                  hintText: 'Search by name or admission no.',
+                  prefixIcon: const Icon(Icons.search, color: AppIcons.primaryTeal),
+                  suffixIcon: _searchQuery.isNotEmpty
+                      ? IconButton(
+                          icon: const Icon(Icons.clear),
+                          onPressed: () {
+                            _searchController.clear();
+                            setState(() => _searchQuery = '');
+                          },
+                        )
+                      : null,
+                  filled: true,
+                  fillColor: Colors.white,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+                onChanged: (val) => setState(() => _searchQuery = val),
+              ),
+              const SizedBox(height: 12),
+
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      physics: const BouncingScrollPhysics(),
+                      child: Row(
+                        children: ['All', 'Overdue', 'Pending', 'Paid'].map((f) {
+                          final isSel = _filter == f;
+                          return Padding(
+                            padding: const EdgeInsets.only(right: 8.0),
+                            child: ChoiceChip(
+                              label: Text(f),
+                              selected: isSel,
+                              selectedColor: AppIcons.primaryTeal,
+                              labelStyle: TextStyle(
+                                color: isSel ? Colors.white : AppIcons.primaryTeal,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12,
+                              ),
+                              onSelected: (_) => setState(() => _filter = f),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                  ),
+                  if (_batches.isNotEmpty)
+                    Builder(
+                      builder: (context) {
+                        final uniqueBatches = {
+                          for (final b in _batches)
+                            if (b.id != null) b.id: b
+                        }.values.toList();
+                        final hasMatch = _selectedBatchId == null ||
+                            uniqueBatches.any((b) => b.id == _selectedBatchId);
+                        return DropdownButton<int?>(
+                          value: hasMatch ? _selectedBatchId : null,
+                          hint: const Text('Filter Batch'),
+                          items: [
+                            const DropdownMenuItem(value: null, child: Text('All Batches', maxLines: 1, overflow: TextOverflow.ellipsis)),
+                            ...uniqueBatches.map((b) => DropdownMenuItem(value: b.id, child: Text(b.name, maxLines: 1, overflow: TextOverflow.ellipsis))),
+                          ],
+                          onChanged: (val) {
+                            setState(() {
+                              _selectedBatchId = val;
+                            });
+                            _loadFeeRecords();
+                          },
+                        );
+                      },
+                    ),
+                ],
+              ),
+              const SizedBox(height: 12),
+
+              if (_isLoading) ...[
+                const ShimmerLoader(height: 110),
+                const SizedBox(height: 12),
+                const ShimmerLoader(height: 110),
+              ] else if (filtered.isEmpty) ...[
+                const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(32),
+                    child: Text('No fee records found.', style: TextStyle(color: Colors.black45)),
+                  ),
+                ),
+              ] else ...[
+                ListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: filtered.length,
+                  itemBuilder: (context, index) {
+                    final item = filtered[index];
+                    return FeeCard(
+                      item: item,
+                      onPayUpi: () => _payViaUpiThenRecord(item),
+                      onWhatsApp: () => _sendWhatsAppReminder(item),
+                      onNotify: () => _triggerNotification(item),
+                      onLog: () => _showRecordDialog(item),
+                      onEdit: () => _editFeeStructure(item),
+                      onReceipt: () => _sendReceipt(item),
+                    );
+                  },
+                ),
+              ],
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSectionB() {
+    return RefreshIndicator(
+      onRefresh: _loadFeeRecords,
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Subtotal Card
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: Colors.grey.shade200),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.04),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFF3E0),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.handshake_outlined, color: Colors.orange, size: 28),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Total Paid to Manager',
+                          style: TextStyle(color: Colors.black54, fontSize: 13),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          '₹$_totalHandedOver',
+                          style: const TextStyle(
+                            color: Color(0xFFE65100),
+                            fontWeight: FontWeight.bold,
+                            fontSize: 22,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Action row for recording handover
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Settlement History',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF004D40)),
+                ),
+                TextButton.icon(
+                  onPressed: () {
+                    final mgr = _manager ?? User(
+                      id: 0,
+                      name: 'Manager',
+                      pinHash: '',
+                      role: 'admin',
+                      createdAt: DateTime.now().toIso8601String(),
+                    );
+                    _showHandoverDialog(mgr, defaultAmount: _outstandingOwed);
+                  },
+                  icon: const Icon(Icons.add, size: 18),
+                  label: const Text('Record Handover'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+
+            if (_myHandovers.isEmpty)
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(40),
+                  child: Column(
+                    children: [
+                      Icon(Icons.handshake_outlined, size: 48, color: Colors.black26),
+                      SizedBox(height: 10),
+                      Text('No settlements made to manager yet.', style: TextStyle(color: Colors.black45)),
+                    ],
+                  ),
+                ),
+              )
+            else
+              ListView.separated(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: _myHandovers.length,
+                separatorBuilder: (_, __) => const SizedBox(height: 8),
+                itemBuilder: (context, index) {
+                  final h = _myHandovers[index];
+                  final parsed = DateTime.tryParse(h.timestamp);
+                  final formattedDate = parsed != null
+                      ? DateFormat('dd MMM yyyy, hh:mm a').format(parsed)
+                      : h.timestamp;
+                  final managerName = _manager?.name ?? 'Manager';
+
+                  return Card(
+                    elevation: 1,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    child: ListTile(
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                      leading: const CircleAvatar(
+                        backgroundColor: Color(0xFFFFF3E0),
+                        child: Icon(Icons.handshake_outlined, color: Colors.orange, size: 22),
+                      ),
+                      title: Text(
+                        '₹${h.amount} via ${h.mode}',
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF004D40)),
+                      ),
+                      subtitle: Text(
+                        '$formattedDate\nTo: $managerName${h.reference != null ? " • Ref: ${h.reference}" : ""}${h.notes != null ? "\nNotes: ${h.notes}" : ""}',
+                        style: const TextStyle(fontSize: 11, color: Colors.black54),
+                      ),
+                      isThreeLine: true,
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            h.receiptSent == 1 ? Icons.check_circle_rounded : Icons.schedule_rounded,
+                            size: 16,
+                            color: h.receiptSent == 1 ? Colors.green : Colors.amber.shade800,
+                          ),
+                          const SizedBox(width: 4),
+                          if (_manager?.mobile != null && _manager!.mobile!.isNotEmpty)
+                            IconButton(
+                              icon: const Icon(Icons.share_rounded, size: 18, color: Color(0xFF004D40)),
+                              tooltip: 'Share Receipt',
+                              onPressed: () {
+                                final dateStr = DateFormat('dd MMM yyyy').format(DateTime.tryParse(h.timestamp) ?? DateTime.now());
+                                final receiptMsg = 'Assalamu Alaikum,\n\n'
+                                    'Fee Handover Receipt:\n'
+                                    '• Amount: ₹${h.amount}\n'
+                                    '• Date: $dateStr\n'
+                                    '• Mode: ${h.mode}\n'
+                                    '${h.reference != null ? '• Reference: ${h.reference}\n' : ''}'
+                                    '• Teacher: $_teacherName\n\n'
+                                    'Recorded in Maktab app.';
+                                WhatsAppUtility.launchWhatsApp(_manager!.mobile!, receiptMsg, context: context);
+                              },
+                            ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final q = _searchQuery.toLowerCase();
@@ -599,7 +1595,6 @@ class _TeacherFeesScreenState extends State<TeacherFeesScreen> {
           (i.student.admissionNumber).toLowerCase().contains(q);
       return statusMatch && searchMatch;
     }).toList();
-
 
     final loc = AppLocalizations.of(context);
     return DefaultTabController(
@@ -615,10 +1610,16 @@ class _TeacherFeesScreenState extends State<TeacherFeesScreen> {
               tooltip: loc?.translate('teacher_fees_reminders') ?? 'Send Bulk Batch Reminders',
             ),
           ],
-          bottom: TabBar(
+          bottom: const TabBar(
             tabs: [
-              Tab(text: loc?.translate('teacher_fees_tab_status') ?? 'Fee Status', icon: const Icon(Icons.people_alt_outlined, size: 18)),
-              Tab(text: loc?.translate('teacher_fees_tab_history') ?? 'Payment History', icon: const Icon(Icons.history_rounded, size: 18)),
+              Tab(
+                text: 'Collected from Students',
+                icon: Icon(Icons.payments_outlined, size: 18),
+              ),
+              Tab(
+                text: 'Paid to Manager',
+                icon: Icon(Icons.account_balance_outlined, size: 18),
+              ),
             ],
             indicatorColor: AppIcons.gold,
             labelColor: Colors.white,
@@ -626,143 +1627,16 @@ class _TeacherFeesScreenState extends State<TeacherFeesScreen> {
           ),
         ),
         body: SafeArea(
-          child: TabBarView(
+          child: Column(
             children: [
-              RefreshIndicator(
-                onRefresh: _loadFeeRecords,
-                child: SingleChildScrollView(
-                  physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      if (_feeTotals.isNotEmpty)
-                        FinanceTotalsCard(
-                          title: 'My Collection',
-                          periodTotals: _feeTotals,
-                          modeBreakdown: _modeBreakdown,
-                        ),
-
-                      TextField(
-                        controller: _searchController,
-                        decoration: InputDecoration(
-                          hintText: 'Search by name or admission no.',
-                          prefixIcon: const Icon(Icons.search, color: AppIcons.primaryTeal),
-                          suffixIcon: _searchQuery.isNotEmpty
-                              ? IconButton(
-                                  icon: const Icon(Icons.clear),
-                                  onPressed: () {
-                                    _searchController.clear();
-                                    setState(() => _searchQuery = '');
-                                  },
-                                )
-                              : null,
-                          filled: true,
-                          fillColor: Colors.white,
-                          contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide.none,
-                          ),
-                        ),
-                        onChanged: (val) => setState(() => _searchQuery = val),
-                      ),
-                      const SizedBox(height: 16),
-
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Expanded(
-                            child: SingleChildScrollView(
-                              scrollDirection: Axis.horizontal,
-                              physics: const BouncingScrollPhysics(),
-                              child: Row(
-                                children: ['All', 'Overdue', 'Pending', 'Paid'].map((f) {
-                                  final isSel = _filter == f;
-                                  return Padding(
-                                    padding: const EdgeInsets.only(right: 8.0),
-                                    child: ChoiceChip(
-                                      label: Text(f),
-                                      selected: isSel,
-                                      selectedColor: AppIcons.primaryTeal,
-                                      labelStyle: TextStyle(
-                                        color: isSel ? Colors.white : AppIcons.primaryTeal,
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 12,
-                                      ),
-                                      onSelected: (_) => setState(() => _filter = f),
-                                    ),
-                                  );
-                                }).toList(),
-                              ),
-                            ),
-                          ),
-                          if (_batches.isNotEmpty)
-                            Builder(
-                              builder: (context) {
-                                final uniqueBatches = {
-                                  for (final b in _batches)
-                                    if (b.id != null) b.id: b
-                                }.values.toList();
-                                final hasMatch = _selectedBatchId == null ||
-                                    uniqueBatches.any((b) => b.id == _selectedBatchId);
-                                return DropdownButton<int?>(
-                                  value: hasMatch ? _selectedBatchId : null,
-                                  hint: const Text('Filter Batch'),
-                                  items: [
-                                    const DropdownMenuItem(value: null, child: Text('All Batches', maxLines: 1, overflow: TextOverflow.ellipsis)),
-                                    ...uniqueBatches.map((b) => DropdownMenuItem(value: b.id, child: Text(b.name, maxLines: 1, overflow: TextOverflow.ellipsis))),
-                                  ],
-                                  onChanged: (val) {
-                                    setState(() {
-                                      _selectedBatchId = val;
-                                    });
-                                    _loadFeeRecords();
-                                  },
-                                );
-                              },
-                            ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-
-                      if (_isLoading) ...[
-                        const ShimmerLoader(height: 110),
-                        const SizedBox(height: 12),
-                        const ShimmerLoader(height: 110),
-                      ] else if (filtered.isEmpty) ...[
-                        const Center(
-                          child: Padding(
-                            padding: EdgeInsets.all(32),
-                            child: Text('No fee records found.', style: TextStyle(color: Colors.black45)),
-                          ),
-                        ),
-                      ] else ...[
-                        ListView.builder(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemCount: filtered.length,
-                          itemBuilder: (context, index) {
-                            final item = filtered[index];
-                            return FeeCard(
-                              item: item,
-                              onPayUpi: () => _payViaUpiThenRecord(item),
-                              onWhatsApp: () => _sendWhatsAppReminder(item),
-                              onNotify: () => _triggerNotification(item),
-                              onLog: () => _showRecordDialog(item),
-                              onEdit: () => _editFeeStructure(item),
-                              onReceipt: () => _sendReceipt(item),
-                            );
-                          },
-                        ),
-                      ],
-                    ],
-                  ),
+              _buildOutstandingBanner(),
+              Expanded(
+                child: TabBarView(
+                  children: [
+                    _buildSectionA(filtered, loc),
+                    _buildSectionB(),
+                  ],
                 ),
-              ),
-              FeePaymentsListWidget(
-                teacherId: _teacherId,
-                onPaymentRecorded: _loadFeeRecords,
               ),
             ],
           ),
@@ -775,7 +1649,10 @@ class _TeacherFeesScreenState extends State<TeacherFeesScreen> {
           icon: const Icon(Icons.add_card_rounded, size: 22),
           label: Text(
             loc?.translate('fee_record_payment') ?? 'Record Payment',
-            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14), maxLines: 1, overflow: TextOverflow.ellipsis),
+            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
         ),
       ),
     );

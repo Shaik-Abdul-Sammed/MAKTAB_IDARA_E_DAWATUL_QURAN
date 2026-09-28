@@ -734,6 +734,7 @@ class _FeeManagementScreenState extends State<FeeManagementScreen> {
                   final formattedTime = DateFormat('dd MMM yyyy, hh:mm a').format(paymentDate);
                   final month = DateFormat('MMMM yyyy').format(paymentDate);
 
+                  final currentUser = Provider.of<AuthProvider>(context, listen: false).currentUser;
                   final newPayment = FeePayment(
                     studentId: item.student.id!,
                     amount: amt,
@@ -744,6 +745,7 @@ class _FeeManagementScreenState extends State<FeeManagementScreen> {
                     voiceNotePath: recordFilePath,
                     receiptSent: sendReceiptWhatsApp ? 1 : 0,
                     receiptSentAt: sendReceiptWhatsApp ? DateTime.now().toIso8601String() : null,
+                    collectedBy: currentUser?.id,
                   );
 
                   await FeePaymentRepository().insertFeePayment(newPayment);
