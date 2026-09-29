@@ -483,8 +483,18 @@ class _MetaRow extends StatelessWidget {
         children: [
           Icon(icon, size: 18, color: const Color(0xFF004D40)),
           const SizedBox(width: 12),
-          Expanded(child: Text(label, style: const TextStyle(color: Colors.black54, fontSize: 13))),
-          Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF004D40))),
+          Expanded(flex: 2, child: Text(label, style: const TextStyle(color: Colors.black54, fontSize: 13), maxLines: 1, overflow: TextOverflow.ellipsis)),
+          const SizedBox(width: 8),
+          Flexible(
+            flex: 3,
+            child: Text(
+              value,
+              textAlign: TextAlign.end,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF004D40)),
+            ),
+          ),
         ],
       ),
     );

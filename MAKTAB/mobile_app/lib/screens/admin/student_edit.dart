@@ -430,6 +430,7 @@ class _StudentEditScreenState extends State<StudentEditScreen> {
         uniqueBatches.any((b) => b.id == _selectedBatchId);
 
     return DropdownButtonFormField<int?>(
+      isExpanded: true,
       initialValue: hasMatch ? _selectedBatchId : null,
       decoration: _inputDecoration(
         label: 'Assigned Batch',

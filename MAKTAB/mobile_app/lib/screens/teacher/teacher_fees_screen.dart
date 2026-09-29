@@ -1763,61 +1763,72 @@ class _TeacherFeesScreenState extends State<TeacherFeesScreen> {
         final loc = AppLocalizations.of(context);
         return DefaultTabController(
           length: 2,
-          child: Scaffold(
-            backgroundColor: const Color(0xFFF9FBE7),
-            appBar: CustomAppBar(
-              title: loc?.translate('teacher_fees_title') ?? 'Student Fees',
-              actions: [
-                IconButton(
-                  icon: const Icon(Icons.send_rounded),
-                  onPressed: _openBulkMessagingDialog,
-                  tooltip: loc?.translate('teacher_fees_reminders') ?? 'Send Bulk Batch Reminders',
-                ),
-              ],
-              bottom: const TabBar(
-                tabs: [
-                  Tab(
-                    text: 'Collected from Students',
-                    icon: Icon(Icons.payments_outlined, size: 18),
-                  ),
-                  Tab(
-                    text: 'Paid to Manager',
-                    icon: Icon(Icons.account_balance_outlined, size: 18),
-                  ),
-                ],
-                indicatorColor: AppIcons.gold,
-                labelColor: Colors.white,
-                unselectedLabelColor: Colors.white70,
-              ),
-            ),
-            body: SafeArea(
-              child: Column(
-                children: [
-                  _buildOutstandingBanner(),
-                  Expanded(
-                    child: TabBarView(
-                      children: [
-                        _buildSectionA(filtered, loc),
-                        _buildSectionB(),
-                      ],
+          child: Builder(
+            builder: (tabCtx) {
+              final tabController = DefaultTabController.of(tabCtx);
+              return Scaffold(
+                backgroundColor: const Color(0xFFF9FBE7),
+                appBar: CustomAppBar(
+                  title: loc?.translate('teacher_fees_title') ?? 'Student Fees',
+                  actions: [
+                    IconButton(
+                      icon: const Icon(Icons.send_rounded),
+                      onPressed: _openBulkMessagingDialog,
+                      tooltip: loc?.translate('teacher_fees_reminders') ?? 'Send Bulk Batch Reminders',
                     ),
+                  ],
+                  bottom: const TabBar(
+                    tabs: [
+                      Tab(
+                        text: 'Collected from Students',
+                        icon: Icon(Icons.payments_outlined, size: 18),
+                      ),
+                      Tab(
+                        text: 'Paid to Manager',
+                        icon: Icon(Icons.account_balance_outlined, size: 18),
+                      ),
+                    ],
+                    indicatorColor: AppIcons.gold,
+                    labelColor: Colors.white,
+                    unselectedLabelColor: Colors.white70,
                   ),
-                ],
-              ),
-            ),
-            floatingActionButton: FloatingActionButton.extended(
-              onPressed: _showRecordPaymentDialog,
-              backgroundColor: const Color(0xFF004D40),
-              foregroundColor: Colors.white,
-              elevation: 4,
-              icon: const Icon(Icons.add_card_rounded, size: 22),
-              label: Text(
-                loc?.translate('fee_record_payment') ?? 'Record Payment',
-                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
+                ),
+                body: SafeArea(
+                  child: Column(
+                    children: [
+                      _buildOutstandingBanner(),
+                      Expanded(
+                        child: TabBarView(
+                          children: [
+                            _buildSectionA(filtered, loc),
+                            _buildSectionB(),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                floatingActionButton: AnimatedBuilder(
+                  animation: tabController,
+                  builder: (context, _) {
+                    if (tabController.index != 0) return const SizedBox.shrink();
+                    return FloatingActionButton.extended(
+                      onPressed: _showRecordPaymentDialog,
+                      backgroundColor: const Color(0xFF004D40),
+                      foregroundColor: Colors.white,
+                      elevation: 4,
+                      icon: const Icon(Icons.add_card_rounded, size: 22),
+                      label: Text(
+                        loc?.translate('fee_record_payment') ?? 'Record Payment',
+                        style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    );
+                  },
+                ),
+              );
+            },
           ),
         );
       },

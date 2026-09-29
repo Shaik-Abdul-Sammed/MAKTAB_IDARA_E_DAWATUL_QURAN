@@ -130,22 +130,29 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
           children: [
             Icon(Icons.edit, color: Color(0xFF004D40)),
             SizedBox(width: 8),
-            Text('Edit Student Details', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+            Expanded(
+              child: Text(
+                'Edit Student Details',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
           ],
         ),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'Student Name', icon: Icon(Icons.person))),
+              TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'Student Name', prefixIcon: Icon(Icons.person))),
               const SizedBox(height: 8),
-              TextField(controller: phoneCtrl, keyboardType: TextInputType.phone, decoration: const InputDecoration(labelText: 'Phone Number', icon: Icon(Icons.phone))),
+              TextField(controller: phoneCtrl, keyboardType: TextInputType.phone, decoration: const InputDecoration(labelText: 'Phone Number', prefixIcon: Icon(Icons.phone))),
               const SizedBox(height: 8),
-              TextField(controller: fatherCtrl, decoration: const InputDecoration(labelText: 'Father Name', icon: Icon(Icons.person_outline))),
+              TextField(controller: fatherCtrl, decoration: const InputDecoration(labelText: 'Father Name', prefixIcon: Icon(Icons.person_outline))),
               const SizedBox(height: 8),
-              TextField(controller: feesCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Fees Amount (₹)', icon: Icon(Icons.attach_money))),
+              TextField(controller: feesCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Fees Amount (₹)', prefixIcon: Icon(Icons.attach_money))),
               const SizedBox(height: 8),
-              TextField(controller: notesCtrl, maxLines: 2, decoration: const InputDecoration(labelText: 'Teacher Notes', icon: Icon(Icons.note))),
+              TextField(controller: notesCtrl, maxLines: 2, decoration: const InputDecoration(labelText: 'Teacher Notes', prefixIcon: Icon(Icons.note))),
             ],
           ),
         ),

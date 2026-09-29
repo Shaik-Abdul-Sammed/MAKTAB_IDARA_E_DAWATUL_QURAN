@@ -56,17 +56,22 @@ class _AdminAuditLogsScreenState extends State<AdminAuditLogsScreen> {
             const SizedBox(height: 12),
             
               // Try to cast to map, if fails, use toString
-              Expanded(
-                child: SingleChildScrollView(
-                  child: Text(
-                    () {
-                      try {
-                        return (item as dynamic).toMap().entries.map((e) => '${e.key}: ${e.value}').join('\n\n');
-                      } catch (_) {
-                        return item.toString();
-                      }
-                    }(), 
-                    style: const TextStyle(fontSize: 16), maxLines: 1, overflow: TextOverflow.ellipsis),
+              Flexible(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxHeight: MediaQuery.of(context).size.height * 0.45,
+                  ),
+                  child: SingleChildScrollView(
+                    child: Text(
+                      () {
+                        try {
+                          return (item as dynamic).toMap().entries.map((e) => '${e.key}: ${e.value}').join('\n\n');
+                        } catch (_) {
+                          return item.toString();
+                        }
+                      }(), 
+                      style: const TextStyle(fontSize: 16)),
+                  ),
                 ),
               ),
             const SizedBox(height: 24),

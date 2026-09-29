@@ -77,6 +77,11 @@ void main() async {
   // Global error boundary for UI errors
   FlutterError.onError = (FlutterErrorDetails details) {
     FlutterError.presentError(details);
+    if (details.exceptionAsString().contains('overflowed')) {
+      debugPrint('=== FULL OVERFLOW DUMP START ===');
+      debugPrint(details.toString());
+      debugPrint('=== FULL OVERFLOW DUMP END ===');
+    }
     debugPrint('[OVERFLOW] ${details.exceptionAsString()}');
     if (details.context != null) {
       debugPrint('[OVERFLOW CONTEXT] ${details.context}');

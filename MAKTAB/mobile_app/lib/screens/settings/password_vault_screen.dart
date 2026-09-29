@@ -231,8 +231,12 @@ class _PasswordVaultScreenState extends State<PasswordVaultScreen>
               child: Icon(existing == null ? Icons.add_circle_outline : Icons.edit_outlined, color: _teal, size: 22),
             ),
             const SizedBox(width: 12),
-            Text(existing == null ? 'New Credential' : 'Edit Credential',
-                style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
+            Expanded(
+              child: Text(existing == null ? 'New Credential' : 'Edit Credential',
+                  style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis),
+            ),
           ]),
           contentPadding: const EdgeInsets.fromLTRB(20, 12, 20, 4),
           content: SizedBox(

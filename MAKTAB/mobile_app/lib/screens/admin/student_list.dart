@@ -126,91 +126,94 @@ class _StudentListScreenState extends State<StudentListScreen> {
                 top: 24,
                 bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
               ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Assign Batch for ${student.name}',
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF004D40),
-                    ),
-                    maxLines: 2,
-                    softWrap: true,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'ADM: ${student.admissionNumber}',
-                    style: const TextStyle(fontSize: 13, color: Colors.black54),
-                    maxLines: 2,
-                    softWrap: true,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 20),
-                  Builder(
-                    builder: (context) {
-                      final uniqueBatches = {
-                        for (final b in _batches)
-                          if (b.id != null) b.id: b
-                      }.values.toList();
-                      final hasMatch = selectedBatchId != null &&
-                          uniqueBatches.any((b) => b.id == selectedBatchId);
-                      return DropdownButtonFormField<int?>(
-                        initialValue: hasMatch ? selectedBatchId : null,
-                        decoration: InputDecoration(
-                          labelText: 'Select Batch',
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                          prefixIcon: const Icon(Icons.class_outlined, color: Color(0xFF004D40)),
-                        ),
-                        items: uniqueBatches.map((b) {
-                          return DropdownMenuItem<int?>(
-                            value: b.id,
-                            child: Text(b.name, maxLines: 1, overflow: TextOverflow.ellipsis),
-                          );
-                        }).toList(),
-                        onChanged: (val) {
-                          if (val != null) {
-                            setSheetState(() => selectedBatchId = val);
-                          }
-                        },
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 24),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 48,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF004D40),
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Assign Batch for ${student.name}',
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF004D40),
                       ),
-                      onPressed: selectedBatchId == null
-                          ? null
-                          : () async {
-                              Navigator.pop(sheetContext);
-                              await StudentRepository().updateStudent(
-                                student.copyWith(batchId: selectedBatchId),
-                              );
-                              if (mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text('Assigned "${student.name}" to batch.', maxLines: 2, overflow: TextOverflow.ellipsis),
-                                    backgroundColor: const Color(0xFF004D40),
-                                  ),
-                                );
-                                _loadUnassignedStudents();
-                                _provider.fetchStudents();
-                              }
-                            },
-                      child: const Text('Assign to Batch', style: TextStyle(fontWeight: FontWeight.bold)),
+                      maxLines: 2,
+                      softWrap: true,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 4),
+                    Text(
+                      'ADM: ${student.admissionNumber}',
+                      style: const TextStyle(fontSize: 13, color: Colors.black54),
+                      maxLines: 2,
+                      softWrap: true,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 20),
+                    Builder(
+                      builder: (context) {
+                        final uniqueBatches = {
+                          for (final b in _batches)
+                            if (b.id != null) b.id: b
+                        }.values.toList();
+                        final hasMatch = selectedBatchId != null &&
+                            uniqueBatches.any((b) => b.id == selectedBatchId);
+                        return DropdownButtonFormField<int?>(
+                          isExpanded: true,
+                          initialValue: hasMatch ? selectedBatchId : null,
+                          decoration: InputDecoration(
+                            labelText: 'Select Batch',
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                            prefixIcon: const Icon(Icons.class_outlined, color: Color(0xFF004D40)),
+                          ),
+                          items: uniqueBatches.map((b) {
+                            return DropdownMenuItem<int?>(
+                              value: b.id,
+                              child: Text(b.name, maxLines: 1, overflow: TextOverflow.ellipsis),
+                            );
+                          }).toList(),
+                          onChanged: (val) {
+                            if (val != null) {
+                              setSheetState(() => selectedBatchId = val);
+                            }
+                          },
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 24),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 48,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF004D40),
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                        onPressed: selectedBatchId == null
+                            ? null
+                            : () async {
+                                Navigator.pop(sheetContext);
+                                await StudentRepository().updateStudent(
+                                  student.copyWith(batchId: selectedBatchId),
+                                );
+                                if (mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text('Assigned "${student.name}" to batch.', maxLines: 2, overflow: TextOverflow.ellipsis),
+                                      backgroundColor: const Color(0xFF004D40),
+                                    ),
+                                  );
+                                  _loadUnassignedStudents();
+                                  _provider.fetchStudents();
+                                }
+                              },
+                        child: const Text('Assign to Batch', style: TextStyle(fontWeight: FontWeight.bold)),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             );
           },

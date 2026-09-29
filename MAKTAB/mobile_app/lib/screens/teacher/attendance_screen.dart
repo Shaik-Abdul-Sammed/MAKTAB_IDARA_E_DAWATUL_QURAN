@@ -619,20 +619,19 @@ class _BatchAttendanceCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 6),
-                  Row(
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 4,
+                    alignment: WrapAlignment.spaceBetween,
+                    crossAxisAlignment: WrapCrossAlignment.center,
                     children: [
                       _StatDot(color: Colors.green, label: '✅ ${stat!.present} Present'),
-                      const SizedBox(width: 8),
                       _StatDot(color: Colors.red, label: '❌ ${stat!.absent} Absent'),
-                      const SizedBox(width: 8),
-                      Flexible(
-                        child: Text(
-                          '${stat!.marked}/${stat!.total} marked',
-                          style: const TextStyle(fontSize: 11, color: Colors.black45),
-                          overflow: TextOverflow.ellipsis,
-                          maxLines: 1,
-                          textAlign: TextAlign.end,
-                        ),
+                      Text(
+                        '${stat!.marked}/${stat!.total} marked',
+                        style: const TextStyle(fontSize: 11, color: Colors.black45),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
                       ),
                     ],
                   ),

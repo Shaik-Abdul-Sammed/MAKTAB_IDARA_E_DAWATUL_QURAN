@@ -65,8 +65,9 @@ class _TeacherBatchesScreenState extends State<TeacherBatchesScreen> {
             const Divider(),
             const SizedBox(height: 12),
             
-              // Try to cast to map, if fails, use toString
-              Expanded(
+            Flexible(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.4),
                 child: SingleChildScrollView(
                   child: Text(
                     () {
@@ -76,9 +77,11 @@ class _TeacherBatchesScreenState extends State<TeacherBatchesScreen> {
                         return item.toString();
                       }
                     }(), 
-                    style: const TextStyle(fontSize: 16), maxLines: 1, overflow: TextOverflow.ellipsis),
+                    style: const TextStyle(fontSize: 16),
+                  ),
                 ),
               ),
+            ),
             const SizedBox(height: 24),
             SizedBox(
               width: double.infinity,

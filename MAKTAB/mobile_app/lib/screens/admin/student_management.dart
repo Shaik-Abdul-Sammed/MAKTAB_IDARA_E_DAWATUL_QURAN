@@ -245,6 +245,7 @@ class _StudentManagementScreenState extends State<StudentManagementScreen> {
                           final hasMatch = selectedBatchId != null &&
                               uniqueBatches.any((b) => b.id == selectedBatchId);
                           return DropdownButtonFormField<int?>(
+                            isExpanded: true,
                             initialValue: hasMatch ? selectedBatchId : null,
                             decoration: InputDecoration(
                               labelText: 'Assign Batch',
