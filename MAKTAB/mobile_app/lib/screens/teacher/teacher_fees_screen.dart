@@ -320,17 +320,17 @@ class _TeacherFeesScreenState extends State<TeacherFeesScreen> {
                           Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                             const Expanded(child: Text('Monthly Fee:', maxLines: 1, overflow: TextOverflow.ellipsis)),
                             const SizedBox(width: 8),
-                            SizedBox(width: 90, child: Text('₹${monthlyFee.toInt()}', textAlign: TextAlign.end, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.bold))),
+                            Flexible(child: Text('₹${monthlyFee.toInt()}', textAlign: TextAlign.end, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.bold))),
                           ]),
                           Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                             const Expanded(child: Text('Already Paid:', maxLines: 1, overflow: TextOverflow.ellipsis)),
                             const SizedBox(width: 8),
-                            SizedBox(width: 90, child: Text('₹${alreadyPaid.toInt()}', textAlign: TextAlign.end, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green))),
+                            Flexible(child: Text('₹${alreadyPaid.toInt()}', textAlign: TextAlign.end, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green))),
                           ]),
                           Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                             const Expanded(child: Text('Remaining Due:', maxLines: 1, overflow: TextOverflow.ellipsis)),
                             const SizedBox(width: 8),
-                            SizedBox(width: 90, child: Text('₹${remainingDue.toInt()}', textAlign: TextAlign.end, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.red))),
+                            Flexible(child: Text('₹${remainingDue.toInt()}', textAlign: TextAlign.end, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.red))),
                           ]),
                         ],
                       ),
@@ -355,6 +355,7 @@ class _TeacherFeesScreenState extends State<TeacherFeesScreen> {
                     const SizedBox(height: 12),
                     DropdownButtonFormField<String>(
                       initialValue: modes.contains(selectedMode) ? selectedMode : modes.first,
+                      isExpanded: true,
                       decoration: const InputDecoration(
                         labelText: 'Payment Mode',
                         border: OutlineInputBorder(),
@@ -893,6 +894,7 @@ class _TeacherFeesScreenState extends State<TeacherFeesScreen> {
                     const SizedBox(height: 12),
                     DropdownButtonFormField<String>(
                       initialValue: modes.contains(selectedMode) ? selectedMode : modes.first,
+                      isExpanded: true,
                       decoration: const InputDecoration(
                         labelText: 'Payment Mode',
                         border: OutlineInputBorder(),

@@ -211,6 +211,7 @@ class _FeePaymentsListWidgetState extends State<FeePaymentsListWidget> {
                           uniqueStudents.any((s) => s.id == selectedStudent?.id);
                       return DropdownButtonFormField<Student?>(
                         initialValue: hasMatch ? selectedStudent : null,
+                        isExpanded: true,
                         decoration: const InputDecoration(
                           labelText: 'Student',
                           border: OutlineInputBorder(),
@@ -249,6 +250,7 @@ class _FeePaymentsListWidgetState extends State<FeePaymentsListWidget> {
                   initialValue: ['Cash', 'UPI', 'Bank', 'Cheque'].contains(selectedMode)
                       ? selectedMode
                       : 'Cash',
+                  isExpanded: true,
                   decoration: const InputDecoration(
                     labelText: 'Payment Mode',
                     border: OutlineInputBorder(),
@@ -714,17 +716,20 @@ class _PaymentCardItem extends StatelessWidget {
                   const SizedBox(height: 6),
                   Row(
                     children: [
-                      SizedBox(
-                        width: 80,
-                        child: Text(
-                          '₹$amount',
-                          maxLines: 1,
-                          softWrap: false,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.primaryTeal,
+                      Flexible(
+                        flex: 0,
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 90),
+                          child: Text(
+                            '₹$amount',
+                            maxLines: 1,
+                            softWrap: false,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.primaryTeal,
+                            ),
                           ),
                         ),
                       ),

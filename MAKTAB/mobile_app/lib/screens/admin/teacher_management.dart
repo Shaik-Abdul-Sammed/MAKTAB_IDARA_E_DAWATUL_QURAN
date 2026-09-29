@@ -518,6 +518,166 @@ class _TeacherManagementScreenState extends State<TeacherManagementScreen> {
     );
   }
 
+  void _showSendCredentialsDialog(User teacher) {
+    final pinController = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+    bool updatePinInDatabase = true;
+
+    showDialog(
+      context: context,
+      builder: (dialogCtx) {
+        return StatefulBuilder(
+          builder: (dialogCtx, setDialogState) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              title: Row(
+                children: [
+                  const Icon(Icons.share, color: Color(0xFF004D40)),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Send Credentials: ${teacher.name}',
+                      style: const TextStyle(color: Color(0xFF004D40), fontWeight: FontWeight.bold, fontSize: 16),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+              content: SingleChildScrollView(
+                child: Form(
+                  key: formKey,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFE9F1E9),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Column(
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text('Teacher Name:', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12)),
+                                const SizedBox(width: 8),
+                                Flexible(child: Text(teacher.name, textAlign: TextAlign.end, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12), maxLines: 1, overflow: TextOverflow.ellipsis)),
+                              ],
+                            ),
+                            const SizedBox(height: 6),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text('Teacher ID:', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12)),
+                                const SizedBox(width: 8),
+                                Flexible(child: Text('${teacher.teacherId ?? teacher.id ?? "-"}', textAlign: TextAlign.end, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12), maxLines: 1, overflow: TextOverflow.ellipsis)),
+                              ],
+                            ),
+                            const SizedBox(height: 6),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text('Mobile:', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12)),
+                                const SizedBox(width: 8),
+                                Flexible(child: Text(teacher.mobile ?? 'No phone', textAlign: TextAlign.end, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12), maxLines: 1, overflow: TextOverflow.ellipsis)),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                      TextFormField(
+                        controller: pinController,
+                        decoration: InputDecoration(
+                          labelText: '4-Digit PIN to Send',
+                          hintText: 'Enter 4-digit PIN',
+                          prefixIcon: const Icon(Icons.lock_outline, color: Color(0xFF004D40)),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                        keyboardType: TextInputType.number,
+                        maxLength: 4,
+                        validator: (val) {
+                          if (val == null || val.length != 4) return 'PIN must be exactly 4 digits';
+                          if (int.tryParse(val) == null) return 'PIN must be numeric';
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 6),
+                      CheckboxListTile(
+                        value: updatePinInDatabase,
+                        onChanged: (val) => setDialogState(() => updatePinInDatabase = val ?? true),
+                        title: const Text('Also update PIN in database', style: TextStyle(fontSize: 12)),
+                        contentPadding: EdgeInsets.zero,
+                        controlAffinity: ListTileControlAffinity.leading,
+                        dense: true,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogCtx),
+                  child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+                ),
+                ElevatedButton.icon(
+                  icon: const Icon(Icons.send_rounded, size: 16),
+                  label: const Text('Send via WhatsApp'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF004D40),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  onPressed: () async {
+                    if (formKey.currentState!.validate()) {
+                      final enteredPin = pinController.text.trim();
+                      if (updatePinInDatabase && teacher.id != null) {
+                        await _userRepository.updateUserPin(teacher.id!, _hashPin(enteredPin));
+                      }
+                      if (dialogCtx.mounted) Navigator.pop(dialogCtx);
+
+                      final targetPhone = teacher.mobile ?? '';
+                      if (targetPhone.isEmpty) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Cannot send WhatsApp: Teacher has no mobile number registered.', maxLines: 2, overflow: TextOverflow.ellipsis)),
+                          );
+                        }
+                        return;
+                      }
+
+                      if (context.mounted) {
+                        final sender = context.read<AuthProvider>().currentUser?.name ?? 'Maktab Management';
+                        await WhatsAppUtility.sendTeacherCredentials(
+                          context,
+                          targetPhone,
+                          teacher.name,
+                          enteredPin,
+                          teacherId: teacher.teacherId ?? teacher.id ?? 0,
+                          mobile: targetPhone,
+                          languageCode: LanguageResolver.forUser(teacher),
+                          senderName: sender,
+                        );
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Credentials sent to ${teacher.name} via WhatsApp', maxLines: 2, overflow: TextOverflow.ellipsis)),
+                          );
+                        }
+                      }
+                    }
+                  },
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
   Future<bool?> _showDeleteConfirmation(User teacher) async {
     return await showDialog<bool>(
       context: context,
@@ -668,16 +828,18 @@ class _TeacherManagementScreenState extends State<TeacherManagementScreen> {
                               children: [
                                 if (teacher.mobile != null && teacher.mobile!.isNotEmpty)
                                   IconButton(
-                                    icon: const Icon(Icons.message, color: Colors.green),
-                                    tooltip: 'Send/Reset PIN via WhatsApp',
+                                    icon: const Icon(Icons.share, color: Colors.green),
+                                    tooltip: 'Send Credentials via WhatsApp',
                                     onPressed: () {
-                                      _showResetPinDialog(teacher);
+                                      _showSendCredentialsDialog(teacher);
                                     },
                                   ),
                                     PopupMenuButton<String>(
                                       icon: const Icon(Icons.more_vert, color: Color(0xFF004D40)),
                                       onSelected: (value) async {
-                                        if (value == 'reset_password') {
+                                        if (value == 'send_credentials') {
+                                          _showSendCredentialsDialog(teacher);
+                                        } else if (value == 'reset_password') {
                                           if (teacher.mobile != null && teacher.mobile!.contains('@')) {
                                             final auth = Provider.of<AuthProvider>(context, listen: false);
                                             final success = await auth.sendPasswordReset(teacher.mobile!);
@@ -687,13 +849,21 @@ class _TeacherManagementScreenState extends State<TeacherManagementScreen> {
                                               );
                                             }
                                           } else {
-                                            _showResetPinDialog(teacher);
+                                            _showSendCredentialsDialog(teacher);
                                           }
                                         } else if (value == 'edit') {
                                           _showEditTeacherDialog(teacher);
                                         }
                                       },
                                       itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+                                        const PopupMenuItem<String>(
+                                          value: 'send_credentials',
+                                          child: ListTile(
+                                            leading: Icon(Icons.share, color: Color(0xFF004D40)),
+                                            title: Text('Send Credentials via WhatsApp', maxLines: 1, overflow: TextOverflow.ellipsis),
+                                            contentPadding: EdgeInsets.zero,
+                                          ),
+                                        ),
                                         const PopupMenuItem<String>(
                                           value: 'edit',
                                           child: ListTile(

@@ -24,6 +24,8 @@ class ReceiptPreviewDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     return AlertDialog(
       title: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis),
+      actionsOverflowDirection: VerticalDirection.down,
+      actionsOverflowButtonSpacing: 6,
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,

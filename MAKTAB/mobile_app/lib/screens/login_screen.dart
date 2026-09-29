@@ -29,6 +29,8 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _rememberTeacher = false;
   String? _rememberedManagerEmail;
   String? _rememberedTeacherId;
+  List<RememberedTeacher> _rememberedTeachers = [];
+  RememberedTeacher? _selectedRememberedTeacher;
 
   @override
   void initState() {
@@ -38,7 +40,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _loadRememberedCredentials() async {
     final managerCreds = await RememberMeService.loadManagerCredentials();
-    final teacherCreds = await RememberMeService.loadTeacherCredentials();
+    final teachers = await RememberMeService.getRememberedTeachers();
     if (!mounted) return;
     setState(() {
       if (managerCreds['remember'] == 'true') {
@@ -47,11 +49,56 @@ class _LoginScreenState extends State<LoginScreen> {
         _passwordController.text = managerCreds['password'] ?? '';
         _rememberedManagerEmail = managerCreds['email'];
       }
-      if (teacherCreds['remember'] == 'true') {
+      _rememberedTeachers = teachers;
+      if (teachers.isNotEmpty) {
         _rememberTeacher = true;
-        _teacherIdController.text = teacherCreds['id'] ?? '';
-        _pinController.text = teacherCreds['pin'] ?? '';
-        _rememberedTeacherId = teacherCreds['id'];
+        _selectedRememberedTeacher = teachers.first;
+        _teacherIdController.text = teachers.first.teacherId;
+        _pinController.text = teachers.first.pin;
+        _rememberedTeacherId = teachers.first.teacherId;
+      }
+    });
+  }
+
+  void _selectRememberedTeacher(RememberedTeacher teacher) {
+    setState(() {
+      _selectedRememberedTeacher = teacher;
+      _teacherIdController.text = teacher.teacherId;
+      _pinController.text = teacher.pin;
+      _rememberTeacher = true;
+      _rememberedTeacherId = teacher.teacherId;
+    });
+  }
+
+  void _clearSelectedTeacher() {
+    setState(() {
+      _selectedRememberedTeacher = null;
+      _teacherIdController.clear();
+      _pinController.clear();
+      _rememberTeacher = true;
+      _rememberedTeacherId = null;
+    });
+  }
+
+  Future<void> _removeRememberedTeacher(RememberedTeacher teacher) async {
+    await RememberMeService.removeRememberedTeacher(teacher.teacherId);
+    final updated = await RememberMeService.getRememberedTeachers();
+    if (!mounted) return;
+    setState(() {
+      _rememberedTeachers = updated;
+      if (_selectedRememberedTeacher?.teacherId == teacher.teacherId) {
+        if (updated.isNotEmpty) {
+          _selectedRememberedTeacher = updated.first;
+          _teacherIdController.text = updated.first.teacherId;
+          _pinController.text = updated.first.pin;
+          _rememberedTeacherId = updated.first.teacherId;
+        } else {
+          _selectedRememberedTeacher = null;
+          _teacherIdController.clear();
+          _pinController.clear();
+          _rememberTeacher = false;
+          _rememberedTeacherId = null;
+        }
       }
     });
   }
@@ -99,12 +146,13 @@ class _LoginScreenState extends State<LoginScreen> {
         }
       } else {
         if (_rememberTeacher) {
-          await RememberMeService.saveTeacherCredentials(
+          await RememberMeService.saveRememberedTeacher(
             teacherIdOrMobile: _teacherIdController.text.trim(),
             pin: _pinController.text.trim(),
+            name: auth.currentUser?.name,
           );
         } else {
-          await RememberMeService.clearTeacherCredentials();
+          await RememberMeService.removeRememberedTeacher(_teacherIdController.text.trim());
         }
       }
 
@@ -592,6 +640,86 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                           ],
                         ] else ...[
+                          if (_rememberedTeachers.isNotEmpty) ...[
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Expanded(
+                                  child: Text(
+                                    'SAVED TEACHER ACCOUNTS',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFF004D40),
+                                      letterSpacing: 0.5,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                if (_selectedRememberedTeacher != null)
+                                  InkWell(
+                                    onTap: _clearSelectedTeacher,
+                                    child: const Padding(
+                                      padding: EdgeInsets.symmetric(vertical: 4, horizontal: 6),
+                                      child: Text(
+                                        '+ Other Teacher',
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.bold,
+                                          color: Color(0xFF004D40),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            SingleChildScrollView(
+                              scrollDirection: Axis.horizontal,
+                              physics: const BouncingScrollPhysics(),
+                              child: Row(
+                                children: _rememberedTeachers.map((t) {
+                                  final isSelected = _selectedRememberedTeacher?.teacherId == t.teacherId;
+                                  final displayName = t.name.trim().isNotEmpty ? t.name.trim() : t.teacherId;
+                                  final initial = displayName.isNotEmpty ? displayName[0].toUpperCase() : 'T';
+                                  return Padding(
+                                    padding: const EdgeInsets.only(right: 8),
+                                    child: InputChip(
+                                      avatar: CircleAvatar(
+                                        backgroundColor: isSelected ? const Color(0xFFFFD700) : const Color(0xFF004D40).withValues(alpha: 0.15),
+                                        child: Text(
+                                          initial,
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.bold,
+                                            color: isSelected ? const Color(0xFF004D40) : const Color(0xFF004D40),
+                                          ),
+                                        ),
+                                      ),
+                                      label: Text(
+                                        displayName,
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                                          color: isSelected ? Colors.white : const Color(0xFF004D40),
+                                        ),
+                                      ),
+                                      selected: isSelected,
+                                      selectedColor: const Color(0xFF004D40),
+                                      backgroundColor: const Color(0xFFF0F4F0),
+                                      onSelected: (_) => _selectRememberedTeacher(t),
+                                      deleteIcon: const Icon(Icons.close, size: 14),
+                                      deleteIconColor: isSelected ? Colors.white70 : Colors.black45,
+                                      onDeleted: () => _removeRememberedTeacher(t),
+                                    ),
+                                  );
+                                }).toList(),
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                          ],
+
                           // Teacher ID / Mobile Field
                           TextFormField(
                             controller: _teacherIdController,
@@ -665,7 +793,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   fit: BoxFit.scaleDown,
                                   alignment: Alignment.centerLeft,
                                   child: Text(
-                                    loc?.translate('remember_me') ?? 'Remember Teacher ID',
+                                    loc?.translate('remember_me') ?? 'Remember Teacher Profile',
                                     style: const TextStyle(
                                       fontSize: 14,
                                       fontWeight: FontWeight.w500,
@@ -699,7 +827,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                         fit: BoxFit.scaleDown,
                                         alignment: Alignment.centerLeft,
                                         child: Text(
-                                          'Quick Login as $_rememberedTeacherId',
+                                          'Quick Login as ${_selectedRememberedTeacher != null && _selectedRememberedTeacher!.name.trim().isNotEmpty ? _selectedRememberedTeacher!.name : _rememberedTeacherId}',
                                           maxLines: 1,
                                           softWrap: false,
                                           style: const TextStyle(

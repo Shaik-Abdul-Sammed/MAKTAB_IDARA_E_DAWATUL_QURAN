@@ -364,6 +364,7 @@ class _TeacherSalaryManagementScreenState extends State<TeacherSalaryManagementS
                       const SizedBox(height: 12),
                       DropdownButtonFormField<String>(
                         initialValue: ['UPI', 'Bank Transfer', 'Cash', 'Other'].contains(selectedMode) ? selectedMode : 'Cash',
+                        isExpanded: true,
                         decoration: const InputDecoration(labelText: 'Payment Mode', border: OutlineInputBorder()),
                         items: ['UPI', 'Bank Transfer', 'Cash', 'Other']
                             .map((m) => DropdownMenuItem(value: m, child: Text(m)))
@@ -634,6 +635,7 @@ class _TeacherSalaryManagementScreenState extends State<TeacherSalaryManagementS
             const SizedBox(height: 12),
             DropdownButtonFormField<String>(
               initialValue: ['UPI', 'Bank Transfer', 'Cash', 'Other'].contains(selectedMode) ? selectedMode : 'Cash',
+              isExpanded: true,
               decoration: const InputDecoration(labelText: 'Preferred Payment Mode', border: OutlineInputBorder()),
               items: ['UPI', 'Bank Transfer', 'Cash', 'Other']
                   .map((m) => DropdownMenuItem(value: m, child: Text(m)))
@@ -717,6 +719,7 @@ class _TeacherSalaryManagementScreenState extends State<TeacherSalaryManagementS
                       const SizedBox(height: 12),
                       DropdownButtonFormField<String>(
                         initialValue: ['UPI', 'Bank Transfer', 'Cash', 'Other'].contains(selectedMode) ? selectedMode : 'Cash',
+                        isExpanded: true,
                         decoration: const InputDecoration(labelText: 'Payment Mode', border: OutlineInputBorder()),
                         items: ['UPI', 'Bank Transfer', 'Cash', 'Other']
                             .map((m) => DropdownMenuItem(value: m, child: Text(m)))

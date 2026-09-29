@@ -164,14 +164,16 @@ class FeeCard extends StatelessWidget {
                       children: [
                         Icon(onPayUpi != null ? Icons.payment_rounded : Icons.add_card_rounded, size: 14),
                         const SizedBox(width: 4),
-                        FittedBox(
-                          fit: BoxFit.scaleDown,
-                          child: Text(
-                            onPayUpi != null ? 'Pay UPI' : 'RECORD COLLECTION',
-                            maxLines: 1,
-                            softWrap: false,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                        Flexible(
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              onPayUpi != null ? 'Pay UPI' : 'RECORD COLLECTION',
+                              maxLines: 1,
+                              softWrap: false,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                            ),
                           ),
                         ),
                       ],

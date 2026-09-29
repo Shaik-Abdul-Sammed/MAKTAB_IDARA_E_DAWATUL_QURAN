@@ -235,7 +235,14 @@ class _LogFeePaymentDialogState extends State<LogFeePaymentDialog> {
                   children: [
                     Icon(Icons.payment, color: Color(0xFF004D40)),
                     SizedBox(width: 8),
-                    Text('Log Fee Payment', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF004D40))),
+                    Expanded(
+                      child: Text(
+                        'Log Fee Payment',
+                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF004D40)),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 16),
@@ -260,6 +267,7 @@ class _LogFeePaymentDialogState extends State<LogFeePaymentDialog> {
                 // Mode Dropdown
                 DropdownButtonFormField<String>(
                   initialValue: _modes.contains(_selectedMode) ? _selectedMode : _modes.first,
+                  isExpanded: true,
                   decoration: const InputDecoration(
                     labelText: 'Payment Mode',
                     prefixIcon: Icon(Icons.account_balance_wallet_outlined),
