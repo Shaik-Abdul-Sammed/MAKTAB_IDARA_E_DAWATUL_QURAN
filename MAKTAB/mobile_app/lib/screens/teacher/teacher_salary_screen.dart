@@ -310,13 +310,20 @@ class _TeacherSalaryScreenState extends State<TeacherSalaryScreen> {
                                       ),
                                     ),
                                     // Large Right-aligned Amount
-                                    Text(
-                                      '₹${p.amount}',
-                                      style: const TextStyle(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.w900,
-                                        color: Color(0xFF004D40),
-                                      ), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                    SizedBox(
+                                      width: 80,
+                                      child: Text(
+                                        '₹${p.amount}',
+                                        textAlign: TextAlign.end,
+                                        style: const TextStyle(
+                                          fontSize: 17,
+                                          fontWeight: FontWeight.w900,
+                                          color: Color(0xFF004D40),
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
                                   ],
                                 ),
                               ),

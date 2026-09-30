@@ -336,6 +336,36 @@ class _TeacherManagementScreenState extends State<TeacherManagementScreen> {
                       ),
                     ],
                   ),
+                  // Teacher ID display (read-only)
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE9F1E9),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: const Color(0xFF004D40).withValues(alpha: 0.3)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.badge_outlined, size: 16, color: Color(0xFF004D40)),
+                        const SizedBox(width: 8),
+                        const Text('Teacher ID:', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12, color: Color(0xFF004D40))),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            '${teacher.teacherId ?? teacher.id ?? "—"}',
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF004D40)),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const Tooltip(
+                          message: 'Teacher ID is system-assigned and cannot be changed',
+                          child: Icon(Icons.info_outline, size: 14, color: Colors.black38),
+                        ),
+                      ],
+                    ),
+                  ),
                   const SizedBox(height: 16),
                   TextFormField(
                     controller: nameController,
@@ -399,13 +429,20 @@ class _TeacherManagementScreenState extends State<TeacherManagementScreen> {
                 if (formKey.currentState!.validate()) {
                   final updatedUser = User(
                     id: teacher.id,
+                    teacherId: teacher.teacherId ?? teacher.id,
                     name: nameController.text.trim(),
                     pinHash: teacher.pinHash,
+                    rawPin: teacher.rawPin,
                     role: teacher.role,
                     mobile: mobileController.text.trim().isNotEmpty ? mobileController.text.trim() : null,
                     photoPath: selectedPhotoPath,
                     isActive: teacher.isActive,
                     createdAt: teacher.createdAt,
+                    monthlySalary: teacher.monthlySalary,
+                    upiId: teacher.upiId,
+                    upiRegisteredPhone: teacher.upiRegisteredPhone,
+                    preferredPaymentMode: teacher.preferredPaymentMode,
+                    preferredLanguage: teacher.preferredLanguage,
                   );
                   await _userRepository.updateUser(updatedUser);
                   
@@ -804,7 +841,7 @@ class _TeacherManagementScreenState extends State<TeacherManagementScreen> {
                           ),
                           title: Text(
                             teacher.name,
-                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17, color: Color(0xFF004D40)),
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF004D40)),
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -831,6 +868,18 @@ class _TeacherManagementScreenState extends State<TeacherManagementScreen> {
                                 spacing: 6,
                                 runSpacing: 4,
                                 children: [
+                                  // Teacher ID chip
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: Colors.blueGrey.withValues(alpha: 0.10),
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    child: Text(
+                                      'ID: ${teacher.teacherId ?? teacher.id ?? "—"}',
+                                      style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.blueGrey.shade700),
+                                    ),
+                                  ),
                                   Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                     decoration: BoxDecoration(

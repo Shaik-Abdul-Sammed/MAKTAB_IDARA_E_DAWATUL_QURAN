@@ -46,8 +46,10 @@ class TeacherFormProvider extends ChangeNotifier {
     notifyListeners();
     try {
       final dto = UserDTO(
+        id: null,
         name: name.trim(),
         pinHash: _hashPin(pin),
+        rawPin: pin.trim(), // persist plain PIN so manager can view/send credentials
         role: 'teacher',
         createdAt: DateTime.now().toIso8601String(),
         mobile: mobile.trim(),
@@ -98,12 +100,12 @@ class TeacherFormProvider extends ChangeNotifier {
     _lastUpdateResult = TeacherUpdateResult.success;
     notifyListeners();
     try {
+      final isNewPin = newPin != null && newPin.trim().isNotEmpty;
       final updated = UserDTO(
         id: existing.id,
         name: name.trim(),
-        pinHash: (newPin != null && newPin.trim().isNotEmpty)
-            ? _hashPin(newPin.trim())
-            : existing.pinHash,
+        pinHash: isNewPin ? _hashPin(newPin.trim()) : existing.pinHash,
+        rawPin: isNewPin ? newPin.trim() : existing.rawPin, // preserve plain PIN for credentials feature
         role: existing.role,
         createdAt: existing.createdAt,
         mobile: mobile.trim(),

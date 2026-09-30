@@ -1255,7 +1255,7 @@ class _TeacherSalaryManagementScreenState extends State<TeacherSalaryManagementS
                                                 ],
                                               ),
                                               trailing: SizedBox(
-                                                width: 108,
+                                                width: 96,
                                                 child: Row(
                                                   mainAxisSize: MainAxisSize.min,
                                                   mainAxisAlignment: MainAxisAlignment.end,
@@ -1387,7 +1387,7 @@ class _IconAction extends StatelessWidget {
       onPressed: onTap,
       visualDensity: VisualDensity.compact,
       padding: EdgeInsets.zero,
-      constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+      constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
     );
   }
 }
