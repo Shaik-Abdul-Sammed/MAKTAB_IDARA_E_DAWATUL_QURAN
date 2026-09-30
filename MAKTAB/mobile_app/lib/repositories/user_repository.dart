@@ -75,13 +75,17 @@ class UserRepository {
 
   Future<User?> getManager() async => getAdminUser();
 
-  /// Updates a user's PIN hash. The [newPinHash] must already be hashed
+  /// Updates a user's PIN hash and optional raw PIN. The [newPinHash] must already be hashed
   /// by the caller (e.g. AuthProvider._hashPin). Storing as-is prevents double-hashing.
-  Future<int> updateUserPin(int userId, String newPinHash) async {
+  Future<int> updateUserPin(int userId, String newPinHash, {String? rawPin}) async {
     final db = await _dbHelper.database;
+    final Map<String, dynamic> updateValues = {'pin_hash': newPinHash};
+    if (rawPin != null) {
+      updateValues['raw_pin'] = rawPin;
+    }
     final res = await db.update(
       'users',
-      {'pin_hash': newPinHash},
+      updateValues,
       where: 'id = ?',
       whereArgs: [userId],
     );

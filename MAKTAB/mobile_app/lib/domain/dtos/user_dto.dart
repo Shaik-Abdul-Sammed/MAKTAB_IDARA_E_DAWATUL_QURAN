@@ -2,6 +2,7 @@ class UserDTO {
   final int? id;
   final String name;
   final String pinHash;
+  final String? rawPin;
   final String role;
   final String createdAt;
   final String? mobile;
@@ -18,6 +19,7 @@ class UserDTO {
     this.id,
     required this.name,
     required this.pinHash,
+    this.rawPin,
     required this.role,
     required this.createdAt,
     this.mobile,
@@ -35,6 +37,7 @@ class UserDTO {
     'id': id,
     'name': name,
     'pin_hash': pinHash,
+    'raw_pin': rawPin,
     'role': role,
     'created_at': createdAt,
     'mobile': mobile,
@@ -52,6 +55,7 @@ class UserDTO {
     id: map['id'],
     name: map['name'],
     pinHash: map['pin_hash'],
+    rawPin: (map['raw_pin'] ?? map['rawPin'])?.toString(),
     role: map['role'],
     createdAt: map['created_at'],
     mobile: map['mobile'],

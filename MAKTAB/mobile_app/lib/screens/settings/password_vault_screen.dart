@@ -107,13 +107,14 @@ class _PasswordVaultScreenState extends State<PasswordVaultScreen>
       final mobile = u['mobile'] as String?;
       final dob = u['dob'] as String?;
       final pinHash = u['pin_hash'] as String? ?? '';
+      final rawPin = u['raw_pin'] as String?;
       final createdAt = u['created_at'] as String? ?? '';
       
       return VaultEntry(
         id: -id, // negative virtual ID so it doesn't conflict with custom entries
         label: '$name ($role PIN)',
         username: mobile != null && mobile.isNotEmpty ? mobile : '$role Account',
-        password: pinHash,
+        password: (rawPin != null && rawPin.isNotEmpty) ? rawPin : pinHash,
         category: 'Users & PINs',
         url: null,
         notes: 'System User | Role: $role | Mobile: ${mobile ?? "N/A"} | DOB: ${dob ?? "N/A"}',

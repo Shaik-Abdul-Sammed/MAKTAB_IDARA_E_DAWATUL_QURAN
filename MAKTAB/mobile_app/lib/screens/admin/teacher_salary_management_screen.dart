@@ -1020,10 +1020,9 @@ class _TeacherSalaryManagementScreenState extends State<TeacherSalaryManagementS
                                 child: Theme(
                                   data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
                                   child: ExpansionTile(
-                                    tilePadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                                    tilePadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                                     childrenPadding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
                                     title: Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                       children: [
                                         Expanded(
                                           child: Column(
@@ -1031,34 +1030,46 @@ class _TeacherSalaryManagementScreenState extends State<TeacherSalaryManagementS
                                             children: [
                                               Text(
                                                 teacher.name,
-                                                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF004D40)), maxLines: 2, overflow: TextOverflow.ellipsis),
+                                                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF004D40)),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
                                               const SizedBox(height: 2),
                                               Text(
                                                 'This Month: ₹$paid / ₹$salary',
-                                                style: TextStyle(fontSize: 12, color: Colors.grey.shade700), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                                style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
                                             ],
                                           ),
                                         ),
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-                                          decoration: BoxDecoration(
-                                            color: statusColor.withValues(alpha: 0.15),
-                                            borderRadius: BorderRadius.circular(20),
-                                            border: Border.all(color: statusColor),
-                                          ),
-                                          child: Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              Icon(statusIcon, size: 14, color: statusColor),
-                                              const SizedBox(width: 4),
-                                              Text(
-                                                status,
-                                                maxLines: 1,
-                                                softWrap: false,
-                                                overflow: TextOverflow.ellipsis,
-                                                style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: statusColor),
-                                              ),
-                                            ],
+                                        const SizedBox(width: 6),
+                                        Flexible(
+                                          flex: 0,
+                                          child: Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2.5),
+                                            decoration: BoxDecoration(
+                                              color: statusColor.withValues(alpha: 0.15),
+                                              borderRadius: BorderRadius.circular(20),
+                                              border: Border.all(color: statusColor),
+                                            ),
+                                            child: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Icon(statusIcon, size: 12, color: statusColor),
+                                                const SizedBox(width: 3),
+                                                Flexible(
+                                                  child: Text(
+                                                    status,
+                                                    maxLines: 1,
+                                                    softWrap: false,
+                                                    overflow: TextOverflow.ellipsis,
+                                                    style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: statusColor),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
                                           ),
                                         ),
                                       ],

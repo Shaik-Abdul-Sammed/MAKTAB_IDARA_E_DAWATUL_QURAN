@@ -114,15 +114,18 @@ class _TeacherDetailsScreenState extends State<TeacherDetailsScreen> {
             child: TextFormField(
               controller: pinController,
               decoration: InputDecoration(
-                labelText: 'New 4-Digit PIN',
+                labelText: 'New PIN (4-6 digits)',
+                hintText: 'Enter 4 to 6 digit PIN',
                 prefixIcon: const Icon(Icons.lock_reset, color: Color(0xFF004D40)),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
               ),
               keyboardType: TextInputType.number,
-              maxLength: 4,
+              maxLength: 6,
               validator: (val) {
-                if (val == null || val.length != 4) return 'PIN must be exactly 4 digits';
-                if (int.tryParse(val) == null) return 'PIN must be numeric';
+                if (val == null || val.trim().length < 4 || val.trim().length > 6) {
+                  return 'PIN must be 4 to 6 digits';
+                }
+                if (int.tryParse(val.trim()) == null) return 'PIN must be numeric';
                 return null;
               },
             ),
@@ -140,7 +143,12 @@ class _TeacherDetailsScreenState extends State<TeacherDetailsScreen> {
               onPressed: () async {
                 if (formKey.currentState!.validate()) {
                   if (teacher.id == null) return;
-                  await userRepo.updateUserPin(teacher.id!, _hashPin(pinController.text));
+                  final enteredPin = pinController.text.trim();
+                  await userRepo.updateUserPin(
+                    teacher.id!,
+                    _hashPin(enteredPin),
+                    rawPin: enteredPin,
+                  );
                   if (context.mounted) {
                     Navigator.pop(context);
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -188,7 +196,7 @@ class _TeacherDetailsScreenState extends State<TeacherDetailsScreen> {
   }
 
   void _showSendCredentialsDialog(UserDTO teacher) {
-    final pinController = TextEditingController();
+    final pinController = TextEditingController(text: teacher.rawPin ?? '');
     final formKey = GlobalKey<FormState>();
     final userRepo = UserRepository();
     bool updatePinInDatabase = true;
@@ -262,16 +270,20 @@ class _TeacherDetailsScreenState extends State<TeacherDetailsScreen> {
                       TextFormField(
                         controller: pinController,
                         decoration: InputDecoration(
-                          labelText: '4-Digit PIN to Send',
-                          hintText: 'Enter 4-digit PIN',
+                          labelText: 'PIN to Send (4-6 digits)',
+                          hintText: 'Enter 4 to 6 digit PIN',
                           prefixIcon: const Icon(Icons.lock_outline, color: Color(0xFF004D40)),
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                         ),
                         keyboardType: TextInputType.number,
-                        maxLength: 4,
+                        maxLength: 6,
                         validator: (val) {
-                          if (val == null || val.length != 4) return 'PIN must be exactly 4 digits';
-                          if (int.tryParse(val) == null) return 'PIN must be numeric';
+                          if (val == null || val.trim().length < 4 || val.trim().length > 6) {
+                            return 'PIN must be 4 to 6 digits';
+                          }
+                          if (int.tryParse(val.trim()) == null) {
+                            return 'PIN must be numeric';
+                          }
                           return null;
                         },
                       ),
@@ -305,7 +317,11 @@ class _TeacherDetailsScreenState extends State<TeacherDetailsScreen> {
                     if (formKey.currentState!.validate()) {
                       final enteredPin = pinController.text.trim();
                       if (updatePinInDatabase && teacher.id != null) {
-                        await userRepo.updateUserPin(teacher.id!, _hashPin(enteredPin));
+                        await userRepo.updateUserPin(
+                          teacher.id!,
+                          _hashPin(enteredPin),
+                          rawPin: enteredPin,
+                        );
                       }
                       if (dialogCtx.mounted) Navigator.pop(dialogCtx);
 
@@ -618,11 +634,17 @@ class _MetaRow extends StatelessWidget {
         children: [
           Icon(icon, size: 18, color: const Color(0xFF004D40)),
           const SizedBox(width: 12),
+          Text(label, style: const TextStyle(color: Colors.black54, fontSize: 13)),
+          const SizedBox(width: 12),
           Expanded(
-            child: Text(label, style: const TextStyle(color: Colors.black54, fontSize: 13)),
+            child: Text(
+              value,
+              textAlign: TextAlign.end,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF004D40)),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
-          Text(value,
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF004D40))),
         ],
       ),
     );

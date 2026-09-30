@@ -42,7 +42,7 @@ class DatabaseHelper {
       return await ffi.databaseFactoryFfi.openDatabase(
         path,
         options: ffi.OpenDatabaseOptions(
-          version: 29,
+          version: 30,
           onConfigure: (db) async {
             await db.execute('PRAGMA foreign_keys = ON');
           },
@@ -59,7 +59,7 @@ class DatabaseHelper {
     return await openDatabase(
       path,
       password: key,
-      version: 29,
+      version: 30,
       onConfigure: (db) async {
         await db.execute('PRAGMA foreign_keys = ON');
       },
@@ -115,6 +115,7 @@ class DatabaseHelper {
         teacher_id $integerNullable,
         name $textType,
         pin_hash $textType,
+        raw_pin $textNullable,
         role $textType,
         mobile $textNullable,
         photo_path $textNullable,
@@ -1163,6 +1164,15 @@ class DatabaseHelper {
         debugPrint('[MIGRATION v29] Added upi_registered_phone column');
       } catch (e) {
         debugPrint('[MIGRATION v29] $e');
+      }
+    }
+
+    if (oldVersion < 30) {
+      try {
+        await db.execute('ALTER TABLE users ADD COLUMN raw_pin TEXT');
+        debugPrint('[MIGRATION v30] Added raw_pin column to users table');
+      } catch (e) {
+        debugPrint('[MIGRATION v30] $e');
       }
     }
   }

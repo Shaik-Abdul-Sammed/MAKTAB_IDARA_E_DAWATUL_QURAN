@@ -738,14 +738,14 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                           const SizedBox(height: 16),
 
-                          // Teacher 4-Digit PIN Field
+                          // Teacher PIN (4-6 Digits) Field
                           TextFormField(
                             controller: _pinController,
                             obscureText: _obscurePin,
                             keyboardType: TextInputType.number,
                             maxLength: 6,
                             decoration: InputDecoration(
-                              labelText: loc?.translate('pin') ?? '4-Digit PIN',
+                              labelText: loc?.translate('pin') ?? 'PIN (4-6 digits)',
                               prefixIcon: const Icon(Icons.lock_outline, color: Color(0xFF004D40)),
                               suffixIcon: IconButton(
                                 icon: Icon(
@@ -764,8 +764,8 @@ class _LoginScreenState extends State<LoginScreen> {
                               counterText: '',
                             ),
                             validator: (val) {
-                              if (val == null || val.trim().isEmpty) return loc?.translate('enter_pin') ?? 'Please enter 4-digit PIN';
-                              if (val.trim().length < 4) return 'PIN must be at least 4 digits';
+                              if (val == null || val.trim().isEmpty) return loc?.translate('enter_pin') ?? 'Please enter PIN (4-6 digits)';
+                              if (val.trim().length < 4 || val.trim().length > 6) return 'PIN must be 4 to 6 digits';
                               return null;
                             },
                           ),

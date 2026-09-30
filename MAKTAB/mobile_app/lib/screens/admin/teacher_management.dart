@@ -148,15 +148,18 @@ class _TeacherManagementScreenState extends State<TeacherManagementScreen> {
                   TextFormField(
                     controller: pinController,
                     decoration: InputDecoration(
-                      labelText: '4-Digit PIN',
+                      labelText: 'Teacher PIN (4-6 digits)',
+                      hintText: 'Enter 4 to 6 digit PIN',
                       prefixIcon: const Icon(Icons.lock, color: Color(0xFF004D40)),
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                     ),
                     keyboardType: TextInputType.number,
                     maxLength: 6,
                     validator: (val) {
-                      if (val == null || val.length < 6) return 'PIN must be at least 6 digits';
-                      if (int.tryParse(val) == null) return 'PIN must be numeric';
+                      if (val == null || val.trim().length < 4 || val.trim().length > 6) {
+                        return 'PIN must be 4 to 6 digits';
+                      }
+                      if (int.tryParse(val.trim()) == null) return 'PIN must be numeric';
                       return null;
                     },
                   ),
@@ -201,9 +204,11 @@ class _TeacherManagementScreenState extends State<TeacherManagementScreen> {
               ),
               onPressed: () async {
                 if (formKey.currentState!.validate()) {
+                  final enteredPin = pinController.text.trim();
                   final newUser = User(
                     name: nameController.text.trim(),
-                    pinHash: _hashPin(pinController.text),
+                    pinHash: _hashPin(enteredPin),
+                    rawPin: enteredPin,
                     role: 'teacher',
                     mobile: mobileController.text.trim().isNotEmpty ? mobileController.text.trim() : null,
                     photoPath: selectedPhotoPath,
@@ -432,7 +437,7 @@ class _TeacherManagementScreenState extends State<TeacherManagementScreen> {
   // _sendPinToWhatsApp removed in favor of WhatsAppUtility
 
   void _showResetPinDialog(User teacher) {
-    final pinController = TextEditingController();
+    final pinController = TextEditingController(text: teacher.rawPin ?? '');
     final formKey = GlobalKey<FormState>();
     
     showDialog(
@@ -446,15 +451,18 @@ class _TeacherManagementScreenState extends State<TeacherManagementScreen> {
             child: TextFormField(
               controller: pinController,
               decoration: InputDecoration(
-                labelText: 'New 4-Digit PIN',
+                labelText: 'New PIN (4-6 digits)',
+                hintText: 'Enter 4 to 6 digit PIN',
                 prefixIcon: const Icon(Icons.lock_reset, color: Color(0xFF004D40)),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
               ),
               keyboardType: TextInputType.number,
-              maxLength: 4,
+              maxLength: 6,
               validator: (val) {
-                if (val == null || val.length != 4) return 'PIN must be exactly 4 digits';
-                if (int.tryParse(val) == null) return 'PIN must be numeric';
+                if (val == null || val.trim().length < 4 || val.trim().length > 6) {
+                  return 'PIN must be 4 to 6 digits';
+                }
+                if (int.tryParse(val.trim()) == null) return 'PIN must be numeric';
                 return null;
               },
             ),
@@ -471,7 +479,12 @@ class _TeacherManagementScreenState extends State<TeacherManagementScreen> {
               ),
               onPressed: () async {
                 if (formKey.currentState!.validate()) {
-                  await _userRepository.updateUserPin(teacher.id!, _hashPin(pinController.text));
+                  final enteredPin = pinController.text.trim();
+                  await _userRepository.updateUserPin(
+                    teacher.id!,
+                    _hashPin(enteredPin),
+                    rawPin: enteredPin,
+                  );
                   if (context.mounted) {
                     Navigator.pop(context);
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -519,7 +532,7 @@ class _TeacherManagementScreenState extends State<TeacherManagementScreen> {
   }
 
   void _showSendCredentialsDialog(User teacher) {
-    final pinController = TextEditingController();
+    final pinController = TextEditingController(text: teacher.rawPin ?? '');
     final formKey = GlobalKey<FormState>();
     bool updatePinInDatabase = true;
 
@@ -592,16 +605,18 @@ class _TeacherManagementScreenState extends State<TeacherManagementScreen> {
                       TextFormField(
                         controller: pinController,
                         decoration: InputDecoration(
-                          labelText: '4-Digit PIN to Send',
-                          hintText: 'Enter 4-digit PIN',
+                          labelText: 'PIN to Send (4-6 digits)',
+                          hintText: 'Enter 4 to 6 digit PIN',
                           prefixIcon: const Icon(Icons.lock_outline, color: Color(0xFF004D40)),
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                         ),
                         keyboardType: TextInputType.number,
-                        maxLength: 4,
+                        maxLength: 6,
                         validator: (val) {
-                          if (val == null || val.length != 4) return 'PIN must be exactly 4 digits';
-                          if (int.tryParse(val) == null) return 'PIN must be numeric';
+                          if (val == null || val.trim().length < 4 || val.trim().length > 6) {
+                            return 'PIN must be 4 to 6 digits';
+                          }
+                          if (int.tryParse(val.trim()) == null) return 'PIN must be numeric';
                           return null;
                         },
                       ),
@@ -635,7 +650,12 @@ class _TeacherManagementScreenState extends State<TeacherManagementScreen> {
                     if (formKey.currentState!.validate()) {
                       final enteredPin = pinController.text.trim();
                       if (updatePinInDatabase && teacher.id != null) {
-                        await _userRepository.updateUserPin(teacher.id!, _hashPin(enteredPin));
+                        await _userRepository.updateUserPin(
+                          teacher.id!,
+                          _hashPin(enteredPin),
+                          rawPin: enteredPin,
+                        );
+                        _fetchTeachers();
                       }
                       if (dialogCtx.mounted) Navigator.pop(dialogCtx);
 
@@ -771,6 +791,7 @@ class _TeacherManagementScreenState extends State<TeacherManagementScreen> {
                         ),
                         child: ListTile(
                           contentPadding: const EdgeInsets.all(16),
+                          isThreeLine: true,
                           leading: CircleAvatar(
                             backgroundColor: const Color(0xFFE9F1E9),
                             radius: 25,
@@ -783,7 +804,7 @@ class _TeacherManagementScreenState extends State<TeacherManagementScreen> {
                           ),
                           title: Text(
                             teacher.name,
-                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Color(0xFF004D40)),
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17, color: Color(0xFF004D40)),
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -791,33 +812,61 @@ class _TeacherManagementScreenState extends State<TeacherManagementScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               const SizedBox(height: 4),
-                              Text(
-                                'Mobile: ${teacher.mobile ?? "N/A"}',
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
+                              Row(
+                                children: [
+                                  const Icon(Icons.phone_outlined, size: 13, color: Colors.black45),
+                                  const SizedBox(width: 4),
+                                  Expanded(
+                                    child: Text(
+                                      teacher.mobile ?? "N/A",
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(fontSize: 12, color: Colors.black87),
+                                    ),
+                                  ),
+                                ],
                               ),
-                              const SizedBox(height: 2),
-                              Text(
-                                'Role: ${teacher.role}',
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              const SizedBox(height: 2),
-                              Builder(
-                                builder: (_) {
-                                  final assignedCount = _allBatches.where((b) =>
-                                      b.teacherId != null &&
-                                      (b.teacherId == (teacher.teacherId ?? teacher.id) || b.teacherId == teacher.id)).length;
-                                  return Text(
-                                    assignedCount == 0
-                                        ? 'No batches assigned'
-                                        : 'Batches: $assignedCount assigned',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w500,
-                                      color: assignedCount == 0 ? Colors.orange.shade800 : Colors.green.shade800,
-                                    ), maxLines: 1, overflow: TextOverflow.ellipsis);
-                                },
+                              const SizedBox(height: 6),
+                              Wrap(
+                                spacing: 6,
+                                runSpacing: 4,
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFF004D40).withValues(alpha: 0.08),
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    child: Text(
+                                      'ROLE: ${teacher.role.toUpperCase()}',
+                                      style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF004D40)),
+                                    ),
+                                  ),
+                                  Builder(
+                                    builder: (_) {
+                                      final assignedCount = _allBatches.where((b) =>
+                                          b.teacherId != null &&
+                                          (b.teacherId == (teacher.teacherId ?? teacher.id) || b.teacherId == teacher.id)).length;
+                                      return Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                        decoration: BoxDecoration(
+                                          color: (assignedCount == 0 ? Colors.orange : Colors.green).withValues(alpha: 0.12),
+                                          borderRadius: BorderRadius.circular(6),
+                                        ),
+                                        child: Text(
+                                          assignedCount == 0
+                                              ? 'No batches assigned'
+                                              : '$assignedCount batches',
+                                          style: TextStyle(
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.bold,
+                                            color: assignedCount == 0 ? Colors.orange.shade800 : Colors.green.shade800,
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ],
                               ),
                             ],
                           ),

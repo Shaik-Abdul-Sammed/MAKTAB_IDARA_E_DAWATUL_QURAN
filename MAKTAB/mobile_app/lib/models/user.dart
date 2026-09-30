@@ -3,6 +3,7 @@ class User {
   final int? teacherId;
   final String name;
   final String pinHash; // We will store hashed PIN
+  final String? rawPin; // Plain PIN when created or reset by manager (for sending credentials)
   final String role; // 'admin' or 'teacher'
   final bool isActive;
   final String createdAt;
@@ -20,6 +21,7 @@ class User {
     this.teacherId,
     required this.name,
     required this.pinHash,
+    this.rawPin,
     required this.role,
     this.isActive = true,
     required this.createdAt,
@@ -39,6 +41,7 @@ class User {
       'teacher_id': teacherId ?? id,
       'name': name,
       'pin_hash': pinHash,
+      'raw_pin': rawPin,
       'role': role,
       'is_active': isActive ? 1 : 0,
       'created_at': createdAt,
@@ -80,6 +83,7 @@ class User {
       teacherId: rawTeacherId,
       name: (map['name'] ?? 'User').toString(),
       pinHash: (map['pin_hash'] ?? map['pinHash'] ?? '').toString(),
+      rawPin: (map['raw_pin'] ?? map['rawPin'])?.toString(),
       role: (map['role'] ?? 'teacher').toString(),
       isActive: active,
       createdAt: (map['created_at'] ?? map['createdAt'] ?? DateTime.now().toIso8601String()).toString(),
@@ -99,6 +103,7 @@ class User {
     int? teacherId,
     String? name,
     String? pinHash,
+    String? rawPin,
     String? role,
     bool? isActive,
     String? createdAt,
@@ -116,6 +121,7 @@ class User {
       teacherId: teacherId ?? this.teacherId,
       name: name ?? this.name,
       pinHash: pinHash ?? this.pinHash,
+      rawPin: rawPin ?? this.rawPin,
       role: role ?? this.role,
       isActive: isActive ?? this.isActive,
       createdAt: createdAt ?? this.createdAt,
